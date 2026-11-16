@@ -24,6 +24,7 @@
 // OPCIONES
 //   --perfil <ruta>    Perfil concreto en vez del de por defecto.
 //   --mods <lista>     Solo esos mods, por su carpeta: acrylic-glass,motion,...
+//   --idioma es|en     Idioma de las opciones en Ajustes > Zen Mods (por defecto, el del sistema).
 //                      Los demas no se tocan.
 //   --nivel-web <n>    safe | full | aggressive | off   (por defecto: full)
 //   --bloquear         Escribe las prefs en user.js en lugar de prefs.js. Con
@@ -43,10 +44,14 @@ import * as z from './lib/zen.mjs'
 z.principal(() => {
   const args = z.parsearArgs(process.argv.slice(2), {
     interruptores: ['bloquear', 'forzar'],
-    claves: ['perfil', 'nivel-web', 'mods'],
+    claves: ['perfil', 'nivel-web', 'mods', 'idioma'],
   })
 
   const nivelWeb = args['nivel-web'] ?? 'full'
+  // El idioma de las opciones en Ajustes > Zen Mods: --idioma es|en, o el del
+  // sistema. Cada mod trae preferences.json (ingles) y preferences.es.json.
+  const idioma = args.idioma ?? (/^es/i.test(Intl.DateTimeFormat().resolvedOptions().locale || '') ? 'es' : 'en')
+  if (!['es', 'en'].includes(idioma)) throw new Error('--idioma debe ser es o en')
   if (!z.NIVELES_WEB.includes(nivelWeb)) {
     throw new Error(`--nivel-web debe ser uno de: ${z.NIVELES_WEB.join(', ')}`)
   }
@@ -104,7 +109,8 @@ z.principal(() => {
     const destino = path.join(perfil, 'chrome', 'zen-themes', manifiesto.id)
     fs.mkdirSync(destino, { recursive: true })
     for (const f of ['chrome.css', 'preferences.json', 'readme.md']) {
-      z.copiarSiExiste(path.join(mod.dir, f), path.join(destino, f))
+      const traducido = f === 'preferences.json' && idioma === 'es' && fs.existsSync(path.join(mod.dir, 'preferences.es.json'))
+      z.copiarSiExiste(path.join(mod.dir, traducido ? 'preferences.es.json' : f), path.join(destino, f))
     }
     temas[manifiesto.id] = manifiesto
     z.linea('Mod instalado', `${manifiesto.name} v${manifiesto.version}`)

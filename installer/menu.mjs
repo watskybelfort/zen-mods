@@ -180,7 +180,7 @@ z.principal(async () => {
 
   const fallos = []
   const css = elegidos.filter((m) => m.css).map((m) => m.id)
-  if (css.length && !correr('instalar.mjs', ['--mods', css.join(',')])) fallos.push('CSS: ' + css.join(', '))
+  if (css.length && !correr('instalar.mjs', ['--mods', css.join(','), '--idioma', ES ? 'es' : 'en'])) fallos.push('CSS: ' + css.join(', '))
   for (const m of elegidos.filter((x) => x.native)) {
     console.log('')
     console.log('  --- ' + m.name)

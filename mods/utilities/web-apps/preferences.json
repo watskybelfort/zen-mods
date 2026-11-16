@@ -1,13 +1,13 @@
 [
   {
     "property": "zen-web-apps.restore-top-bar",
-    "label": "Devolver la barra de direcciones a una franja arriba (necesita la pieza nativa: node scripts/instalar-web-apps.mjs)",
+    "label": "Bring the address bar back as a strip at the top (needs the native part: node installer/instalar-web-apps.mjs)",
     "type": "checkbox",
     "defaultValue": true
   },
   {
     "property": "zen-web-apps.hide-compact-toggle",
-    "label": "Ocultar tambien el boton de modo compacto de la barra de arriba (oculta el area entera, con lo que le hayas anadido)",
+    "label": "Also hide the compact mode button in the top bar (hides the whole area, with anything you've added to it)",
     "type": "checkbox",
     "defaultValue": false
   }

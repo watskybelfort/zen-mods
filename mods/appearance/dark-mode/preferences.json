@@ -1,13 +1,13 @@
 [
   {
     "property": "zen.modooscuro.encendido",
-    "label": "Modo oscuro activo: muestra 'Activar modo oscuro' en el clic derecho y oscurece las paginas de tu lista (necesita la pieza nativa: node scripts/instalar-modo-oscuro.mjs)",
+    "label": "Dark mode on: shows 'Turn on dark mode' in the right-click menu and darkens the pages on your list (needs the native part: node installer/instalar-modo-oscuro.mjs)",
     "type": "checkbox",
     "defaultValue": true
   },
   {
     "property": "zen.modooscuro.todo",
-    "label": "Oscurecer TODAS las paginas, no solo las de la lista (las que ya son oscuras no se tocan; cuesta algo de CPU al cargar cada pagina)",
+    "label": "Darken ALL pages, not just the ones on the list (pages that are already dark are left alone; costs some CPU on every page load)",
     "type": "checkbox",
     "defaultValue": false
   }

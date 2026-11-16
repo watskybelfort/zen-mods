@@ -1,60 +1,69 @@
 [
   {
     "property": "zen-lights.size",
-    "label": "Tamano de los circulos",
+    "label": "Circle size",
     "type": "dropdown",
     "defaultValue": "mac",
     "options": [
-      { "label": "Compacto — 10px", "value": "compact" },
-      { "label": "Mac — 12px, la medida real de macOS", "value": "mac" },
-      { "label": "Grande — 14px", "value": "large" }
+      {
+        "label": "Compact: 10px",
+        "value": "compact"
+      },
+      {
+        "label": "Mac: 12px, the real macOS size",
+        "value": "mac"
+      },
+      {
+        "label": "Large: 14px",
+        "value": "large"
+      }
     ]
   },
   {
     "property": "zen-lights.mac-order",
-    "label": "Orden de macOS: cerrar, minimizar, maximizar",
+    "label": "macOS order: close, minimize, maximize",
     "type": "checkbox",
     "defaultValue": true
   },
   {
     "property": "zen-lights.always-symbols",
-    "label": "Mostrar los simbolos siempre, no solo al pasar el raton",
+    "label": "Always show the symbols, not only on hover",
     "type": "checkbox",
     "defaultValue": false
   },
   {
     "property": "zen-lights.dim-inactive",
-    "label": "Apagar los colores cuando la ventana pierde el foco",
+    "label": "Gray out the colors when the window loses focus",
     "type": "checkbox",
     "defaultValue": true
   },
   {
     "property": "zen-lights.close",
-    "label": "Color de cerrar (vacio = rojo de macOS)",
+    "label": "Close color (empty = macOS red)",
     "type": "string",
     "placeholder": "#ff5f57"
   },
   {
     "property": "zen-lights.min",
-    "label": "Color de minimizar (vacio = ambar de macOS)",
+    "label": "Minimize color (empty = macOS amber)",
     "type": "string",
     "placeholder": "#febc2e"
   },
   {
     "property": "zen-lights.max",
-    "label": "Color de maximizar (vacio = verde de macOS)",
+    "label": "Maximize color (empty = macOS green)",
     "type": "string",
     "placeholder": "#28c840"
   },
   {
     "property": "zen-lights.diameter",
-    "label": "Diametro exacto con unidad, para ajuste fino (vacio = usar el tamano)",
+    "label": "Exact diameter with unit, for fine-tuning (empty = use the size)",
     "type": "string",
     "placeholder": "12px"
   },
   {
     "property": "zen-lights.gap",
-    "label": "Separacion entre circulos con unidad (vacio = usar el tamano)",
+    "label": "Gap between circles with unit (empty = use the size)",
     "type": "string",
     "placeholder": "8px"
   }

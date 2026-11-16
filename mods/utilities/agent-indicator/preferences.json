@@ -1,79 +1,115 @@
 [
   {
     "property": "zen-claude.position",
-    "label": "Donde sale la pastilla",
+    "label": "Where the pill shows",
     "type": "dropdown",
     "defaultValue": "bottom-right",
     "options": [
-      { "label": "Abajo a la derecha — no estorba a nada", "value": "bottom-right" },
-      { "label": "Abajo a la izquierda", "value": "bottom-left" },
-      { "label": "Arriba a la derecha — ojo, ahi estan los botones de ventana", "value": "top-right" },
-      { "label": "Arriba a la izquierda", "value": "top-left" },
-      { "label": "En ningun sitio — solo la marca de la barra de direcciones", "value": "off" }
+      {
+        "label": "Bottom right: doesn't get in the way",
+        "value": "bottom-right"
+      },
+      {
+        "label": "Bottom left",
+        "value": "bottom-left"
+      },
+      {
+        "label": "Top right: careful, the window buttons are there",
+        "value": "top-right"
+      },
+      {
+        "label": "Top left",
+        "value": "top-left"
+      },
+      {
+        "label": "Nowhere: only the mark in the address bar",
+        "value": "off"
+      }
     ]
   },
   {
     "property": "zen-claude.label",
-    "label": "Que pone",
+    "label": "What it says",
     "type": "dropdown",
     "defaultValue": "claude",
     "options": [
-      { "label": "Claude", "value": "claude" },
-      { "label": "Claude Code", "value": "claude-code" },
-      { "label": "Sesion controlada", "value": "sesion" },
-      { "label": "Nada — solo el punto", "value": "none" }
+      {
+        "label": "Claude",
+        "value": "claude"
+      },
+      {
+        "label": "Claude Code",
+        "value": "claude-code"
+      },
+      {
+        "label": "Controlled session",
+        "value": "sesion"
+      },
+      {
+        "label": "Nothing: just the dot",
+        "value": "none"
+      }
     ]
   },
   {
     "property": "zen-claude.size",
-    "label": "Tamano",
+    "label": "Size",
     "type": "dropdown",
     "defaultValue": "normal",
     "options": [
-      { "label": "Compacto", "value": "compact" },
-      { "label": "Normal", "value": "normal" },
-      { "label": "Grande", "value": "large" }
+      {
+        "label": "Compact",
+        "value": "compact"
+      },
+      {
+        "label": "Normal",
+        "value": "normal"
+      },
+      {
+        "label": "Large",
+        "value": "large"
+      }
     ]
   },
   {
     "property": "zen-claude.pulse",
-    "label": "El punto late mientras hay conexion",
+    "label": "The dot pulses while connected",
     "type": "checkbox",
     "defaultValue": true
   },
   {
     "property": "zen-claude.tame-warning",
-    "label": "Sustituir el aviso rojo a rayas de Firefox en la barra de direcciones",
+    "label": "Replace Firefox's red striped warning in the address bar",
     "type": "checkbox",
     "defaultValue": true
   },
   {
     "property": "zen-claude.hide-robot",
-    "label": "Ocultar el robot de la barra de direcciones cuando ya se ve la pastilla",
+    "label": "Hide the robot in the address bar when the pill is showing",
     "type": "checkbox",
     "defaultValue": true
   },
   {
     "property": "zen-claude.ring",
-    "label": "Anillo de color en el borde de la ventana (mas visible, mas invasivo)",
+    "label": "Colored ring around the window edge (more visible, more intrusive)",
     "type": "checkbox",
     "defaultValue": false
   },
   {
     "property": "zen-claude.color",
-    "label": "Color (vacio = naranja de Claude)",
+    "label": "Color (empty = Claude orange)",
     "type": "string",
     "placeholder": "#d97757"
   },
   {
     "property": "zen-claude.offset-x",
-    "label": "Separacion horizontal del borde, con unidad (vacio = la del tamano)",
+    "label": "Horizontal gap from the edge, with unit (empty = from the size)",
     "type": "string",
     "placeholder": "12px"
   },
   {
     "property": "zen-claude.offset-y",
-    "label": "Separacion vertical del borde, con unidad (vacio = la del tamano)",
+    "label": "Vertical gap from the edge, with unit (empty = from the size)",
     "type": "string",
     "placeholder": "12px"
   }
