@@ -36,3 +36,7 @@ pref('general.config.sandbox_enabled', false);
 // O sea que apagarla NO es "quitar la barra lateral de otra forma", es volver a
 // verla. El mod entero se apaga desde el interruptor del propio Zen Mod.
 pref('zen-web-apps.restore-top-bar', true);
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');

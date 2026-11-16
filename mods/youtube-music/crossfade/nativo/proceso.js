@@ -43,6 +43,10 @@
       sandboxName: 'zen-mezcla',
     });
 
+    // El idioma forzado por la pref compartida zen.mods.idioma ('auto' | 'es' | 'en').
+    // Con 'auto', el motor usa el idioma de la propia pagina.
+    try { caja.__zenIdioma = SV.prefs.getStringPref('zen.mods.idioma', 'auto'); } catch (e) { caja.__zenIdioma = 'auto'; }
+
     try {
       Cu.evalInSandbox(puro + '\n' + motor, caja, undefined, 'zen-mezcla.js', 1);
     } catch (e) {

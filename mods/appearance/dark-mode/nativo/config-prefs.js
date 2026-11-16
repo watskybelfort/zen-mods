@@ -63,3 +63,7 @@ pref('zen.modooscuro.sepia', 0);
 // destino que el puente rechazo. Sin esto, algo que se queda claro no dice por
 // que. Se mira al crear cada documento, asi que hay que recargar la pagina.
 pref('zen.modooscuro.depurar', false);
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');

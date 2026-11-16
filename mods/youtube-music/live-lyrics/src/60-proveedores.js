@@ -188,18 +188,18 @@ const Letra = {
       clave: 'sin-letra',
       lineaDeTiempo: null,
       fuente: null,
-      mensaje: huboCorte ? 'No se pudo preguntar: mira window.__zenLetra.probarRed()' : 'Nadie tiene la letra de esto',
+      mensaje: huboCorte ? tr("Couldn't reach the lyrics providers (see window.__zenLetra.probarRed())", 'No se pudo preguntar a nadie: mira window.__zenLetra.probarRed()') : tr('Nobody has the lyrics for this', 'Nadie tiene la letra de esta canción'),
       id: id.id,
     });
   },
 
   _aplicar(entrada, id, deCache) {
     if (entrada.vacio) {
-      this._poner({ clave: 'sin-letra', lineaDeTiempo: null, fuente: null, mensaje: 'Nadie tiene la letra de esto', id: id.id });
+      this._poner({ clave: 'sin-letra', lineaDeTiempo: null, fuente: null, mensaje: tr('Nobody has the lyrics for this', 'Nadie tiene la letra de esta canción'), id: id.id });
       return;
     }
     if (entrada.instrumental) {
-      this._poner({ clave: 'instrumental', lineaDeTiempo: null, fuente: entrada.fuente, mensaje: 'Instrumental', id: id.id });
+      this._poner({ clave: 'instrumental', lineaDeTiempo: null, fuente: entrada.fuente, mensaje: tr('Instrumental', 'Instrumental'), id: id.id });
       return;
     }
     if (entrada.plano) {
@@ -207,7 +207,7 @@ const Letra = {
         clave: 'plano',
         lineaDeTiempo: { fuente: entrada.fuente, porPalabra: false, lineas: entrada.texto.split(/\r?\n/).map((t) => ({ inicio: 0, fin: 0, texto: t, palabras: null, interludio: !t.trim() })), finLetra: 0 },
         fuente: entrada.fuente,
-        mensaje: 'Solo hay letra sin cronometrar',
+        mensaje: tr('Only unsynced lyrics available', 'Solo hay letra sin sincronizar'),
         id: id.id,
       });
       return;
@@ -215,7 +215,7 @@ const Letra = {
 
     const linea = componerLineaDeTiempo(parsearLrc(entrada.texto, entrada.fuente));
     if (!linea) {
-      this._poner({ clave: 'sin-letra', lineaDeTiempo: null, fuente: entrada.fuente, mensaje: 'La letra que llego no se pudo leer', id: id.id });
+      this._poner({ clave: 'sin-letra', lineaDeTiempo: null, fuente: entrada.fuente, mensaje: tr("The lyrics that came back couldn't be read", 'La letra que llegó no se pudo leer'), id: id.id });
       return;
     }
 
@@ -225,7 +225,7 @@ const Letra = {
     const dur = id.duracion || Reloj.duracion();
     let mensaje = '';
     if (dur > 30 && linea.finLetra > 0 && linea.finLetra < dur * 0.6) {
-      mensaje = 'La letra parece de otra version del tema';
+      mensaje = tr('These lyrics seem to be from another version of the song', 'La letra parece de otra versión de la canción');
       log(`la letra acaba en ${linea.finLetra.toFixed(0)}s y la cancion dura ${dur.toFixed(0)}s`);
     }
 

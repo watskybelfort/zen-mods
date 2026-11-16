@@ -67,6 +67,10 @@
     };
     caja.__zenRemotoPuente = Cu.cloneInto({ enviar }, caja, { cloneFunctions: true });
 
+    // El idioma forzado por la pref compartida zen.mods.idioma ('auto' | 'es' | 'en').
+    // Con 'auto', el motor usa el idioma de la propia pagina.
+    try { caja.__zenIdioma = SV.prefs.getStringPref('zen.mods.idioma', 'auto'); } catch (e) { caja.__zenIdioma = 'auto'; }
+
     try {
       Cu.evalInSandbox(puro + '\n;' + qr + '\n;' + motor, caja, undefined, 'zen-remoto.js', 1);
     } catch (e) {

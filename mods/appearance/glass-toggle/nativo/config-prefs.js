@@ -69,3 +69,7 @@ pref('zen.sincristal.encendido', true);
 // mismo: lo que sale ahi lo resiembra el instalador de la capa web en cada
 // pasada, y se llevaria por delante lo que el usuario hubiese guardado.
 pref('zen.sincristal.pendientes.sello', '');
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');

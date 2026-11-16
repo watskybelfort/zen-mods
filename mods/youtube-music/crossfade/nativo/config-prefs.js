@@ -12,3 +12,7 @@ pref('general.config.sandbox_enabled', false);
 // con recargar la pestana de YouTube Music. La mezcla del dia a dia se apaga
 // desde el boton de la barra del reproductor.
 pref('zen.mezcla.encendido', true);
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');

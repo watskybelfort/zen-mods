@@ -19,3 +19,7 @@
 pref('general.config.filename', 'config.js');
 pref('general.config.obscure_value', 0);
 pref('general.config.sandbox_enabled', false);
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');

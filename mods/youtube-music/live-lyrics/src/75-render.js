@@ -165,15 +165,15 @@ class Escena {
     const aviso = crear('div', c('aviso'));
     if (estado.clave === 'buscando') {
       aviso.appendChild(crear('div', c('girando')));
-      aviso.appendChild(crear('div', null, { textContent: 'Buscando la letra' }));
+      aviso.appendChild(crear('div', null, { textContent: tr('Looking for the lyrics', 'Buscando la letra') }));
     } else if (estado.clave === 'instrumental') {
-      aviso.appendChild(crear('b', null, { textContent: 'Instrumental' }));
-      aviso.appendChild(crear('small', null, { textContent: 'La base de datos dice que este tema no tiene letra' }));
+      aviso.appendChild(crear('b', null, { textContent: tr('Instrumental', 'Instrumental') }));
+      aviso.appendChild(crear('small', null, { textContent: tr('The database says this song has no lyrics', 'La base de datos dice que esta canción no tiene letra') }));
     } else if (estado.clave === 'sin-letra') {
-      aviso.appendChild(crear('b', null, { textContent: 'Sin letra' }));
-      aviso.appendChild(crear('small', null, { textContent: 'Nadie tiene la letra cronometrada de este tema. Si el titulo trae adornos, a veces cambiando de version de la cancion aparece.' }));
+      aviso.appendChild(crear('b', null, { textContent: tr('No lyrics', 'Sin letra') }));
+      aviso.appendChild(crear('small', null, { textContent: tr("Nobody has synced lyrics for this song. If the title has extras, switching to another version of the song sometimes helps.", 'Nadie tiene la letra sincronizada de esta canción. Si el título trae adornos, a veces aparece cambiando de versión de la canción.') }));
     } else {
-      aviso.appendChild(crear('small', null, { textContent: 'Pon algo y la letra sale aqui' }));
+      aviso.appendChild(crear('small', null, { textContent: tr('Play something and the lyrics show up here', 'Pon algo y la letra sale aquí') }));
     }
     this.raiz.appendChild(aviso);
   }

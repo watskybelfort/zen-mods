@@ -27,6 +27,20 @@ const LV = {
 const log = (...a) => { if (LV.debug) console.log('%c[letra]', 'color:#d97757;font-weight:600', ...a); };
 const warn = (...a) => console.warn('[letra]', ...a);
 
+/* EL IDIOMA ---------------------------------------------------------------
+   Lo que se ve sale en el idioma de la pagina de YouTube Music, que es el que el
+   usuario tiene puesto en su cuenta (<html lang>), o en el que fuerce la pref
+   zen.mods.idioma ('es' / 'en'), que llega del cargador como __zenIdioma. Si no
+   es espanol, en ingles. Se mira cada vez y no una sola al arrancar: el lang se
+   puede cambiar sin recargar. */
+const idioma = () => {
+  const forzado = typeof __zenIdioma === 'string' ? __zenIdioma : '';
+  if (forzado === 'es' || forzado === 'en') return forzado;
+  const l = (document.documentElement && document.documentElement.lang) || navigator.language || '';
+  return /^es\b/i.test(l) ? 'es' : 'en';
+};
+const tr = (en, es) => (idioma() === 'es' ? es : en);
+
 /* --- Utilidades ---------------------------------------------------------- */
 
 const limitar = (n, min, max) => (n < min ? min : n > max ? max : n);

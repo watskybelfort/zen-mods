@@ -34,70 +34,89 @@ const CSS_CONTROLES_HOJA = `
 .zen-letra-aviso-flotante {
   position: fixed;
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
+  transform: translateX(-50%) translateY(6px) scale(0.98);
   z-index: 10000;
-  padding: 9px 16px;
-  border-radius: 10px;
-  background: rgb(8 9 11 / 0.9);
-  backdrop-filter: blur(20px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgb(30 30 32 / 0.9);
+  backdrop-filter: blur(30px) saturate(1.8);
   border: 1px solid rgb(255 255 255 / 0.1);
-  font-family: Roboto, Arial, sans-serif;
-  font-size: 13px; font-weight: 600;
-  color: rgb(255 255 255 / 0.92);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.35);
+  font: 500 14px/1.2 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: rgb(255 255 255 / 0.95);
+  -webkit-font-smoothing: antialiased;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
-.zen-letra-aviso-flotante[data-ver="1"] { opacity: 1; transform: translateX(-50%) translateY(0); }
+.zen-letra-aviso-flotante[data-ver="1"] { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 
 /* --- El menu -------------------------------------------------------------
    Un userscript no sale en Ajustes > Zen Mods, asi que sus opciones tienen que
-   vivir en algun sitio de la propia pagina o no existen. */
+   vivir en algun sitio de la propia pagina o no existen.
+
+   ESTILO DE LOS MODS (16-11-2026): el de la app del movil de Zen Remoto, con
+   aire de iOS. Lamina oscura esmerilada con esquinas de 18px, secciones como
+   grupos redondeados con separadores finos, interruptores de iOS con el acento
+   rosa de los mods, y la letra del sistema (SF en Mac, Segoe UI en Windows). */
 .zen-letra-menu {
   position: fixed;
   z-index: 10001;
-  min-width: 272px;
-  padding: 6px;
-  border-radius: 12px;
-  background: rgb(12 13 15 / 0.96);
-  backdrop-filter: blur(24px);
+  width: 330px;
+  padding: 8px 10px 10px;
+  border-radius: 18px;
+  background: rgb(30 30 32 / 0.92);
+  backdrop-filter: blur(30px) saturate(1.8);
   border: 1px solid rgb(255 255 255 / 0.1);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5);
-  font-family: Roboto, Arial, sans-serif;
-  font-size: 13px;
-  color: rgb(255 255 255 / 0.9);
-  /* Con quince opciones el menu mide 573px, y hay ventanas donde eso no cabe ni
-     encima ni debajo del boton. Cuando pasa, abrir() le pone un max-height y
-     esto lo vuelve desplazable en lugar de dejarlo salirse de la pantalla.
-     overscroll-behavior para que al llegar al final no empiece a moverse la
-     pagina de detras, que es un menu abierto y una lista que se va sola. */
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+  font: 400 14px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: rgb(255 255 255 / 0.92);
+  -webkit-font-smoothing: antialiased;
+  /* Con quince opciones el menu no cabe en todas las ventanas: abrir() le pone
+     un max-height y esto lo vuelve desplazable en vez de dejarlo salirse. */
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* Con el modelo de caja de contenido, el max-height que calcula abrir() se
-     queda corto por el relleno y el borde: pide 566 y el menu mide 580. */
   box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: rgb(255 255 255 / 0.25) transparent;
 }
 .zen-letra-menu h4 {
-  margin: 8px 10px 5px;
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: rgb(255 255 255 / 0.4);
+  margin: 14px 12px 6px;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase;
+  color: rgb(235 235 245 / 0.55);
 }
+.zen-letra-menu h4:first-child { margin-top: 6px; }
+.zen-letra-menu .zen-letra-grupo { border-radius: 12px; background: rgb(255 255 255 / 0.06); overflow: hidden; }
 .zen-letra-menu button {
-  display: flex; align-items: center; gap: 8px;
-  width: 100%; padding: 8px 10px;
-  background: none; border: 0; border-radius: 8px;
+  position: relative;
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; min-height: 40px; padding: 8px 12px;
+  background: none; border: 0; border-radius: 0;
   color: inherit; font: inherit; text-align: left; cursor: pointer;
 }
-.zen-letra-menu button:hover { background: rgb(255 255 255 / 0.08); }
-.zen-letra-menu button[data-on="1"] { color: #fff; }
-.zen-letra-menu button[data-on="1"]::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.zen-letra-menu button:not([data-on])::before,
-.zen-letra-menu button[data-on="0"]::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: rgb(255 255 255 / 0.2); }
-.zen-letra-menu .zen-letra-tecla { margin-left: auto; font-size: 11px; color: rgb(255 255 255 / 0.35); font-variant-numeric: tabular-nums; }
-.zen-letra-menu hr { margin: 6px 8px; border: 0; border-top: 1px solid rgb(255 255 255 / 0.08); }
+.zen-letra-menu button + button::before {
+  content: ''; position: absolute; top: 0; left: 12px; right: 0; height: 1px;
+  background: rgb(255 255 255 / 0.08);
+}
+.zen-letra-menu button:hover { background: rgb(255 255 255 / 0.06); }
+.zen-letra-menu button:active { background: rgb(255 255 255 / 0.1); }
+.zen-letra-menu .zen-letra-texto { flex: 1; min-width: 0; }
+.zen-letra-menu .zen-letra-tecla { flex: none; font-size: 12px; color: rgb(235 235 245 / 0.45); font-variant-numeric: tabular-nums; }
+.zen-letra-interruptor {
+  flex: none; position: relative; width: 42px; height: 26px; border-radius: 13px;
+  background: rgb(120 120 128 / 0.36); transition: background-color 0.2s ease;
+}
+.zen-letra-interruptor::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.3);
+  transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+.zen-letra-menu button[data-on="1"] .zen-letra-interruptor { background: #ff5c7a; }
+.zen-letra-menu button[data-on="1"] .zen-letra-interruptor::after { transform: translateX(16px); }
+@media (prefers-reduced-motion: reduce) {
+  .zen-letra-interruptor, .zen-letra-interruptor::after, .zen-letra-aviso-flotante { transition: none; }
+}
 `;
 
 LV.hojas.push(CSS_CONTROLES_HOJA);
@@ -149,21 +168,21 @@ const PASO_DESFASE = 0.1;
    `key` no valia 'm'. `code` es la posicion fisica de la tecla, no cambia con la
    distribucion ni con los modificadores, y es lo que hay que usar en un atajo. */
 const ATAJOS = [
-  { codigo: 'KeyL', tecla: 'Alt+L', nombre: 'Abrir o cerrar la letra', hacer: () => { Vistas.alternar(Ajustes.get('vistaPorDefecto') || 'escenario'); Controles.refrescar(); } },
-  { codigo: 'KeyP', tecla: 'Alt+P', nombre: 'Panel al lado', hacer: () => { Vistas.alternar('panel'); Controles.refrescar(); } },
-  { codigo: 'KeyE', tecla: 'Alt+E', nombre: 'Escenario', hacer: () => { Vistas.alternar('escenario'); Controles.refrescar(); } },
-  { codigo: 'KeyF', tecla: 'Alt+F', nombre: 'Pantalla completa', hacer: () => { Vistas.alternar('completa'); Controles.refrescar(); } },
-  { codigo: 'KeyM', tecla: 'Alt+M', nombre: 'Mini tira', hacer: () => { Vistas.alternar('tira'); Controles.refrescar(); } },
-  { codigo: 'ArrowLeft', tecla: 'Alt+←', nombre: 'La letra, antes', hacer: () => Aviso.decir(explicarDesfase(Letra.ajustarDesfase(-PASO_DESFASE))) },
-  { codigo: 'ArrowRight', tecla: 'Alt+→', nombre: 'La letra, despues', hacer: () => Aviso.decir(explicarDesfase(Letra.ajustarDesfase(PASO_DESFASE))) },
-  { codigo: 'Digit0', tecla: 'Alt+0', nombre: 'Quitar el ajuste', hacer: () => { Letra.reiniciarDesfase(); Aviso.decir('Desfase a cero'); } },
+  { codigo: 'KeyL', tecla: 'Alt+L', nombre: tr('Open or close the lyrics', 'Abrir o cerrar la letra'), hacer: () => { Vistas.alternar(Ajustes.get('vistaPorDefecto') || 'escenario'); Controles.refrescar(); } },
+  { codigo: 'KeyP', tecla: 'Alt+P', nombre: tr('Side panel', 'Panel al lado'), hacer: () => { Vistas.alternar('panel'); Controles.refrescar(); } },
+  { codigo: 'KeyE', tecla: 'Alt+E', nombre: tr('Stage', 'Escenario'), hacer: () => { Vistas.alternar('escenario'); Controles.refrescar(); } },
+  { codigo: 'KeyF', tecla: 'Alt+F', nombre: tr('Full screen', 'Pantalla completa'), hacer: () => { Vistas.alternar('completa'); Controles.refrescar(); } },
+  { codigo: 'KeyM', tecla: 'Alt+M', nombre: tr('Mini strip', 'Mini tira'), hacer: () => { Vistas.alternar('tira'); Controles.refrescar(); } },
+  { codigo: 'ArrowLeft', tecla: 'Alt+←', nombre: tr('Lyrics earlier', 'La letra, antes'), hacer: () => Aviso.decir(explicarDesfase(Letra.ajustarDesfase(-PASO_DESFASE))) },
+  { codigo: 'ArrowRight', tecla: 'Alt+→', nombre: tr('Lyrics later', 'La letra, después'), hacer: () => Aviso.decir(explicarDesfase(Letra.ajustarDesfase(PASO_DESFASE))) },
+  { codigo: 'Digit0', tecla: 'Alt+0', nombre: tr('Reset the offset', 'Quitar el ajuste'), hacer: () => { Letra.reiniciarDesfase(); Aviso.decir(tr('Offset reset', 'Desfase a cero')); } },
   {
     codigo: 'KeyR',
     tecla: 'Alt+R',
-    nombre: 'Esta no es: prueba otra version',
+    nombre: tr('Wrong lyrics: try another version', 'No es esta: prueba otra versión'),
     hacer: () => {
       const r = Letra.otraVersion();
-      Aviso.decir(r ? `Version ${r.actual} de ${r.total}` : 'Buscando otra letra desde cero');
+      Aviso.decir(r ? tr(`Version ${r.actual} of ${r.total}`, `Versión ${r.actual} de ${r.total}`) : tr('Looking for other lyrics from scratch', 'Buscando otra letra desde cero'));
     },
   },
   /* El tamano tambien por teclado: es lo que se toca mientras se escucha, y abrir
@@ -171,26 +190,26 @@ const ATAJOS = [
      dos teclas de cada signo, la de la fila de numeros y la del teclado numerico,
      porque en un teclado espanol el + de arriba lleva Shift y con Alt puesto la
      combinacion se vuelve incomoda. */
-  { codigo: 'Equal', tecla: 'Alt++', nombre: 'Letra mas grande', hacer: () => subirTamano(4) },
-  { codigo: 'NumpadAdd', tecla: 'Alt++', nombre: 'Letra mas grande', hacer: () => subirTamano(4) },
-  { codigo: 'Minus', tecla: 'Alt+-', nombre: 'Letra mas pequena', hacer: () => subirTamano(-4) },
-  { codigo: 'NumpadSubtract', tecla: 'Alt+-', nombre: 'Letra mas pequena', hacer: () => subirTamano(-4) },
+  { codigo: 'Equal', tecla: 'Alt++', nombre: tr('Bigger lyrics', 'Letra más grande'), hacer: () => subirTamano(4) },
+  { codigo: 'NumpadAdd', tecla: 'Alt++', nombre: tr('Bigger lyrics', 'Letra más grande'), hacer: () => subirTamano(4) },
+  { codigo: 'Minus', tecla: 'Alt+-', nombre: tr('Smaller lyrics', 'Letra más pequeña'), hacer: () => subirTamano(-4) },
+  { codigo: 'NumpadSubtract', tecla: 'Alt+-', nombre: tr('Smaller lyrics', 'Letra más pequeña'), hacer: () => subirTamano(-4) },
 ];
 
 const subirTamano = (paso) => {
   const nuevo = limitar((Ajustes.get('tamano') || 44) + paso, 18, 96);
   Ajustes.set('tamano', nuevo);
   aplicarTamano();
-  Aviso.decir(`Letra a ${nuevo}px`);
+  Aviso.decir(tr(`Lyrics at ${nuevo}px`, `Letra a ${nuevo}px`));
 };
 
 /* El signo se explica con palabras y no con un numero pelado: "+0.3s" no dice si
    la letra va antes o despues, y es justo lo unico que uno necesita saber
    mientras lo esta ajustando. */
 const explicarDesfase = (d) => {
-  if (Math.abs(d) < 0.001) return 'Letra al mismo tiempo que el audio';
+  if (Math.abs(d) < 0.001) return tr('Lyrics in time with the audio', 'Letra a tiempo con el audio');
   const s = Math.abs(d).toFixed(1);
-  return d > 0 ? `Letra ${s}s mas tarde` : `Letra ${s}s antes`;
+  return d > 0 ? tr(`Lyrics ${s}s later`, `Letra ${s}s más tarde`) : tr(`Lyrics ${s}s earlier`, `Letra ${s}s antes`);
 };
 
 /* El contador no es decoracion: si esto se instalara dos veces, cada pulsacion
@@ -254,8 +273,8 @@ const Controles = {
     const b = crear('button', c('boton'));
     b.type = 'button';
     b.appendChild(icono());
-    b.title = 'Letra sincronizada';
-    b.setAttribute('aria-label', 'Letra sincronizada');
+    b.title = tr('Synced lyrics (right-click for options)', 'Letra sincronizada (clic derecho: opciones)');
+    b.setAttribute('aria-label', tr('Synced lyrics', 'Letra sincronizada'));
     b.addEventListener('click', (e) => {
       /* ytmusic-player-bar abre y cierra el reproductor grande con cualquier
          clic que le llegue en burbuja (medido el 16-11-2026 con un raton real
@@ -330,94 +349,105 @@ const Menu = {
   abrir(ancla) {
     this.nodo = crear('div', c('menu'));
 
-    const titulo = (t) => this.nodo.appendChild(crear('h4', null, { textContent: t }));
-    const separador = () => this.nodo.appendChild(crear('hr'));
+    // Cada titulo abre un grupo redondeado (estilo iOS); las opciones van dentro.
+    let grupo = null;
+    const titulo = (t) => {
+      this.nodo.appendChild(crear('h4', null, { textContent: t }));
+      grupo = crear('div', c('grupo'));
+      this.nodo.appendChild(grupo);
+    };
+    const separador = () => {};
 
     const opcion = (texto, tecla, activo, alPulsar) => {
       const b = crear('button');
       b.type = 'button';
-      b.appendChild(crear('span', null, { textContent: texto }));
+      b.appendChild(crear('span', c('texto'), { textContent: texto }));
       if (tecla) b.appendChild(crear('span', c('tecla'), { textContent: tecla }));
-      if (activo !== null) b.dataset.on = activo ? '1' : '0';
+      if (activo !== null) {
+        b.dataset.on = activo ? '1' : '0';
+        b.setAttribute('role', 'switch');
+        b.setAttribute('aria-checked', activo ? 'true' : 'false');
+        b.appendChild(crear('span', c('interruptor')));
+      }
       b.addEventListener('click', (e) => { e.stopPropagation(); alPulsar(); this.refrescar(); });
-      this.nodo.appendChild(b);
+      (grupo || this.nodo).appendChild(b);
       return b;
     };
 
-    titulo('Donde sale la letra');
+    titulo(tr('Where the lyrics show', 'Dónde sale la letra'));
     /* Las teclas que muestra el menu salen de ATAJOS y no escritas otra vez aqui:
        si un dia se cambia un atajo, lo que pone el menu cambia con el. */
     for (const [nombre, etiqueta, codigo] of [
-      ['escenario', 'En lugar del video', 'KeyE'],
-      ['panel', 'En la columna de al lado', 'KeyP'],
-      ['completa', 'Pantalla completa', 'KeyF'],
-      ['tira', 'Mini tira sobre la barra', 'KeyM'],
+      ['escenario', tr('Instead of the video', 'En lugar del vídeo'), 'KeyE'],
+      ['panel', tr('In the side column', 'En la columna de al lado'), 'KeyP'],
+      ['completa', tr('Full screen', 'Pantalla completa'), 'KeyF'],
+      ['tira', tr('Mini strip above the player bar', 'Mini tira sobre la barra'), 'KeyM'],
     ]) {
       opcion(etiqueta, teclaDe(codigo), Vistas.estaAbierta(nombre), () => { Vistas.alternar(nombre); Controles.refrescar(); });
     }
 
     separador();
-    titulo('Que suena');
+    titulo(tr('Playback', 'Qué suena'));
     /* El unico ajuste del menu que no va sobre la letra sino sobre la
        reproduccion. Vive aqui porque un userscript no sale en Ajustes > Zen
        Mods y este es el unico sitio de la pagina donde el mod tiene voz.
        Al encenderlo se reconsidera la cancion que ya esta sonando: si esperara
        a la siguiente, parecería que el interruptor no hace nada. */
-    opcion('Poner el video cuando la cancion lo tenga', null, Ajustes.get('preferirVideo') !== false, () => {
+    opcion(tr('Play the video when the song has one', 'Poner el vídeo cuando la canción lo tenga'), null, Ajustes.get('preferirVideo') !== false, () => {
       const encendiendo = Ajustes.get('preferirVideo') === false;
       Ajustes.set('preferirVideo', encendiendo);
-      if (!encendiendo) { Aviso.decir('Se quedara el audio con la caratula'); return; }
+      if (!encendiendo) { Aviso.decir(tr('Audio with the cover art it is', 'Se quedará el audio con la carátula')); return; }
       Video.reconsiderar();
       /* Y si no se puede, se dice por que: sin sesion iniciada YouTube Music no
          deja conmutar, y callarse eso deja al usuario creyendo que es el mod. */
       const e = Video.estado();
-      if (!/se puede poner|ya esta sonando/.test(e.dice)) Aviso.decir(e.dice);
+      if (!/se puede poner|ya esta sonando/.test(e.dice)) Aviso.decir(textoVideo(e.dice));
     });
 
     separador();
-    titulo('Como se ve');
-    opcion('Relleno palabra a palabra', null, Ajustes.get('porPalabra') !== false, () => {
+    titulo(tr('Look', 'Cómo se ve'));
+    opcion(tr('Word-by-word fill', 'Relleno palabra a palabra'), null, Ajustes.get('porPalabra') !== false, () => {
       Ajustes.set('porPalabra', Ajustes.get('porPalabra') === false);
       /* Esto si cambia la forma de las lineas, asi que aqui SI hay que rehacer. */
       for (const e of Motor.escenas) e.poner(Letra.estado());
     });
     /* En pixeles, en pasos de 4. El tope de arriba es alto a proposito: en una
        pantalla grande con la vista completa, 96px se lee desde el sofa. */
-    opcion(`Letra mas grande (ahora ${Ajustes.get('tamano') || 44}px)`, teclaDe('Equal'), null, () => subirTamano(4));
-    opcion('Letra mas pequena', teclaDe('Minus'), null, () => subirTamano(-4));
+    opcion(tr(`Bigger (now ${Ajustes.get('tamano') || 44}px)`, `Más grande (ahora ${Ajustes.get('tamano') || 44}px)`), teclaDe('Equal'), null, () => subirTamano(4));
+    opcion(tr('Smaller', 'Más pequeña'), teclaDe('Minus'), null, () => subirTamano(-4));
 
     separador();
-    titulo('Sincronizacion');
+    titulo(tr('Sync', 'Sincronización'));
     opcion(explicarDesfase(Letra.desfase()), `${teclaDe('ArrowLeft')} / ${teclaDe('ArrowRight')}`, null, () => {});
-    opcion('Quitar el ajuste de esta cancion', teclaDe('Digit0'), null, () => { Letra.reiniciarDesfase(); Aviso.decir('Desfase a cero'); });
-    opcion('Esta no es: prueba otra version', teclaDe('KeyR'), null, () => {
+    opcion(tr('Reset the offset for this song', 'Quitar el ajuste de esta canción'), teclaDe('Digit0'), null, () => { Letra.reiniciarDesfase(); Aviso.decir(tr('Offset reset', 'Desfase a cero')); });
+    opcion(tr('Wrong lyrics: try another version', 'No es esta: prueba otra versión'), teclaDe('KeyR'), null, () => {
       const r = Letra.otraVersion();
-      Aviso.decir(r ? `Version ${r.actual} de ${r.total}` : 'Buscando otra letra desde cero');
+      Aviso.decir(r ? tr(`Version ${r.actual} of ${r.total}`, `Versión ${r.actual} de ${r.total}`) : tr('Looking for other lyrics from scratch', 'Buscando otra letra desde cero'));
     });
 
     separador();
-    titulo('Fuentes');
-    opcion('LRCLIB — abierta, por lineas', null, Ajustes.get('usarLrclib') !== false, () => Ajustes.set('usarLrclib', Ajustes.get('usarLrclib') === false));
-    opcion('Musixmatch — palabra a palabra', null, !!Ajustes.get('usarMusixmatch'), () => {
+    titulo(tr('Lyrics sources', 'De dónde sale la letra'));
+    opcion(tr('LRCLIB: open, line by line', 'LRCLIB: abierta, por líneas'), null, Ajustes.get('usarLrclib') !== false, () => Ajustes.set('usarLrclib', Ajustes.get('usarLrclib') === false));
+    opcion(tr('Musixmatch: word by word', 'Musixmatch: palabra a palabra'), null, !!Ajustes.get('usarMusixmatch'), () => {
       const encendiendo = !Ajustes.get('usarMusixmatch');
       Ajustes.set('usarMusixmatch', encendiendo);
       if (!encendiendo) return;
       if (!Ajustes.get('tokenMusixmatch')) { pedirTokenMusixmatch(); return; }
       const via = Red.via();
-      if (via !== 'gm' && via !== 'puente') Aviso.decir('Musixmatch necesita gestor de userscripts');
+      if (via !== 'gm' && via !== 'puente') Aviso.decir(tr('Musixmatch needs a userscript manager', 'Musixmatch necesita un gestor de userscripts'));
     });
     if (Ajustes.get('usarMusixmatch')) {
-      opcion(Ajustes.get('tokenMusixmatch') ? 'Cambiar el token de Musixmatch' : 'Falta el token de Musixmatch', null, null, () => pedirTokenMusixmatch());
+      opcion(Ajustes.get('tokenMusixmatch') ? tr('Change the Musixmatch token', 'Cambiar el token de Musixmatch') : tr('Musixmatch token missing', 'Falta el token de Musixmatch'), null, null, () => pedirTokenMusixmatch());
     }
     /* Encendida por defecto, al contrario que Musixmatch, porque no pide nada:
        ni token, ni gestor, ni permiso de nadie. Y solo entra cuando no hay letra
        de las otras dos, asi que encenderla no le quita sitio a ninguna. */
-    opcion('Subtitulos de YouTube — cuando no la tiene nadie', null, Ajustes.get('usarSubtitulos') !== false, () => {
+    opcion(tr('YouTube captions, when nobody else has them', 'Subtítulos de YouTube, cuando no la tiene nadie'), null, Ajustes.get('usarSubtitulos') !== false, () => {
       const encendiendo = Ajustes.get('usarSubtitulos') === false;
       Ajustes.set('usarSubtitulos', encendiendo);
-      Aviso.decir(encendiendo ? 'Se usaran en la proxima cancion sin letra' : 'Subtitulos de YouTube apagados');
+      Aviso.decir(encendiendo ? tr('Used on the next song without lyrics', 'Se usarán en la próxima canción sin letra') : tr('YouTube captions off', 'Subtítulos de YouTube apagados'));
     });
-    opcion(`Olvidar lo guardado (${Cache.cuantas()})`, null, null, () => { Cache.vaciar(); Aviso.decir('Cache vaciada'); });
+    opcion(tr(`Forget saved lyrics (${Cache.cuantas()})`, `Olvidar lo guardado (${Cache.cuantas()})`), null, null, () => { Cache.vaciar(); Aviso.decir(tr('Saved lyrics cleared', 'Guardado borrado')); });
 
     document.body.appendChild(this.nodo);
 
@@ -495,19 +525,25 @@ const Menu = {
 const pedirTokenMusixmatch = () => {
   const actual = Ajustes.get('tokenMusixmatch') || '';
   const puesto = window.prompt(
+    tr('Musixmatch user token.\n\n' +
+      'Get it from the Musixmatch desktop app: Ctrl+Shift+I to open the developer\n' +
+      'tools, Network tab, Ctrl+R to reload, filter by "apic" and the token is in\n' +
+      'the parameters of any of those requests.\n\n' +
+      'Note: the API is unofficial and using it this way goes against its terms of\n' +
+      'use. Leave the token empty to turn this source off and use LRCLIB only.',
     'Token de usuario de Musixmatch.\n\n' +
-    'Se saca de la aplicacion de escritorio de Musixmatch: Ctrl+Shift+I para abrir las\n' +
-    'herramientas, pestana Red, Ctrl+R para recargar, se filtra por "apic" y el token\n' +
-    'esta en los parametros de cualquiera de esas peticiones.\n\n' +
-    'Ojo: la API no es oficial y usarla asi va contra sus condiciones de uso. Con el\n' +
-    'token vacio, esta fuente se apaga y solo se usa LRCLIB.',
+      'Se saca de la aplicación de escritorio de Musixmatch: Ctrl+Mayús+I para abrir las\n' +
+      'herramientas, pestaña Red, Ctrl+R para recargar, se filtra por "apic" y el token\n' +
+      'está en los parámetros de cualquiera de esas peticiones.\n\n' +
+      'Ojo: la API no es oficial y usarla así va contra sus condiciones de uso. Con el\n' +
+      'token vacío, esta fuente se apaga y solo se usa LRCLIB.'),
     actual,
   );
   if (puesto === null) return;                       // canceló
   const limpio = puesto.trim();
   Ajustes.set('tokenMusixmatch', limpio);
-  if (!limpio) { Ajustes.set('usarMusixmatch', false); Aviso.decir('Musixmatch apagado'); return; }
-  Aviso.decir('Token guardado. Se usara en la proxima cancion');
+  if (!limpio) { Ajustes.set('usarMusixmatch', false); Aviso.decir(tr('Musixmatch off', 'Musixmatch apagado')); return; }
+  Aviso.decir(tr('Token saved. It will be used on the next song', 'Token guardado. Se usará en la próxima canción'));
 };
 
 const aplicarTamano = () => {

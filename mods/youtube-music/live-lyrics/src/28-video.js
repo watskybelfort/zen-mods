@@ -158,7 +158,7 @@ const Video = {
         this._recordar(this._pista);
         if (this.poner()) {
           log('video: conmutado en', this._pista);
-          Aviso.decir('Poniendo el video');
+          Aviso.decir(tr('Switching to the video', 'Poniendo el vídeo'));
         }
         return;
       }
@@ -192,3 +192,14 @@ const Video = {
     this.atender(id);
   },
 };
+
+/* `dice` es una clave interna (la logica la compara); esto es lo que se le
+   ensena al usuario, en su idioma. */
+const textoVideo = (dice) => ({
+  'apagado en el menu': tr('Turned off in the menu', 'Apagado en el menú'),
+  'no encuentro el conmutador de YouTube Music': tr("Can't find YouTube Music's video switch", 'No encuentro el conmutador de YouTube Music'),
+  'ya esta sonando el video': tr('The video is already playing', 'Ya está sonando el vídeo'),
+  'esta cancion no tiene video': tr('This song has no video', 'Esta canción no tiene vídeo'),
+  'YouTube Music no deja conmutar: lo tipico es no tener la sesion iniciada': tr("YouTube Music won't switch, usually because you're not signed in", 'YouTube Music no deja cambiar: lo típico es no tener la sesión iniciada'),
+  'hay video y se puede poner': tr('This song has a video', 'Hay vídeo y se puede poner'),
+}[dice] || dice);

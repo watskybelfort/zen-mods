@@ -102,7 +102,7 @@ Vistas.registrar('completa', {
        aperturas, asi que sin esto se iria acumulando una pista por cada vez que
        se abre la vista. */
     if (!raiz.querySelector(`.${c('salida')}`)) {
-      raiz.appendChild(crear('div', c('salida'), { textContent: 'Esc para salir' }));
+      raiz.appendChild(crear('div', c('salida'), { textContent: tr('Esc to exit', 'Esc para salir') }));
     }
   },
   alCerrar: () => ESCAPE.quitar(),

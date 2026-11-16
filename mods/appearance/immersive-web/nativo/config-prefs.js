@@ -15,3 +15,7 @@ pref('zen.inmersivo.ajustes', '{}');
 // Al instalar, desactiva la extension Zen Internet una sola vez (se reactiva en
 // about:addons; el mod no vuelve a tocarla).
 pref('zen.inmersivo.retirar-extension', true);
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');

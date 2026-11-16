@@ -33,3 +33,7 @@ pref('general.config.sandbox_enabled', false);
 // ponerlo igual.
 pref('zen.sintonia.encendido', true);
 pref('zen.sintonia.puerto', 9463);
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');

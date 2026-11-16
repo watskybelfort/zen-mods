@@ -13,3 +13,7 @@ pref('general.config.sandbox_enabled', false);
 pref('zen.remoto.encendido', true);
 // El puerto del servidor en la red de casa. Cambiarlo lo reabre al momento.
 pref('zen.remoto.puerto', 8642);
+
+// Idioma de lo que muestran los mods: 'auto' (el de la pagina o el de Zen), 'es' o 'en'.
+// Compartida por todos los mods; con valor por defecto para que llegue a las paginas.
+pref('zen.mods.idioma', 'auto');
