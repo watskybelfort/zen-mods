@@ -1,0 +1,103 @@
+[
+  {
+    "property": "acrylic-zen.intensity",
+    "label": "Intensidad del cristal",
+    "type": "dropdown",
+    "defaultValue": "glass",
+    "options": [
+      { "label": "Glass — maxima transparencia", "value": "glass" },
+      { "label": "Equilibrada — cristal en el marco, contenido legible", "value": "balanced" },
+      { "label": "Sutil — solo un toque de acrilico", "value": "subtle" }
+    ]
+  },
+  {
+    "property": "acrylic-zen.transparent-content",
+    "label": "Contenido web translucido (nueva pestana y paginas sin fondo propio)",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.blur-popups",
+    "label": "Difuminar menus y paneles",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.web-popups",
+    "label": "Dar cuerpo a los menus de las paginas web (para que no se lean encima del texto de detras)",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.keep-glass-inactive",
+    "label": "Mantener el cristal cuando la ventana pierde el foco",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.search-blur",
+    "label": "Difuminar la pagina al buscar (el buscador que sale con Ctrl+T y Ctrl+L)",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.glance-blur",
+    "label": "Difuminar la pagina de detras en la vista rapida (el enlace que se abre encima sin cambiar de pestana)",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.performance-mode",
+    "label": "Modo rendimiento (quita los blur internos y el truco de capas)",
+    "type": "checkbox",
+    "defaultValue": false
+  },
+  {
+    "property": "acrylic-zen.youtube-search",
+    "label": "Buscador flotante de YouTube (al pulsarlo salta al centro y difumina la pagina)",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.ytmusic-search",
+    "label": "Buscador flotante de YouTube Music (al usarlo salta al centro y difumina la pagina)",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "acrylic-zen.tint",
+    "label": "Opacidad del tinte del marco — 0 a 1 (vacio = usar la intensidad)",
+    "type": "string",
+    "placeholder": "0.06"
+  },
+  {
+    "property": "acrylic-zen.content",
+    "label": "Opacidad del tinte del contenido — 0 a 1 (vacio = igual que el marco, una sola lamina de cristal)",
+    "type": "string",
+    "placeholder": "igual que el marco"
+  },
+  {
+    "property": "acrylic-zen.gradient",
+    "label": "Cuanto gradiente de espacio de trabajo sobrevive — 0 a 1 (vacio = usar la intensidad)",
+    "type": "string",
+    "placeholder": "0.1"
+  },
+  {
+    "property": "acrylic-zen.tint-color",
+    "label": "Color del tinte (vacio = automatico segun tema claro/oscuro)",
+    "type": "string",
+    "placeholder": "#0d0d11"
+  },
+  {
+    "property": "acrylic-zen.blur",
+    "label": "Radio de blur interno con unidad (vacio = 40px)",
+    "type": "string",
+    "placeholder": "40px"
+  },
+  {
+    "property": "acrylic-zen.sheen",
+    "label": "Brillo del cristal — 0 a 1, apagado por defecto. Con escritorio oscuro prueba 0.02-0.04; mas de 0.06 se nota como una mancha",
+    "type": "string",
+    "placeholder": "0 (apagado)"
+  }
+]

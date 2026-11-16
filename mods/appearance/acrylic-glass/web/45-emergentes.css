@@ -1,0 +1,94 @@
+/* ==========================================================================
+   Acrylic Web — los emergentes (siempre se incluye, y va ANTES que los sitios)
+   --------------------------------------------------------------------------
+   Un menu, un dialogo, un desplegable o un tooltip existen para DESPEGARSE de
+   lo que hay detras. Sobre una pagina que hemos vuelto transparente, el que no
+   pinta su propio fondo se queda flotando encima del texto de la pagina y las
+   dos capas de letras se leen a la vez. Es el fallo mas comun de toda la capa
+   web y hasta ahora se arreglaba sitio a sitio: Drive por rol ARIA, Kick con
+   velo, Claude e Instagram por token. Esto es el suelo para los demas.
+
+   VA ANTES QUE 50-sites.css, Y EL NUMERO ES LA MITAD DEL DISENO.
+   La cascada de esta hoja esta montada sobre "a igual especificidad gana la
+   ultima regla" —por eso 90-exclusions.css puede rescatar un sitio pase lo que
+   pase antes, y por eso la guarda de Zen Sin Cristal cuesta cero a proposito—.
+   Poniendo esto ANTES de los sitios, queda como suelo: cubre a quien no tiene
+   bloque propio, y el trabajo fino que ya existe —los diez tokens de Drive, el
+   velo de Kick— le sigue ganando. Al reves seria un techo y se lo llevaria por
+   delante.
+
+   LO QUE ARREGLA LA LEGIBILIDAD ES EL VELO, NO EL BLUR -------------- MEDIDO -
+   Merece decirlo porque lo que uno pide es "que difumine". `backdrop-filter`
+   necesita un backdrop que muestrear, y dentro de una pagina que hemos vaciado
+   muchas veces no hay nada pintado detras: el acrilico y el velo de la ventana
+   viven FUERA del documento. Gecko fotografia ese vacio y lo compone en NEGRO.
+   Esta medido y explicado entero en 00-base.css.
+
+   O sea que el blur a secas, aqui, pinta un rectangulo negro. Lo que hace que
+   el menu se lea es el velo; el blur se queda encima porque donde SI hay algo
+   pintado detras —el texto de la pagina, que es justo lo que se superpone— lo
+   deshace. Es la misma receta que ya estaba medida en Kick el 12-09-2026, con
+   los mismos numeros.
+
+   Y EL VELO SE PINTA CON `background-image`, NO CON `background-color`.
+   Esta regla es general: cae sobre emergentes que ya tienen su fondo y sobre
+   emergentes que no. Un `background-color` pisaria el de los primeros, y eso no
+   se puede deshacer despues: `revert` en una hoja de usuario retrocede al
+   origen del NAVEGADOR, no al del sitio (00-base.css lo explica entero). Un
+   degradado plano se pinta ENCIMA del color del sitio:
+
+     transparente  ->  velo del 78% sobre el negro compuesto: se lee
+     ya opaco      ->  un punto mas oscuro, y sigue siendo opaco
+
+   Y apagarlo es exacto y sin perdida: `background-image: none`.
+
+   POR ESO MISMO NO LLEVA FILO. Un `border` quedaria bien, pero apagarlo
+   obligaria a `revert`, y `revert` en una hoja de usuario retrocede al origen
+   del NAVEGADOR: se llevaria por delante el filo que puso el sitio. El
+   interruptor tiene que poder dejar las cosas como estaban, y con dos
+   propiedades que son puro anadido --una imagen y un filtro-- puede.
+
+   SOLO LO QUE CUELGA DEL <body>, Y ESO ES UNA DECISION ---------------------
+   Practicamente toda libreria de componentes moderna saca sus emergentes a un
+   portal colgado del body, asi que ahi esta el grueso. Nombrarlos a cualquier
+   profundidad seria mas ancho y mucho peor: `[role=menu]` se usa tambien en
+   barras de navegacion, y un velo sobre una barra de ancho completo es
+   exactamente el problema que esto viene a quitar. Lo que no portee al body
+   sigue necesitando su bloque por sitio, y por eso 50-sites.css no sobra.
+
+   `[popover]` si va a cualquier profundidad: un elemento con ese atributo esta
+   en la capa superior por definicion del estandar, no puede ser el lienzo.
+
+   `[role=grid]` NO ENTRA, y es un aviso comprado con una tarde: el listado de
+   archivos de Drive es una rejilla, y devolverle el fondo vuelve a tapar la
+   pagina entera.
+   ========================================================================== */
+
+:where(html:not([zen-sin-cristal])) body > [role='menu'],
+:where(html:not([zen-sin-cristal])) body > [role='dialog'],
+:where(html:not([zen-sin-cristal])) body > [role='listbox'],
+:where(html:not([zen-sin-cristal])) body > [role='tooltip'],
+:where(html:not([zen-sin-cristal])) body > dialog,
+:where(html:not([zen-sin-cristal])) [popover] {
+  background-image: linear-gradient(rgb(16 16 19 / 0.78), rgb(16 16 19 / 0.78)) !important;
+  backdrop-filter: blur(26px) saturate(140%) !important;
+}
+
+/* El interruptor, escrito EN NEGATIVO a proposito, igual que el del buscador de
+   YouTube: una media feature que Gecko no conozca no casa nunca, asi que el dia
+   que cierren esa puerta se pierde el interruptor y no la funcion. Al reves
+   —escribirlo en positivo— el mod se apagaria solo y en silencio.
+
+   Apagar es exacto porque el velo es una imagen: se quita la imagen y debajo
+   esta intacto el color que puso el sitio. */
+@media (not -moz-pref('acrylic-zen.web-popups')) {
+  :where(html:not([zen-sin-cristal])) body > [role='menu'],
+  :where(html:not([zen-sin-cristal])) body > [role='dialog'],
+  :where(html:not([zen-sin-cristal])) body > [role='listbox'],
+  :where(html:not([zen-sin-cristal])) body > [role='tooltip'],
+  :where(html:not([zen-sin-cristal])) body > dialog,
+  :where(html:not([zen-sin-cristal])) [popover] {
+    background-image: none !important;
+    backdrop-filter: none !important;
+  }
+}

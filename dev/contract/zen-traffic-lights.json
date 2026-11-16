@@ -1,0 +1,143 @@
+{
+  "mod": "zen-traffic-lights",
+  "name": "Zen Traffic Lights",
+  "plataformas": [
+    "windows",
+    "linux"
+  ],
+  "verificado_en": "Zen 1.22.2b / Gecko 156.0 / BuildID 20260915091052",
+  "testigo": "--zl-size-e",
+  "vivo": [
+    {
+      "que": "el circulo de cerrar mide el diametro configurado",
+      "js": "const e = document.querySelector('.titlebar-close'); return e ? getComputedStyle(e, '::before').width : 'sin-boton';",
+      "espera": "12px",
+      "severity": "critico",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "que": "y lleva el color del mod: el rojo de macOS, o el apagado si la ventana no tiene el foco",
+      "js": "const e = document.querySelector('.titlebar-close'); if (!e) return 'sin-boton'; const c = getComputedStyle(e, '::before').backgroundColor; if (c === 'rgb(255, 95, 87)') return 'rojo-macos'; const apagado = c === 'rgba(255, 255, 255, 0.15)' || c === 'rgba(0, 0, 0, 0.17)'; if (apagado && e.matches(':-moz-window-inactive')) return 'apagado-sin-foco'; return 'inesperado:' + c;",
+      "espera": "regex:^(rojo-macos|apagado-sin-foco)$",
+      "severity": "degrada",
+      "nota": "LOS DOS VALORES SON EL MOD FUNCIONANDO, y por eso se aceptan los dos. Con la opcion zen-lights.dim-inactive encendida —lo esta de fabrica— el mod apaga los tres circulos a la vez cuando la ventana pierde el foco, como macOS. Medido el 17-09-2026: abrir una ventana de aplicacion web dejo la principal inactiva y esta afirmacion, que solo aceptaba el rojo, dio un fallo que no existia. Una afirmacion cuyo resultado depende de donde estaba el foco no sirve para saber si algo se rompio",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "que": "se ven TRES botones, no cuatro: maximizar y restaurar no salen a la vez",
+      "js": "return String([...document.querySelectorAll('.titlebar-button')].filter(b => getComputedStyle(b).display !== 'none').length);",
+      "espera": "3",
+      "severity": "critico",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "token": ".titlebar-button",
+      "buscar": "titlebar-button",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "los tres botones de ventana. El ::before deja de heredar el glifo de Segoe y pasa a ser el circulo; el ::after dibuja el simbolo con gradientes",
+      "si_falta": "no hay circulos: vuelven los rectangulos nativos. Buscar la clase nueva en browser.xhtml, seccion de window controls",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "token": ".titlebar-close / .titlebar-min / .titlebar-max / .titlebar-restore",
+      "buscar": "titlebar-restore",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el color de cada circulo y su simbolo. Maximizar y restaurar son DOS botones distintos: Firefox oculta uno u otro segun [sizemode]",
+      "si_falta": "los circulos salen todos del mismo color, o aparecen cuatro en vez de tres si el mecanismo de ocultacion cambia",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "token": ".titlebar-buttonbox",
+      "buscar": "titlebar-buttonbox",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el grupo: al pasar el raton por encima entran los tres simbolos a la vez, como en macOS",
+      "si_falta": "los simbolos aparecen uno a uno al apuntar cada boton",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "token": "[sizemode]",
+      "buscar": "sizemode",
+      "kind": "attr",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "no se usa directamente: es como Firefox decide cual de max/restore se ve. Se vigila porque de eso depende que no salgan cuatro circulos",
+      "si_falta": "revisar como oculta Firefox el boton que no toca antes de tocar 'display' en .titlebar-button (nunca poner display ahi)",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "token": "-moz-window-button-maximize",
+      "buscar": "-moz-window-button-maximize",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/skin/classic/browser/browser.css",
+      "para": "no se toca a proposito: es la marca por la que Gecko le dice a Windows donde cae el boton de maximizar, y de ella depende el menu de Snap Layouts",
+      "si_falta": "si Firefox cambia de mecanismo, comprobar que Snap Layouts sigue saliendo al posarse en el circulo verde",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "token": "prefers-contrast",
+      "buscar": "prefers-contrast",
+      "kind": "media",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/skin/classic/browser/browser.css",
+      "para": "con contraste alto de Windows el mod se aparta entero y deja el aspecto nativo: tres circulos que solo se distinguen por el tono son lo contrario de accesible",
+      "si_falta": "el mod dejaria de apartarse en contraste alto. Es la unica media feature de la que depende, y no es privilegiada",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    },
+    {
+      "token": "toolbarbutton (display: flex del UA sheet de XUL)",
+      "buscar": "toolbarbutton",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/toolkit/content/global/xul.css",
+      "para": "el mod NO declara display en .titlebar-button porque xul.css ya pone todo a flex. Declararlo pisaria el display:none que oculta max o restore y saldrian cuatro circulos",
+      "si_falta": "si xul.css deja de poner flex, los circulos podrian descolocarse; la solucion NO es anadir display al boton",
+      "plataformas": [
+        "windows",
+        "linux"
+      ]
+    }
+  ]
+}

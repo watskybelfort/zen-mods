@@ -1,0 +1,14 @@
+[
+  {
+    "property": "zen-web-apps.restore-top-bar",
+    "label": "Devolver la barra de direcciones a una franja arriba (necesita la pieza nativa: node scripts/instalar-web-apps.mjs)",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "zen-web-apps.hide-compact-toggle",
+    "label": "Ocultar tambien el boton de modo compacto de la barra de arriba (oculta el area entera, con lo que le hayas anadido)",
+    "type": "checkbox",
+    "defaultValue": false
+  }
+]

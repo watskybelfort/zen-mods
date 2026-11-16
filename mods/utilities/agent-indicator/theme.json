@@ -1,0 +1,10 @@
+{
+  "id": "zen-claude-link-local",
+  "name": "Zen Claude Link",
+  "description": "Cuando un agente esta conectado a la sesion, Zen lo dice: una pastilla flotante con un punto que late, colocable en cualquier esquina. Sustituye el poste de barbero rojo de Firefox, que sobre cristal se ve fatal. Sin agente conectado el mod no pinta nada. Companero de Acrylic Zen, instalable por separado.",
+  "author": "local",
+  "version": "1.0.0",
+  "preferences": true,
+  "enabled": true,
+  "tags": ["agent", "automation", "remote-control", "indicator", "claude"]
+}

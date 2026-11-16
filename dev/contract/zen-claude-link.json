@@ -1,0 +1,103 @@
+{
+  "mod": "zen-claude-link",
+  "name": "Zen Claude Link",
+  "verificado_en": "Zen 1.22.2b / Gecko 156.0 / BuildID 20260915091052",
+  "testigo": "--zc-color-e",
+  "vivo": [
+    {
+      "que": "el navegador declara que esta bajo control remoto",
+      "js": "return String(document.documentElement.getAttribute('remotecontrol'));",
+      "espera": "true",
+      "severity": "critico",
+      "nota": "esta comprobacion solo puede darse por buena desde Marionette, que es justo lo que pone el atributo. Es la premisa entera del mod: si sale a false midiendo por aqui, gRemoteControl dejo de marcarlo"
+    },
+    {
+      "que": "la pastilla se pinta y lleva su etiqueta",
+      "js": "return getComputedStyle(document.documentElement, '::after').content;",
+      "espera": "regex:Claude",
+      "severity": "critico"
+    }
+  ],
+  "hooks": [
+    {
+      "token": "[remotecontrol]",
+      "buscar": "remotecontrol",
+      "kind": "attr",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.js",
+      "para": "TODO el mod cuelga de aqui. gRemoteControl lo pone en la raiz mientras haya alguien escuchando en devtools-socket, marionette-listening o remote-listening",
+      "si_falta": "el mod no pinta nunca nada, y no hay forma de notarlo salvo abrir el canal y ver que no aparece la pastilla. Es el hook mas critico del repo porque su fallo es indistinguible de 'no hay agente conectado'"
+    },
+    {
+      "token": "gRemoteControl",
+      "buscar": "gRemoteControl",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.js",
+      "para": "el objeto que mantiene el atributo. Se vigila aparte porque Mozilla podria cambiar el atributo sin quitar el objeto, o al contrario",
+      "si_falta": "buscar como declara ahora Firefox el estado de control remoto"
+    },
+    {
+      "token": "#remote-control-icon",
+      "buscar": "remote-control-icon",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el robot que Firefox pone en la barra de direcciones, que el mod oculta a favor de su pastilla",
+      "si_falta": "vuelve a verse el icono nativo junto a la pastilla; redundante pero no roto"
+    },
+    {
+      "token": "#remote-control-box",
+      "buscar": "remote-control-box",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la caja que contiene ese icono",
+      "si_falta": "igual que arriba"
+    },
+    {
+      "token": ".urlbar-background",
+      "buscar": "urlbar-background",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-omnibox.css",
+      "para": "amansar el poste de barbero rojo que Firefox pinta en la barra bajo control remoto, que sobre cristal se ve fatal",
+      "si_falta": "vuelve el rayado rojo original"
+    },
+    {
+      "token": "#zen-main-app-wrapper",
+      "buscar": "zen-main-app-wrapper",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el aro perimetral opcional (zen-claude.ring), apagado por defecto",
+      "si_falta": "la opcion del aro deja de hacer efecto; el resto del mod intacto"
+    },
+    {
+      "token": "--zen-border-radius",
+      "buscar": "--zen-border-radius",
+      "kind": "var",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-theme.css",
+      "para": "que el aro siga el radio de la ventana de Zen",
+      "si_falta": "el var() cae al fallback; el aro queda con un radio fijo"
+    },
+    {
+      "token": "--zen-native-inner-radius",
+      "buscar": "--zen-native-inner-radius",
+      "kind": "var",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-theme.css",
+      "para": "idem, radio interior",
+      "si_falta": "idem"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "mod": "zen-mezcla",
+  "name": "Zen Mezcla",
+  "verificado_en": "music.youtube.com el 2026-11-04 / Zen 1.24b",
+  "nota": "Cruza la frontera 6, como letra-viva y zen-sintonia: casi todo vive en una web ajena y va marcado 'vivo'. La parte pura se prueba sin red con dev\\tools\\probar-mezcla.mjs; la viva, con mods\\youtube-music\\crossfade\\sonda\\vivo.mjs. Si algo de esto falta, el mod deja de mezclar y la musica sigue sonando como siempre: ese es el contrato con el usuario.",
+  "hooks": [
+    {
+      "token": "SourceBuffer.appendBuffer",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "w3c",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "Media Source Extensions; lo usa el reproductor de music.youtube.com",
+      "para": "copiar los bytes de audio. Es la base de la mezcla: de aqui sale la cola",
+      "si_falta": "no hay cola y las canciones terminan como siempre. window.__zenMezcla.estado().captura sale null"
+    },
+    {
+      "token": "#movie_player.nextVideo",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "metodos que YouTube cuelga del elemento",
+      "para": "pasar a la siguiente mientras la cola sigue sonando",
+      "si_falta": "la cola suena hasta el final y la cancion nueva entra sola al acabar, sin fundido"
+    },
+    {
+      "token": "#movie_player.getPlayerResponse",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "metodos que YouTube cuelga del elemento",
+      "para": "playerConfig.audioConfig.trackAbsoluteLoudnessLkfs, para igualar el volumen; videoDetails.musicVideoType, para distinguir estudio de video; streamingData.adaptiveFormats, para los kbps reales",
+      "si_falta": "se funde sin igualar y el panel muestra guiones"
+    },
+    {
+      "token": "#movie_player.getStatsForNerds",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "cosmetico",
+      "comprobable": "vivo",
+      "declarado_en": "metodos que YouTube cuelga del elemento",
+      "para": "el codec y el itag que suenan de verdad, para el panel",
+      "si_falta": "el panel no sabe la calidad. La mezcla no depende de esto"
+    },
+    {
+      "token": "ytmusic-player-bar.repeatMode",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "propiedad interna de la barra del reproductor",
+      "para": "no mezclar con repetir una",
+      "si_falta": "con repetir una, la mezcla saltaria a la siguiente en vez de repetir"
+    },
+    {
+      "token": "ytmusic-player-bar #right-controls",
+      "buscar": "-",
+      "kind": "selector",
+      "owner": "youtube-music",
+      "severity": "cosmetico",
+      "comprobable": "vivo",
+      "declarado_en": "el DOM de music.youtube.com",
+      "para": "donde va el boton de la mezcla",
+      "si_falta": "no sale el boton; la mezcla funciona con los ultimos ajustes guardados"
+    },
+    {
+      "token": "zen.mezcla.encendido",
+      "buscar": "-",
+      "kind": "pref",
+      "owner": "nosotros",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "mods\\youtube-music\\crossfade\\nativo\\config-prefs.js",
+      "para": "el interruptor de emergencia: en false no se inyecta nada",
+      "si_falta": "el mod queda siempre encendido"
+    }
+  ]
+}

@@ -1,0 +1,148 @@
+{
+  "mod": "zen-motion",
+  "name": "Zen Motion",
+  "verificado_en": "Zen 1.22.2b / Gecko 156.0 / BuildID 20260915091052",
+  "testigo": "--zm-dur-e",
+  "vivo": [
+    {
+      "que": "la tipografia de la interfaz es Montserrat",
+      "js": "return getComputedStyle(document.getElementById('main-window')).fontFamily;",
+      "espera": "regex:Montserrat",
+      "severity": "degrada"
+    },
+    {
+      "que": "el contenido de la pestana tiene transicion, o sea que la regla entro",
+      "js": "const todas = [...document.querySelectorAll('.tabbrowser-tab .tab-content')]; if (!todas.length) return 'sin-pestana'; const e = todas.find((x) => /0\\.12s/.test(getComputedStyle(x).transitionDuration)); return e ? getComputedStyle(e).transitionDuration : getComputedStyle(todas[0]).transitionDuration;",
+      "espera": "regex:0\\.12s",
+      "severity": "degrada"
+    }
+  ],
+  "vivo_app": [
+    {
+      "que": "la tipografia de la ventana de app tambien es Montserrat",
+      "js": "return getComputedStyle(document.getElementById('nav-bar') || document.documentElement).fontFamily;",
+      "espera": "regex:Montserrat",
+      "severity": "degrada",
+      "nota": "si sale la de sistema, la regla de tipografia volvio a colgar solo de #main-window y no alcanza a la raiz taskbartab-<uuid>",
+      "plataformas": [
+        "windows"
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "token": "#urlbar[breakout-extend]",
+      "buscar": "breakout-extend",
+      "kind": "attr",
+      "owner": "zen",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-tabs/vertical-tabs.css",
+      "para": "el estado expandido del buscador: es el enganche de la animacion de apertura (Ctrl+T / Ctrl+L)",
+      "si_falta": "el buscador aparece de golpe. Buscar el atributo nuevo del estado expandido en zen-omnibox.css"
+    },
+    {
+      "token": ".urlbarView-row",
+      "buscar": "urlbarView-row",
+      "transitorio": true,
+      "motivo_transitorio": "las filas de resultados solo existen con el buscador abierto",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/skin/classic/browser/urlbar/view-nova.css",
+      "para": "las filas de resultados, que entran en cascada escalonadas cada 18ms",
+      "si_falta": "se pierde la cascada; los resultados aparecen todos a la vez"
+    },
+    {
+      "token": ".urlbar-background",
+      "buscar": "urlbar-background",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-omnibox.css",
+      "para": "el fondo animado del buscador al abrirse",
+      "si_falta": "sin animacion de entrada del panel"
+    },
+    {
+      "token": ".urlbar-input-container",
+      "buscar": "urlbar-input-container",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-omnibox.css",
+      "para": "el campo respira al abrirse en vez de aparecer de golpe",
+      "si_falta": "detalle perdido"
+    },
+    {
+      "token": ".tabbrowser-tab[fadein]",
+      "buscar": "fadein",
+      "kind": "attr",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "moz-src/browser/components/tabbrowser/Tabbrowser.sys.mjs",
+      "para": "Firefox pone [fadein] justo despues de insertar la pestana: es el unico enganche fiable para animar su apertura",
+      "si_falta": "las pestanas nuevas aparecen sin animacion"
+    },
+    {
+      "token": ".tab-content",
+      "buscar": "tab-content",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/tabbrowser/tab.js",
+      "para": "el contenido de la pestana, que se desplaza al apuntarla y desliza el indicador de activa",
+      "si_falta": "se pierden esas dos micro-interacciones"
+    },
+    {
+      "token": "#zen-sidebar-foot-buttons",
+      "buscar": "zen-sidebar-foot-buttons",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "los botones de abajo de la barra lateral crecen un pelo al apuntarlos",
+      "si_falta": "se pierde ese detalle. YA PASO UNA VEZ: este id se llamaba #zen-sidebar-bottom-buttons y el renombrado se llevo la animacion en silencio"
+    },
+    {
+      "token": "#zen-sidebar-bottom-buttons",
+      "buscar": "zen-sidebar-bottom-buttons",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "opcional": true,
+      "motivo": "nombre historico. Se conserva para que el mismo CSS valga en versiones viejas de Zen",
+      "declarado_en": "-",
+      "para": "compatibilidad hacia atras",
+      "si_falta": "nada: es lo esperado en Zen 1.21.9b y posteriores"
+    },
+    {
+      "token": "#zen-workspaces-button",
+      "buscar": "zen-workspaces-button",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el boton de espacios tambien crece al apuntarlo",
+      "si_falta": "detalle perdido"
+    },
+    {
+      "token": ".toolbarbutton-1",
+      "buscar": "toolbarbutton-1",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "modules/ZenCustomizableUI.sys.mjs",
+      "para": "los botones de barra responden al pulsarlos (scale 0.92)",
+      "si_falta": "los botones dejan de responder al click"
+    },
+    {
+      "token": "#main-window",
+      "buscar": "main-window",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "raiz para la tipografia Montserrat y para el corte de animaciones con prefers-reduced-motion",
+      "si_falta": "la tipografia no se aplica en la interfaz, y el respeto a 'reducir movimiento' se queda sin alcance"
+    }
+  ]
+}

@@ -1,0 +1,583 @@
+{
+  "fuente": "https://sameerasw.github.io/my-internet/styles.json",
+  "fecha": "2026-09-24",
+  "sitios": {
+    "-google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "9023191948fa2ef29ed0dd87aacac3f85d08cd848568e77b0d42571d46136111",
+      "bytes": 5475,
+      "blur": 0
+    },
+    "+discord.com.css": {
+      "dominios": [
+        "discord.com"
+      ],
+      "apagada": false,
+      "sha256": "9523ae1c2474db7fea3a7eb0520b68adc5fb2e78d763ea9ba599d6c6cff9ebb4",
+      "bytes": 2184,
+      "blur": 0
+    },
+    "+facebook.com.css": {
+      "dominios": [
+        "facebook.com"
+      ],
+      "apagada": false,
+      "sha256": "b3f0a76ba40cc665329f6676a416f141ae2e307fba022abecd5480c07544c986",
+      "bytes": 562,
+      "blur": 0
+    },
+    "+stackexchange.com.css": {
+      "dominios": [
+        "stackexchange.com"
+      ],
+      "apagada": false,
+      "sha256": "af50c2cd978aabfcbc60c781502a47b5154e623c18db4b97de0230e84944ab9a",
+      "bytes": 452,
+      "blur": 0
+    },
+    "+wikipedia.org.css": {
+      "dominios": [
+        "wikipedia.org"
+      ],
+      "apagada": false,
+      "sha256": "226075eaef38796a3fb69e2735441b4daa2dae1f57ad7459dc419cfbc65d75d6",
+      "bytes": 517,
+      "blur": 0
+    },
+    "+wiktionary.org.css": {
+      "dominios": [
+        "wiktionary.org"
+      ],
+      "apagada": false,
+      "sha256": "27f8ef024ffade3da4c874061dc3b43dc4323ce0a0cb472540dc873065d5796a",
+      "bytes": 463,
+      "blur": 0
+    },
+    "accounts.google.com.css": {
+      "dominios": [
+        "accounts.google.com",
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "c08664210038150364d0616726ab9b076a268db5dbb5516440ec21854f919f9c",
+      "bytes": 740,
+      "blur": 0
+    },
+    "aistudio.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "2fb91fc9b5fc2ab793ffc79e40d622cd5edbc37e91086c9773df8647449321cd",
+      "bytes": 905,
+      "blur": 0
+    },
+    "analytics.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "c7e2f05ab77e8f7482cedca550969c6ff6df944666e6bcfb23ca4935613a30ac",
+      "bytes": 786,
+      "blur": 0
+    },
+    "calendar.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "b7deee56673681a566cb9e36ee406a5b916fd88b594a9b33734de2800bac0242",
+      "bytes": 2697,
+      "blur": 1
+    },
+    "chatgpt.com.css": {
+      "dominios": [
+        "chatgpt.com"
+      ],
+      "apagada": true,
+      "sha256": "f16c6f81978e86cf46b3f7bead75ac15841f11bc1f41c4237881bf52be65fe30",
+      "bytes": 39011,
+      "blur": 37
+    },
+    "chromewebstore.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "f247095e61ac3156737fc8d6b7ca1f17a32dd06861949f55f33c3e7dd67973b1",
+      "bytes": 494,
+      "blur": 0
+    },
+    "classroom.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "e144ea330a58df7e6df0953ed9a4f140d0b9a3c6554b580ab09cb0c801516c72",
+      "bytes": 2391,
+      "blur": 2
+    },
+    "claude.ai.css": {
+      "dominios": [
+        "claude.ai"
+      ],
+      "apagada": false,
+      "sha256": "d3900f7467038d25cdc6272309b3848f840f326e53fd37c6ad924627ba34f2c7",
+      "bytes": 577,
+      "blur": 0
+    },
+    "colab.research.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "da6e3851e4a22eb5e9c307f85e5943ded83b9fd0f598ff8735f2806735b9d9b2",
+      "bytes": 528,
+      "blur": 0
+    },
+    "commons.wikimedia.org.css": {
+      "dominios": [
+        "wikimedia.org"
+      ],
+      "apagada": false,
+      "sha256": "27f8ef024ffade3da4c874061dc3b43dc4323ce0a0cb472540dc873065d5796a",
+      "bytes": 463,
+      "blur": 0
+    },
+    "console.firebase.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "226731cde481bec7eedc6b286eb7baf2a8f341ac64e2a6e1c225e071d4b9b934",
+      "bytes": 427,
+      "blur": 0
+    },
+    "contacts.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "421366d9368e7b1c47987e5b629bc836720c9e5b11766d7b7b6ef4169870fdd4",
+      "bytes": 1288,
+      "blur": 0
+    },
+    "developer.spotify.com.css": {
+      "dominios": [
+        "spotify.com"
+      ],
+      "apagada": false,
+      "sha256": "87542d0d1d86a9b78b9258bce5c795fad1d46a0b70f6ebd82e6ee2263fa2129b",
+      "bytes": 1194,
+      "blur": 0
+    },
+    "developers.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "c507f6b0373c935f548cd4a20ea47ad66ce23a08cf0251fdfc8787e93c7e5034",
+      "bytes": 929,
+      "blur": 0
+    },
+    "docs.google.com.css": {
+      "dominios": [
+        "docs.google.com",
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "5857ed2de64f4f4c43b3c9e37fdbc23c01447331cd263d7ab110f142a0104542",
+      "bytes": 4270,
+      "blur": 1
+    },
+    "drive.google.com.css": {
+      "dominios": [
+        "drive.google.com",
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "ca1564be21d17672270481a4c404437d7362bdbbf3970d091dcafbf8819b94b8",
+      "bytes": 352,
+      "blur": 0
+    },
+    "education.github.com.css": {
+      "dominios": [
+        "github.com"
+      ],
+      "apagada": false,
+      "sha256": "925dca960b43a08be2d2f2cd981d7dbbeb554cdc1bc4061226ceeff16eb087b2",
+      "bytes": 545,
+      "blur": 0
+    },
+    "fonts.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "95df8dd87c12664ca0a6619113aa733ece7d5306a54d0f3d768b8289cc156382",
+      "bytes": 827,
+      "blur": 0
+    },
+    "gemini.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "6dd5f9d1facd8734a368891a56b773c7126faa9cf572b74975c4fd567f830dc0",
+      "bytes": 1799,
+      "blur": 0
+    },
+    "gist.github.com.css": {
+      "dominios": [
+        "github.com"
+      ],
+      "apagada": false,
+      "sha256": "29d2b312065893df8c3186e79be3dfa12c81bf03b65390840146bcb7be22a622",
+      "bytes": 10058,
+      "blur": 0
+    },
+    "github.com.css": {
+      "dominios": [
+        "github.com"
+      ],
+      "apagada": false,
+      "sha256": "d18dfa301ad841a767d1fa7683c860623d88635e28857c645a9f7d805936abc4",
+      "bytes": 10444,
+      "blur": 0
+    },
+    "instagram.com.css": {
+      "dominios": [
+        "instagram.com"
+      ],
+      "apagada": false,
+      "sha256": "bd48fb54b3aada2030f739f9c023aecc6e2c41c90725a699d9939739ee6725e4",
+      "bytes": 1634,
+      "blur": 0
+    },
+    "jules.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "3f7581294f286c32da4e7d6fac48252fc3fa868e0993edeeb63efe976e88bdcb",
+      "bytes": 967,
+      "blur": 0
+    },
+    "keep.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "5705ee34c1dfd37f74403a5affd2b52ecbcf514446459e7edcf1237e396a6bc7",
+      "bytes": 262,
+      "blur": 0
+    },
+    "kick.com.css": {
+      "dominios": [
+        "dashboard.kick.com",
+        "kick.com"
+      ],
+      "apagada": false,
+      "sha256": "2b725b35e74dafc8405e31b23cf7ac50b2188e04f8729694bb34aa3c1f0be8ef",
+      "bytes": 234,
+      "blur": 0
+    },
+    "mail.google.com.css": {
+      "dominios": [
+        "google.com",
+        "mail.google.com"
+      ],
+      "apagada": false,
+      "sha256": "132957c8820b9bf1bf17d04dc1051084a37fb44d1251046d66cdbd421d802bde",
+      "bytes": 2767,
+      "blur": 1
+    },
+    "meet.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "76df504d60dbab258cbd97deb50c9b7cd080a0875af7c64d303c7ebcb37a9434",
+      "bytes": 1355,
+      "blur": 0
+    },
+    "messages.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "181337f2a1106ca205488383d761df9fa446547d037e6fe9791fc69a3e5059fb",
+      "bytes": 1873,
+      "blur": 2
+    },
+    "meta.wikimedia.org.css": {
+      "dominios": [
+        "wikimedia.org"
+      ],
+      "apagada": false,
+      "sha256": "27f8ef024ffade3da4c874061dc3b43dc4323ce0a0cb472540dc873065d5796a",
+      "bytes": 463,
+      "blur": 0
+    },
+    "modrinth.com.css": {
+      "dominios": [
+        "modrinth.com"
+      ],
+      "apagada": false,
+      "sha256": "5b30fadced4e7e86071e50fee734538edd3c0c062b3891b2de2cbf3b46f27a8f",
+      "bytes": 1004,
+      "blur": 0
+    },
+    "music.youtube.com.css": {
+      "dominios": [
+        "music.youtube.com",
+        "youtube.com"
+      ],
+      "apagada": false,
+      "sha256": "3e43bef729a8c7bc5c28150a6ded39ce831e671e2e2795a21ad5f54e30938a96",
+      "bytes": 7400,
+      "blur": 3
+    },
+    "myaccount.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "317cf4e964bbe6e6baf64ae7bbe4090425eaeb9e3a7e841275b9f2a96c8f5496",
+      "bytes": 483,
+      "blur": 0
+    },
+    "myactivity.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "d7ccbb841ccaf8e01191422c3fe2c90194c566a8bb2dc81dfd6e234de44d8eeb",
+      "bytes": 478,
+      "blur": 0
+    },
+    "news.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "239c793f8ed680f0e132de2bf92bdca7f82d87a00c6d46096e838f5645d2d63c",
+      "bytes": 978,
+      "blur": 0
+    },
+    "nextcloud.localhost.css": {
+      "dominios": [
+        "localhost"
+      ],
+      "apagada": false,
+      "sha256": "6d38ffc3807d1f4c2778162fe22fd8664d99a6fec105f77aaf0dac3db0867ad0",
+      "bytes": 2999,
+      "blur": 1
+    },
+    "notebooklm.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "aa36cf97a27eb1e7d27ab35de421418b21326fac5e3203a0010087e9a2a006aa",
+      "bytes": 882,
+      "blur": 0
+    },
+    "old.reddit.com.css": {
+      "dominios": [
+        "reddit.com"
+      ],
+      "apagada": false,
+      "sha256": "2fa94f245f21585f1cf285c1571de4bb8beafcd5358a3a707eb631cad6680d58",
+      "bytes": 1993,
+      "blur": 0
+    },
+    "one.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "d7ccbb841ccaf8e01191422c3fe2c90194c566a8bb2dc81dfd6e234de44d8eeb",
+      "bytes": 478,
+      "blur": 0
+    },
+    "open.spotify.com.css": {
+      "dominios": [
+        "spotify.com"
+      ],
+      "apagada": false,
+      "sha256": "e9d677d691ac9c55bcedd1a647294584eea92a3f78f73ce285f49fe42964e88c",
+      "bytes": 859,
+      "blur": 0
+    },
+    "phabricator.wikimedia.org.css": {
+      "dominios": [
+        "wikimedia.org"
+      ],
+      "apagada": false,
+      "sha256": "ea4f1ab42eabacca404b7792d087fd9ef4e96e78c92eccf2276b5690ea1c8d76",
+      "bytes": 207,
+      "blur": 0
+    },
+    "photos.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "99bbcfe22257871b966c56970d6d7d83f386a2769a8dcacf6781d2c343c71645",
+      "bytes": 2335,
+      "blur": 0
+    },
+    "play.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "c3eeaf622c8a350be462f4101ade38fee0ebc040d9ec6714fd384ae6e60cc8d9",
+      "bytes": 1274,
+      "blur": 0
+    },
+    "reddit.com.css": {
+      "dominios": [
+        "reddit.com"
+      ],
+      "apagada": false,
+      "sha256": "e716aca6a72ced189b535790e96038fea772f4ac64bb9b42b277407dec567274",
+      "bytes": 2053,
+      "blur": 0
+    },
+    "scholar.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "f762569e756d6c4d4d3d5bbdab74a375fb7d55a1bb753f281490fc4ab335d189",
+      "bytes": 571,
+      "blur": 0
+    },
+    "search.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "ca63c0a5bff1d27c49beecabdb74024e03741232109f17b6e0d5482119e2c590",
+      "bytes": 770,
+      "blur": 0
+    },
+    "speedtest.net.css": {
+      "dominios": [
+        "speedtest.net"
+      ],
+      "apagada": false,
+      "sha256": "8a13d406080734f662c28edc68e382e3adf9be140bb5131e2add36f6d23a1a65",
+      "bytes": 931,
+      "blur": 0
+    },
+    "stackoverflow.com.css": {
+      "dominios": [
+        "stackoverflow.com"
+      ],
+      "apagada": false,
+      "sha256": "0ff648db4a08737c747b73d29d6c570f0c55b29a5ed9985fd416ab199ea26dc7",
+      "bytes": 391,
+      "blur": 1
+    },
+    "steamcommunity.com.css": {
+      "dominios": [
+        "steamcommunity.com"
+      ],
+      "apagada": false,
+      "sha256": "ff2f89cb54c7c2338d73d656c32561ffd53d253803dd4b73fec0de40f2af302c",
+      "bytes": 532,
+      "blur": 0
+    },
+    "store.steampowered.com.css": {
+      "dominios": [
+        "steampowered.com"
+      ],
+      "apagada": false,
+      "sha256": "6a3bdb6cbef582b3469639cc33e8de541544daa3af559a05102273abc569fdbc",
+      "bytes": 512,
+      "blur": 0
+    },
+    "studio.youtube.com.css": {
+      "dominios": [
+        "studio.youtube.com",
+        "youtube.com"
+      ],
+      "apagada": false,
+      "sha256": "00475b1f7a449f96859c02485d73d0d63d61f185c36d8a4b7dd704162aa02eb6",
+      "bytes": 674,
+      "blur": 0
+    },
+    "supabase.com.css": {
+      "dominios": [
+        "supabase.com"
+      ],
+      "apagada": false,
+      "sha256": "ab334a36d722a6f965472d6c43383eab54db8a4d8c991ce191301229021a7022",
+      "bytes": 1125,
+      "blur": 0
+    },
+    "tasks.google.com.css": {
+      "dominios": [
+        "google.com"
+      ],
+      "apagada": false,
+      "sha256": "28a11d3351c03bb8e9aa4bc40a236a803640f452a11a02e119bdb6111fa86723",
+      "bytes": 118,
+      "blur": 0
+    },
+    "tiktok.com.css": {
+      "dominios": [
+        "tiktok.com"
+      ],
+      "apagada": false,
+      "sha256": "3a3c1ba7dfea8abde6f30c09532ddf414fd22654b705a959231da7f63b2e63f1",
+      "bytes": 632,
+      "blur": 0
+    },
+    "twitch.tv.css": {
+      "dominios": [
+        "twitch.tv"
+      ],
+      "apagada": false,
+      "sha256": "cad5ce171cebd30d15a385f78da29f258fb78fe415ef5dfc69f3fcf532b1f454",
+      "bytes": 2225,
+      "blur": 0
+    },
+    "twitter.com.css": {
+      "dominios": [
+        "twitter.com"
+      ],
+      "apagada": false,
+      "sha256": "8b4c6d8c66f01fea48c9903d1f7472430d095aea68b887741a85c6e7f85cc4ff",
+      "bytes": 1437,
+      "blur": 0
+    },
+    "x.com.css": {
+      "dominios": [
+        "console.x.com",
+        "x.com"
+      ],
+      "apagada": false,
+      "sha256": "879490c8d7f262fdaf58fed0f7ac747b994d1cc640d1c8f94d17495f5908cb02",
+      "bytes": 1569,
+      "blur": 0
+    },
+    "youtube.com.css": {
+      "dominios": [
+        "music.youtube.com",
+        "studio.youtube.com",
+        "youtube.com"
+      ],
+      "apagada": false,
+      "sha256": "c6e54cda782fe6a493a77bab1c27abb77370ccd52f86f1358eb1ca874e9663f1",
+      "bytes": 15010,
+      "blur": 9
+    }
+  }
+}

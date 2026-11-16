@@ -1,0 +1,433 @@
+/* ==========================================================================
+   Zen Claude Link — v1.0.0
+   "Hay un agente dentro de esta sesion", dicho de forma que se vea sin
+   estorbar: una pastilla flotante con un punto que late.
+   --------------------------------------------------------------------------
+   DE DONDE SALE EL ESTADO, Y POR QUE ESTO NO ES DECORACION
+   No hay que inventar ninguna senal: Firefox ya la publica. En browser.js vive
+   `gRemoteControl`, suscrito a tres notificaciones del sistema —
+   `devtools-socket`, `marionette-listening` y `remote-listening`— y cada vez
+   que salta una recalcula:
+
+       getRemoteControlComponent()          -> "DevTools" | "Marionette" | "RemoteAgent" | null
+       documentElement.setAttribute(...)    -> [remotecontrol="true"] si hay alguno
+       documentElement.removeAttribute(...) -> si no queda ninguno
+
+   Comprobado en Zen 1.21.9b (Gecko 153), browser.js:3830. O sea que
+   `:root[remotecontrol]` NO es una clase que ponga este mod: es el navegador
+   diciendo la verdad sobre su propio estado, en vivo. Cuando el agente se
+   engancha aparece la pastilla; cuando cierra el canal, desaparece sola.
+
+   Consecuencia util: sin nadie conectado este mod no casa ni una regla. Coste
+   cero y aspecto intacto.
+
+   Lo que el atributo NO distingue es QUIEN esta conectado — DevTools normales,
+   Marionette y el RemoteAgent ponen el mismo atributo. El unico filtro que trae
+   de fabrica es que un Browser Toolbox (depurar Zen desde Zen) no cuenta:
+   `hasSocketOpened({ excludeBrowserToolboxSockets: true })`.
+   --------------------------------------------------------------------------
+   POR QUE SE PINTA EN LOS PSEUDOS DE LA RAIZ
+   Un mod es CSS: no puede crear elementos. Asi que la pastilla tiene que salir
+   de un `::before`/`::after`, y el elemento que los aloja decide donde puede
+   colocarse.
+
+   La raiz es el unico sitio bueno. `position: fixed` se posiciona respecto al
+   bloque contenedor, y CUALQUIER ancestro con `transform`, `filter`, `contain`
+   o `backdrop-filter` se convierte en ese bloque contenedor y se lo queda. Zen
+   pone `contain: content` en sus capas de fondo (por eso Acrylic Zen tuvo que
+   mover su brillo a `#main-window`: ver la seccion 3 de su chrome.css), y el
+   urlbar va lleno de transiciones y de `popover`. Colgar la pastilla de
+   cualquiera de ellos la habria anclado a esa caja en vez de a la ventana.
+
+   La raiz no tiene ancestros, asi que no hay nada que pueda robarle el anclaje:
+   `position: fixed` ahi significa siempre "respecto a la ventana".
+
+     ::before   EL PUNTO      — caja propia, para que el latido sea un scale
+                               limpio y no deforme el texto
+     ::after    LA PASTILLA   — el rectangulo con la etiqueta
+
+   Se usa `:root` y no `#main-window` a proposito: en las ventanas de aplicacion
+   web la raiz se llama `taskbartab-<uuid>` (browser-init.js la renombra) y toda
+   regla escrita contra `#main-window` se queda fuera. Con `:root` el indicador
+   tambien sale ahi.
+   --------------------------------------------------------------------------
+   DEGRADACION SEGURA
+   Las reglas base = punto + pastilla abajo a la derecha, con la etiqueta por
+   defecto. Todo lo demas son variantes que cuelgan de `:has(#theme-...)` o de
+   `@media -moz-pref()`. Si esas piezas no estuviesen disponibles —y en las
+   ventanas de app web la primera NO lo esta, porque ahi Zen no inyecta el div
+   de preferencias— se descartan las variantes y queda el indicador por defecto.
+   Nunca media pastilla ni una caja sin pintar.
+
+   Las dos capas van con `pointer-events: none`. No es un detalle estetico: un
+   rectangulo fijo encima del navegador que se comiese los clics seria un fallo
+   grave, y ademas asi tampoco interfiere con las zonas de arrastre de la
+   ventana ni con Snap Layouts.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   `--zc-*`           valores internos (presets de tamano)
+   `--zen-claude-*`   los escribe Zen Mods desde las preferencias del mod. No se
+                      declaran aqui a proposito: si el campo esta vacio la
+                      propiedad no existe y gana el fallback del `var()`.
+   `--zc-*-e`         valor efectivo = preferencia del usuario, o preset.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Preset por defecto: "normal" */
+  --zc-dot: 8px;
+  --zc-h: 26px;
+  --zc-pad: 10px;
+  --zc-gap: 7px;
+  --zc-font: 11px;
+  --zc-edge: 12px;
+
+  /* El naranja de Claude */
+  --zc-color: #d97757;
+
+  /* Valores efectivos */
+  --zc-color-e: var(--zen-claude-color, var(--zc-color));
+  --zc-x: var(--zen-claude-offset-x, var(--zc-edge));
+  --zc-y: var(--zen-claude-offset-y, var(--zc-edge));
+
+  /* Donde cae el punto respecto a la esquina. Con pastilla se mete hacia
+     dentro lo que mide su padding y sube hasta el centro de su alto; sin
+     pastilla (etiqueta "none") los dos valen 0 y el punto se queda solo en la
+     esquina. Cambiando estas dos variables se recoloca el punto en las cuatro
+     esquinas de golpe, en vez de repetir el ajuste cuatro veces. */
+  --zc-dot-inset: var(--zc-pad);
+  --zc-dot-rise: calc((var(--zc-h) - var(--zc-dot)) / 2);
+}
+
+/* Presets del desplegable de tamano.
+   Zen Mods inyecta <div id="theme-Zen-Claude-Link" zen-claude-size="..."> */
+:root:has(#theme-Zen-Claude-Link[zen-claude-size='compact']) {
+  --zc-dot: 6px;
+  --zc-h: 20px;
+  --zc-pad: 8px;
+  --zc-gap: 6px;
+  --zc-font: 10px;
+  --zc-edge: 8px;
+}
+
+:root:has(#theme-Zen-Claude-Link[zen-claude-size='normal']) {
+  --zc-dot: 8px;
+  --zc-h: 26px;
+  --zc-pad: 10px;
+  --zc-gap: 7px;
+  --zc-font: 11px;
+  --zc-edge: 12px;
+}
+
+:root:has(#theme-Zen-Claude-Link[zen-claude-size='large']) {
+  --zc-dot: 10px;
+  --zc-h: 32px;
+  --zc-pad: 13px;
+  --zc-gap: 8px;
+  --zc-font: 13px;
+  --zc-edge: 14px;
+}
+
+/* --------------------------------------------------------------------------
+   2. El punto
+   Caja propia para poder animarlo con `transform` sin arrastrar el texto.
+   -------------------------------------------------------------------------- */
+:root[remotecontrol]::before {
+  content: '';
+  position: fixed;
+  z-index: 2147483000;
+  pointer-events: none;
+  -moz-window-dragging: no-drag;
+
+  width: var(--zc-dot);
+  height: var(--zc-dot);
+  border-radius: 50%;
+  background-color: var(--zc-color-e);
+
+  /* Sobre el cristal de Acrylic Zen el punto puede caer encima de cualquier
+     cosa, asi que lleva su propio halo para no perderse sobre un fondo del
+     mismo tono. */
+  box-shadow: 0 0 6px color-mix(in srgb, var(--zc-color-e) 70%, transparent);
+
+  /* Esquina por defecto: abajo a la derecha. Arriba a la derecha estan los
+     botones de ventana y abajo a la izquierda Zen saca sus notificaciones, asi
+     que esta es la unica esquina que no se pelea con nada de fabrica. */
+  bottom: calc(var(--zc-y) + var(--zc-dot-rise));
+  right: calc(var(--zc-x) + var(--zc-dot-inset));
+}
+
+/* --------------------------------------------------------------------------
+   3. La pastilla
+   -------------------------------------------------------------------------- */
+:root[remotecontrol]::after {
+  content: 'Claude';
+  position: fixed;
+  z-index: 2147482999; /* justo debajo del punto */
+  pointer-events: none;
+  -moz-window-dragging: no-drag;
+
+  display: flex;
+  align-items: center;
+  height: var(--zc-h);
+  border-radius: calc(var(--zc-h) / 2);
+
+  /* El punto va del lado de fuera, pegado a la esquina, y el texto hacia el
+     centro de la ventana. Asi la pastilla puede crecer con la etiqueta sin
+     descolocar el punto: los dos se anclan al MISMO borde y solo hay que sumar
+     el padding, que es un valor conocido. Anclarlos a bordes opuestos habria
+     obligado a saber de antemano cuanto ocupa el texto. */
+  padding-left: var(--zc-pad);
+  padding-right: calc(var(--zc-pad) + var(--zc-dot) + var(--zc-gap));
+
+  font-family: inherit;
+  font-size: var(--zc-font);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--zc-color-e) 26%, #fff);
+
+  /* Tenida del color en lugar de un gris neutro: sobre el acrilico un panel
+     opaco cantaria, y el tinte hace de vinculo visual con el punto. */
+  background-color: color-mix(in srgb, var(--zc-color-e) 20%, rgb(0 0 0 / 0.46));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--zc-color-e) 42%, transparent),
+    0 2px 10px rgb(0 0 0 / 0.34);
+
+  bottom: var(--zc-y);
+  right: var(--zc-x);
+}
+
+/* --------------------------------------------------------------------------
+   4. El latido
+   Una onda que sale del punto, no un parpadeo del punto: el punto se queda
+   nitido y lo que se mueve es el halo. Con `box-shadow` de radio creciente sale
+   de la propia caja del punto, sin necesidad de otro elemento.
+   -------------------------------------------------------------------------- */
+@keyframes zc-latido {
+  0% {
+    box-shadow: 0 0 6px color-mix(in srgb, var(--zc-color-e) 70%, transparent),
+      0 0 0 0 color-mix(in srgb, var(--zc-color-e) 55%, transparent);
+  }
+
+  70% {
+    box-shadow: 0 0 6px color-mix(in srgb, var(--zc-color-e) 70%, transparent),
+      0 0 0 calc(var(--zc-dot) * 1.1) transparent;
+  }
+
+  100% {
+    box-shadow: 0 0 6px color-mix(in srgb, var(--zc-color-e) 70%, transparent),
+      0 0 0 0 transparent;
+  }
+}
+
+@media -moz-pref('zen-claude.pulse') {
+  :root[remotecontrol]::before {
+    animation: zc-latido 2.4s ease-out infinite;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Las otras tres esquinas
+   Solo hay que reescribir el par de coordenadas y, en las de la izquierda,
+   cambiar de lado el hueco del punto. Todo lo demas ya esta en las reglas base.
+   `auto` es obligatorio en la coordenada que se abandona: si no, quedarian
+   puestas las dos y la caja se estiraria de borde a borde.
+   -------------------------------------------------------------------------- */
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='bottom-left'])::before {
+  right: auto;
+  left: calc(var(--zc-x) + var(--zc-dot-inset));
+}
+
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='bottom-left'])::after {
+  right: auto;
+  left: var(--zc-x);
+  padding-left: calc(var(--zc-pad) + var(--zc-dot) + var(--zc-gap));
+  padding-right: var(--zc-pad);
+}
+
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='top-right'])::before {
+  bottom: auto;
+  top: calc(var(--zc-y) + var(--zc-dot-rise));
+}
+
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='top-right'])::after {
+  bottom: auto;
+  top: var(--zc-y);
+}
+
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='top-left'])::before {
+  bottom: auto;
+  top: calc(var(--zc-y) + var(--zc-dot-rise));
+  right: auto;
+  left: calc(var(--zc-x) + var(--zc-dot-inset));
+}
+
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='top-left'])::after {
+  bottom: auto;
+  top: var(--zc-y);
+  right: auto;
+  left: var(--zc-x);
+  padding-left: calc(var(--zc-pad) + var(--zc-dot) + var(--zc-gap));
+  padding-right: var(--zc-pad);
+}
+
+/* Sin pastilla flotante: se retiran las dos capas y queda solo la marca de la
+   barra de direcciones (seccion 7). */
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='off'])::before,
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-position='off'])::after {
+  content: none;
+}
+
+/* --------------------------------------------------------------------------
+   6. La etiqueta
+   -------------------------------------------------------------------------- */
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-label='claude-code'])::after {
+  content: 'Claude Code';
+}
+
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-label='sesion'])::after {
+  content: 'Sesion controlada';
+}
+
+/* Solo el punto. `content: none` no genera caja —a diferencia de `content: ''`,
+   que dejaria una pastilla vacia de 26px—, y las dos variables de la seccion 1
+   se ponen a cero para que el punto no se quede flotando en el hueco donde
+   estaba el padding de una pastilla que ya no existe. */
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-label='none']) {
+  --zc-dot-inset: 0px;
+  --zc-dot-rise: 0px;
+}
+
+:root[remotecontrol]:has(#theme-Zen-Claude-Link[zen-claude-label='none'])::after {
+  content: none;
+}
+
+/* --------------------------------------------------------------------------
+   7. La marca de la barra de direcciones
+   `#remote-control-box` ya existe en browser.xhtml, viene con `collapsed="true"`
+   y Firefox lo destapa solo bajo `:root[remotecontrol]`. O sea: un hueco que el
+   navegador reserva y muestra exactamente cuando nos interesa. Se reaprovecha
+   en lugar de pelearse con el.
+
+   De fabrica dentro va `static-robot.png`. Se cambia por un punto del color del
+   mod, que ademas de pegar con la pastilla se lee igual a 16px, cosa que un PNG
+   de un robot no hace.
+   -------------------------------------------------------------------------- */
+:root[remotecontrol] #remote-control-icon {
+  list-style-image: none !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50%;
+  background-color: var(--zc-color-e);
+  box-shadow: 0 0 5px color-mix(in srgb, var(--zc-color-e) 65%, transparent);
+}
+
+/* Con la pastilla a la vista, el punto del urlbar es el mismo aviso dos veces.
+   La guarda importa: si la posicion es "off" la pastilla NO existe, y ocultar
+   tambien esto dejaria la sesion sin ningun indicador. Por eso el `:not(:has())`
+   en vez de ocultarlo a secas.
+
+   En las ventanas de app web no hay div de preferencias, luego el `:has()` no
+   casa, luego el `:not()` si: se oculta el robot y se ve la pastilla. Que es
+   justo lo que toca, porque ahi la pastilla sale con los valores por defecto. */
+@media -moz-pref('zen-claude.hide-robot') {
+  :root[remotecontrol]:not(:has(#theme-Zen-Claude-Link[zen-claude-position='off']))
+    #remote-control-box {
+    display: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   8. El poste de barbero rojo
+   Firefox avisa del control remoto rayando el fondo del urlbar entero:
+
+       :root[remotecontrol] .urlbar-background {
+         background-image: repeating-linear-gradient(-45deg,
+           rgba(255,60,60,.25) 0 25px, rgba(175,0,0,.25) 25px 50px);
+         background-attachment: fixed;
+       }
+
+   (urlbar-searchbar.css, "Display visual cue that browser is under remote
+   control".) Sobre el chrome opaco de Firefox pasa; sobre el cristal de Acrylic
+   Zen es un manchon rojo a rayas encima de lo unico que se queria transparente.
+
+   Se retira la imagen y se deja el aviso en una linea del color del mod. NO se
+   toca `animation: none`, que Firefox pone ahi para que el degradado no se
+   desplace al abrir el panel de resultados; sin eso vuelve el temblor.
+   -------------------------------------------------------------------------- */
+@media -moz-pref('zen-claude.tame-warning') {
+  :root[remotecontrol] .urlbar-background {
+    background-image: none !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--zc-color-e) 38%, transparent);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. El anillo de la ventana
+   Opcional y apagado de fabrica: es la senal mas dificil de ignorar, y por eso
+   mismo la mas invasiva. Va sobre `#zen-main-app-wrapper`, que es la caja que
+   abarca la aplicacion entera, y no sobre la raiz porque los dos pseudos de la
+   raiz ya estan ocupados por el punto y la pastilla.
+
+   `inset` para que el anillo caiga por dentro del borde redondeado de la
+   ventana en lugar de recortarse contra el, y el radio se hereda del token de
+   Zen para que siga la forma real de la esquina.
+   -------------------------------------------------------------------------- */
+@media -moz-pref('zen-claude.ring') {
+  :root[remotecontrol] #zen-main-app-wrapper {
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--zc-color-e) 55%, transparent),
+      inset 0 0 22px -6px color-mix(in srgb, var(--zc-color-e) 40%, transparent);
+    border-radius: var(--zen-native-inner-radius, var(--zen-border-radius, 0px));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. Accesibilidad
+   El latido es informacion redundante —el punto ya esta ahi, quieto, diciendo
+   lo mismo—, asi que con movimiento reducido se quita entero en vez de
+   ralentizarlo.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root[remotecontrol]::before {
+    animation: none;
+  }
+}
+
+/* Con "contraste alto" de Windows, un aviso que se distingue solo por el tono
+   no cumple su funcion. Ahi el punto y la pastilla pasan a los colores del
+   sistema, que es lo que el usuario ha pedido que se respete. */
+@media (prefers-contrast) {
+  :root[remotecontrol]::before {
+    background-color: SelectedItem;
+    box-shadow: none;
+  }
+
+  :root[remotecontrol]::after {
+    color: SelectedItemText;
+    background-color: SelectedItem;
+    box-shadow: inset 0 0 0 1px ButtonText;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   11. HOOKS DE COMPATIBILIDAD
+   Este mod no toca fondos de ventana, ni botones de ventana, ni la barra
+   lateral: convive con Acrylic Zen, Zen Traffic Lights y Zen Web Apps sin
+   solaparse con ninguno.
+
+   Lo unico que comparte con Acrylic Zen es el elemento `#zen-main-app-wrapper`
+   —Acrylic le pone el fondo, aqui solo un `box-shadow` y solo si se activa el
+   anillo—, asi que no se pisan.
+
+   Para que otro mod herede la paleta en vez de pelearse con ella:
+
+     --zc-color-e   el color de todo el indicador
+     --zc-dot       diametro del punto
+     --zc-h         alto de la pastilla (el radio se deriva)
+     --zc-x / --zc-y  separacion de los bordes de la ventana
+
+   Y si escribes un mod que quiera pintar tambien en la raiz: los dos pseudos
+   de `:root` estan ocupados AQUI, pero solo bajo `[remotecontrol]`. Fuera de
+   una sesion con agente conectado siguen libres.
+   -------------------------------------------------------------------------- */

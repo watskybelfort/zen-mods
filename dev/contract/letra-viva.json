@@ -1,0 +1,228 @@
+{
+  "mod": "letra-viva",
+  "name": "Zen Letra Viva",
+  "verificado_en": "music.youtube.com el 2026-07-30 / Zen 1.21.9b / Gecko 153",
+  "nota": "La sexta frontera del repo, y la unica que no manda ni Zen ni Mozilla: la manda YouTube Music. Casi ningun enganche de aqui se puede comprobar contra los omni.ja, porque no vive en el navegador sino en una web ajena que se despliega cuando quiere y sin avisar. Por eso van marcados como comprobable 'vivo': se comprueban con window.__zenLetra.doctor() desde la consola de la pagina, que informa punto por punto. Lo que si se comprueba desde fuera son las prefs del cargador nativo.",
+  "hooks": [
+    {
+      "token": "video",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "el DOM de music.youtube.com",
+      "para": "EL RELOJ. currentTime del elemento de video es contra lo que se cronometra toda la letra. Es el enganche mas estable de todos: es HTML estandar, no un componente suyo",
+      "si_falta": "no hay reloj y el mod no arranca; avisa en consola tras 30s de espera"
+    },
+    {
+      "token": "ad-showing",
+      "buscar": "-",
+      "kind": "class",
+      "owner": "youtube-music",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "las clases de #movie_player",
+      "para": "distinguir un anuncio de la cancion. Mientras suena un anuncio, currentTime y duration son LOS DEL ANUNCIO: sin esta clase el reloj no se congela, la letra se dispara sola en cada corte y la busqueda pide la letra de una cancion de 15 segundos",
+      "si_falta": "si renombran la clase, la letra salta al principio en cada anuncio. Buscar la nueva en #movie_player con un anuncio en marcha y ajustar Reloj.vigilarAnuncios en mods/youtube-music/live-lyrics/src/20-reloj.js"
+    },
+    {
+      "token": "main-panel",
+      "buscar": "-",
+      "kind": "id",
+      "owner": "youtube-music",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "ytmusic-player-page, dentro de div.content",
+      "para": "el ancla de la vista escenario: es el contenedor de la caratula y el video, medido en 781x1037 con la ventana a 1500",
+      "si_falta": "la vista escenario no tiene donde colgarse y no se abre. El doctor lo dice como ROTO"
+    },
+    {
+      "token": "side-panel",
+      "buscar": "-",
+      "kind": "id",
+      "owner": "youtube-music",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "ytmusic-player-page, dentro de div.content",
+      "para": "el ancla de la vista panel, la columna de las pestanas",
+      "si_falta": "la vista panel no se abre; queda el escenario, que es la que se usa por defecto"
+    },
+    {
+      "token": "tab-renderer",
+      "buscar": "-",
+      "kind": "id",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "ytmusic-tab-renderer en #side-panel",
+      "para": "es lo que el panel esconde con visibility mientras esta puesto. Sin esconderlo se leen a la vez la letra y la lista de A continuacion",
+      "si_falta": "el panel se ve encima de la lista de la pestana. Molesto, no roto"
+    },
+    {
+      "token": "right-controls",
+      "buscar": "-",
+      "kind": "id",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "ytmusic-player-bar",
+      "para": "donde se inyecta el boton de la letra",
+      "si_falta": "no hay boton. El mod sigue funcionando entero con los atajos de Alt, pero se vuelve invisible para quien no los sepa"
+    },
+    {
+      "token": "expanding-menu",
+      "buscar": "-",
+      "kind": "id",
+      "owner": "youtube-music",
+      "severity": "cosmetico",
+      "comprobable": "vivo",
+      "declarado_en": "ytmusic-player-bar #right-controls",
+      "para": "referencia para colocar nuestro boton a su izquierda",
+      "si_falta": "el boton va al final de la fila en lugar de en su sitio; nada mas"
+    },
+    {
+      "token": "ytmusic-av-toggle",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "dentro de #av-id, en #main-panel de ytmusic-player-page",
+      "para": "el conmutador Song/Video. De sus atributos sale TODO lo que hace falta saber sin tocar nada: playback-mode dice ATV_PREFERRED (art track), OMV_PREFERRED (videoclip) o NONE (no hay contrapartida); toggle-disabled, que no se puede conmutar; audio-only-playback-available, que la version de audio existe; e is-video-playback-mode-selected, cual esta puesto. Poner el video es pulsar su button.video-button, y responde con la pagina del reproductor minimizada — medido con su rectangulo a 0x0. OJO: sin sesion iniciada sale toggle-disabled en todas las pistas, incluso con la contrapartida disponible, asi que sin cuenta esto no funciona y no es un fallo",
+      "si_falta": "no se pone el videoclip y suena el art track, que es lo que hacia YouTube Music antes de esto. Nada mas se rompe: la letra no depende de este punto. Si renombran los atributos, el sintoma es que window.__zenLetra.estado().video dice 'no encuentro el conmutador' o se queda en 'esta cancion no tiene video' siempre; los nuevos se leen del elemento en la consola y se ajusta Video.lectura en mods/youtube-music/live-lyrics/src/28-video.js"
+    },
+    {
+      "token": "contextmenu de ytmusic-player-bar",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "un escuchador que la barra se pone a si misma, en fase de burbuja",
+      "para": "es la razon de que el clic derecho de nuestro boton corte la propagacion. Aparecio en una actualizacion medida el 2026-08-02: la barra abre su propio menu de cancion con cualquier clic derecho que le llegue, y como es un tp-yt-iron-dropdown suyo y no el menu del navegador, preventDefault no lo para. Nuestro escuchador esta en el boton, que es descendiente, y en burbuja va antes: stopPropagation hace que la barra no se entere",
+      "si_falta": "si lo quitaran, sobra el stopPropagation y no cambia nada. Lo que rompe es que lo muevan a fase de CAPTURA o lo suban a un ancestro por encima del boton: entonces se dispara antes que el nuestro y vuelven los dos menus a la vez, encimados. El arreglo en ese caso es escuchar contextmenu en captura sobre document y cancelarlo ahi cuando el objetivo caiga dentro del boton"
+    },
+    {
+      "token": "mediaSession.metadata",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "lo puebla la propia aplicacion para los controles del sistema",
+      "para": "identidad del tema: titulo y artista limpios de adornos y en el momento exacto del cambio de pista. Medido: album NO lo trae",
+      "si_falta": "se cae al titulo y el byline de la barra del reproductor, que es lo que ya se usa como respaldo. Peor calidad de busqueda, no fallo"
+    },
+    {
+      "token": "require-trusted-types-for",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "la CSP con la que sirven la pagina",
+      "para": "es la razon de que NADA del mod use innerHTML. Si algun dia se anade una asignacion de HTML por cadena, la excepcion se lleva por delante el arranque entero. Todo el DOM se construye con createElement y createElementNS",
+      "si_falta": "si la quitaran, no habria que cambiar nada: construir el DOM a mano funciona igual"
+    },
+    {
+      "token": "getPlayerResponse",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "metodo que el codigo de YouTube le cuelga a #movie_player",
+      "para": "de aqui sale la lista de subtitulos del video que suena, en captions.playerCaptionsTracklistRenderer, y el videoId con el que se comprueba que el reproductor no va un paso por detras del tema. No hay peticion: la respuesta ya la tiene cargada el reproductor. Con gestor de userscripts hay que llegar por wrappedJSObject, porque el envoltorio de rayos X esconde lo que la pagina anadio al elemento; con el cargador nativo no hace falta, porque su caja se crea con wantXrays en false",
+      "si_falta": "se pierde la tercera fuente y quedan LRCLIB y Musixmatch, que es como estaba antes. Si lo renombran, buscar el metodo nuevo en #movie_player desde la consola y ajustar ProveedorSubtitulos._leerDelReproductor en mods/youtube-music/live-lyrics/src/57-subtitulos.js"
+    },
+    {
+      "token": "api/timedtext",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "la baseUrl firmada de cada entrada de captionTracks",
+      "para": "el texto cronometrado. Se pide con &fmt=json3, que da { events: [ { tStartMs, aAppend, segs: [ { utf8, tOffsetMs } ] } ] } — y con tOffsetMs por trozo, que son tiempos POR PALABRA reales. La URL viene firmada y caduca, asi que se pide entera y no se guarda: a cache va el LRC ya compuesto. OJO: no admite cabeceras propias, porque una cabecera fuera de la lista segura de CORS obliga a un OPTIONS que este endpoint no contesta",
+      "si_falta": "si cambian el formato, json3ALrc devuelve un rechazo con el motivo y la cadena sigue como si el video no tuviera subtitulos. El sintoma en consola es 'subtitulos descartados'"
+    },
+    {
+      "token": "syncedLyrics",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "lrclib",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "la respuesta de lrclib.net/api/get y /api/search",
+      "para": "el texto LRC con las marcas [mm:ss.xx]. Es la fuente por defecto y la unica que no depende de un token",
+      "si_falta": "sin esta clave no hay letra sincronizada por defecto. Comprobar la forma de la respuesta con una peticion a mano y ajustar mods/youtube-music/live-lyrics/src/50-lrclib.js"
+    },
+    {
+      "token": "richsync_body",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "musixmatch",
+      "severity": "cosmetico",
+      "comprobable": "vivo",
+      "declarado_en": "la respuesta de apic-desktop.musixmatch.com/ws/1.1/track.richsync.get",
+      "para": "los tiempos por palabra reales, con entradas {ts, te, l:[{c,o}]}. Fuente opcional y apagada por defecto",
+      "si_falta": "el proveedor devuelve null y LRCLIB contesta detras con palabras interpoladas. Va primero en la cadena precisamente para que su fragilidad no arrastre a la fuente solida"
+    },
+    {
+      "token": "general.config.filename",
+      "buscar": "general.config.filename",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "modules/TelemetryEnvironment.sys.mjs",
+      "para": "es lo que hace que Zen ejecute nuestro config.js del directorio de instalacion. Solo aplica a la instalacion nativa; con gestor de userscripts no hace falta. OJO con el archivo: ahi solo se LEE, para telemetria. Quien la implementa es nsReadConfig.cpp, compilado dentro de xul.dll, asi que no hay cadena que buscar en los omni.ja y este es el unico sitio del paquete donde aparece el nombre",
+      "si_falta": "si Mozilla retira el autoconfig legado, la instalacion nativa deja de existir y queda la via del gestor de userscripts, que no depende de nada de esto",
+      "sin_default": true
+    },
+    {
+      "token": "general.config.obscure_value",
+      "buscar": "general.config.obscure_value",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "greprefs.js",
+      "para": "a 0 permite que config.js sea texto normal. Su valor por defecto es 13, y con el el navegador espera el archivo cifrado con un ROT-13 heredado de Netscape: con 13 y un archivo en claro, el cargador lee basura y NO dice nada",
+      "si_falta": "el cargador nativo no arranca en silencio. Es el fallo mas callado de esta pieza",
+      "sin_default": true
+    },
+    {
+      "token": "Services (global de sistema)",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "lo inyecta el motor de JavaScript en todo contexto con principal de sistema",
+      "para": "config.js y proceso.js lo usan para dirsvc, ppmm, cpmm, io, obs y console. NO se importa: en Gecko 153 el modulo resource://gre/modules/Services.sys.mjs YA NO EXISTE, porque Services paso a ser global automatico. Importarlo lanza 'Failed to load' y, como pasa en el arranque del autoconfig, se lleva por delante el cargador entero",
+      "si_falta": "si algun dia dejara de ser global, hay que volver al import — que sigue puesto como respaldo en las dos piezas, justo para eso. El sintoma seria 'el cargador nativo fallo' en la consola del navegador, no en la de la pagina"
+    },
+    {
+      "token": "sharedData",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "Services.ppmm.sharedData en el padre, Services.cpmm.sharedData en contenido",
+      "para": "es por donde viaja el motor del proceso padre a los de contenido, y tiene que ser LECTURA SINCRONA: el inyector lo necesita en el momento en que nace el documento, no una promesa",
+      "si_falta": "el inyector avisa en la consola del navegador y no inyecta. La alternativa seria volver a incrustar el motor en el inyector, con el asunto del escapado que se quito a proposito"
+    },
+    {
+      "token": "document-element-inserted",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "notificacion del observador, en el proceso de contenido",
+      "para": "el momento en que el documento ya tiene raiz pero no ha corrido ningun script de la pagina: el equivalente exacto de @run-at document-start",
+      "si_falta": "habria que pasar a DOMWindowCreated o a un JSWindowActor. El motor aguanta una inyeccion mas tardia porque de todas formas espera al elemento de video"
+    }
+  ]
+}

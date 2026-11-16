@@ -1,0 +1,363 @@
+/* ==========================================================================
+   Zen Traffic Lights — v1.0.1
+   Minimizar, maximizar y cerrar como en macOS: tres circulos de color, con el
+   simbolo dentro solo al pasar el raton.
+   --------------------------------------------------------------------------
+   DE DONDE SALEN LOS CUADRADOS
+   En Windows, Firefox no usa iconos para estos botones: pinta el glifo con la
+   tipografia `Segoe Fluent Icons` desde la propiedad `content` del propio
+   boton, y lo saca en un `::before` con `content: inherit` (ver browser.css,
+   seccion "Window control buttons"). El boton lleva `padding: 8px 18px` y
+   estira a todo el alto de la barra, asi que al apuntarlo se ilumina un
+   rectangulo completo. Eso es lo que se ve como "cuadrados".
+
+   Aqui se reaprovecha esa misma estructura sin tocar el DOM:
+
+       ::before   deja de heredar el glifo (`content: ""`) y pasa a ser EL CIRCULO
+       ::after    dibuja el simbolo de macOS con gradientes, no con tipografia
+       el boton   conserva su alto completo como zona de click
+
+   Que el simbolo no sea tipografia importa: `Segoe Fluent Icons` no existe en
+   Windows 10 (ahi se cae a `Segoe MDL2 Assets`) y ninguna de las dos trae el
+   aspa fina ni los triangulos de macOS. Dibujados con gradientes escalan con el
+   circulo y se ven igual en cualquier maquina.
+   --------------------------------------------------------------------------
+   QUE NO SE TOCA, Y POR QUE
+   `-moz-default-appearance: -moz-window-button-maximize` sigue en su sitio. Es
+   la marca por la que Gecko le dice a Windows donde esta el boton de maximizar,
+   y es lo que hace que al posarse encima salga el menu de Snap Layouts.
+   Cambiar la forma del boton no rompe esa integracion; quitar esa propiedad si.
+
+   Tampoco se mueve el grupo al lado izquierdo. Eso no es cosmetica: Zen decide
+   media disposicion de la barra segun `isWindowsStyledButtons` (ZenUIManager),
+   y forzarlo desde CSS deja la barra descuadrada. Zen ya lo trae resuelto en
+   `zen.view.experimental-force-window-controls-left` (about:config), que ademas
+   avisa a esa logica. Si quieres el conjunto mac completo, activa esa pref.
+   --------------------------------------------------------------------------
+   DEGRADACION SEGURA
+   Las reglas base = los circulos. Los `@media -moz-pref` solo anaden matices
+   (orden mac, apagado sin foco, simbolos siempre). Si esas media features
+   privilegiadas no estuviesen disponibles en la hoja de mods, se descartan y
+   quedan los circulos con el orden de Windows: nunca un boton sin pintar.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   `--zl-*`            valores internos (presets de tamano)
+   `--zen-lights-*`    los escribe Zen Mods desde las preferencias del mod.
+                       No se declaran aqui a proposito: si el campo esta vacio
+                       la propiedad no existe y gana el fallback.
+   `--zl-*-e`          valor efectivo = preferencia del usuario, o preset.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Preset por defecto: las medidas reales de macOS. 12px de diametro y 8px de
+     separacion dan los 20px de paso entre centros que usa el sistema. */
+  --zl-size: 12px;
+  --zl-gap: 8px;
+
+  /* Colores de macOS Big Sur en adelante */
+  --zl-close: #ff5f57;
+  --zl-min: #febc2e;
+  --zl-max: #28c840;
+
+  /* Valores efectivos */
+  --zl-size-e: var(--zen-lights-diameter, var(--zl-size));
+  --zl-gap-e: var(--zen-lights-gap, var(--zl-gap));
+  --zl-close-e: var(--zen-lights-close, var(--zl-close));
+  --zl-min-e: var(--zen-lights-min, var(--zl-min));
+  --zl-max-e: var(--zen-lights-max, var(--zl-max));
+
+  /* Todo lo demas se deriva del diametro, asi un tamano a medida no descoloca
+     los simbolos ni adelgaza el trazo de forma rara. */
+  --zl-glyph: calc(var(--zl-size-e) * 0.5);
+  --zl-stroke: max(1px, calc(var(--zl-size-e) * 0.09));
+
+  /* Anillo del borde. macOS lo lleva para que el circulo no se funda con un
+     fondo del mismo tono; sobre el cristal de Acrylic Zen es imprescindible,
+     porque detras puede haber cualquier cosa. */
+  --zl-ring: inset 0 0 0 max(0.5px, calc(var(--zl-size-e) * 0.04)) rgb(0 0 0 / 0.16);
+
+  /* Ventana sin foco: los tres apagados a la vez, como en macOS. Translucido y
+     no gris solido, para que sobre cristal siga leyendose el fondo. */
+  --zl-off: light-dark(rgb(0 0 0 / 0.17), rgb(255 255 255 / 0.15));
+}
+
+/* Presets del desplegable de tamano.
+   Zen Mods inyecta <div id="theme-Zen-Traffic-Lights" zen-lights-size="..."> */
+:root:has(#theme-Zen-Traffic-Lights[zen-lights-size='compact']) {
+  --zl-size: 10px;
+  --zl-gap: 7px;
+}
+
+:root:has(#theme-Zen-Traffic-Lights[zen-lights-size='mac']) {
+  --zl-size: 12px;
+  --zl-gap: 8px;
+}
+
+:root:has(#theme-Zen-Traffic-Lights[zen-lights-size='large']) {
+  --zl-size: 14px;
+  --zl-gap: 9px;
+}
+
+/* --------------------------------------------------------------------------
+   LAS DOS CONDICIONES BAJO LAS QUE ESTE MOD SE APARTA ENTERO
+
+   1. CONTRASTE ALTO. Con "contraste alto" de Windows, Firefox pinta estos
+      botones con los colores del sistema (`Field` / `ButtonText`) precisamente
+      porque el color por si solo no basta para distinguirlos. Tres circulos que
+      solo se diferencian por el tono son justo lo contrario de eso.
+
+   2. macOS. Ahi los semaforos son los de verdad, dibujados por AppKit, y este
+      mod es una imitacion suya para Windows. El DOM enganosamente coincide: los
+      `<toolbarbutton class="titlebar-button titlebar-close">` de browser.xhtml
+      existen tambien en la build de macOS, asi que los selectores casan y las
+      reglas aplican — pero encima llevan
+      `-moz-default-appearance: -moz-window-button-close`, que hace que el
+      sistema pinte el circulo real. El resultado de no poner esta condicion no
+      es "no pasa nada": son dos juegos de semaforos superpuestos, el nativo
+      debajo y el dibujado con gradientes encima, ligeramente descuadrados.
+
+      Zen ademas ya tiene lo suyo para esa barra en macOS
+      (`zen.widget.mac.mono-window-controls`, que los convierte en tres puntos
+      del color del titulo), y eso si es cosa suya.
+   -------------------------------------------------------------------------- */
+@media (not (prefers-contrast)) and (not (-moz-platform: macos)) {
+  /* ------------------------------------------------------------------------
+     2. La zona de click
+     El circulo mide 12px, pero el boton sigue ocupando todo el alto de la
+     barra: se encoge lo que se ve, no lo que se puede pulsar. El hueco entre
+     circulos se reparte como padding, asi que los tres blancos siguen siendo
+     zona util y no hay que apuntar fino.
+     ------------------------------------------------------------------------ */
+  .titlebar-button {
+    padding: 0 calc(var(--zl-gap-e) / 2) !important;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    /* AQUI NO VA `display`. NUNCA.
+       Maximizar y restaurar son dos botones distintos en el DOM, y Firefox
+       muestra uno u otro ocultando el que no toca:
+
+         :root:not([sizemode="maximized"], [sizemode="fullscreen"]) .titlebar-restore,
+         :root:is([sizemode="maximized"], [sizemode="fullscreen"]) .titlebar-max
+           { display: none }
+
+       Un `display: flex !important` aqui pisa ese `display: none` y salen los
+       dos a la vez: cuatro circulos en lugar de tres. Y no hace falta para
+       nada, porque en el UA sheet de XUL todo elemento ya es `display: flex`
+       (`xul.css`: `* { display: flex }`) y `toolbarbutton` ya viene con
+       align-items y justify-content centrados. Lo mismo vale para la regla que
+       oculta todo menos cerrar en el modo tableta de Windows 10. */
+
+    /* El rectangulo iluminado de Firefox, incluido el rojo de cerrar. Va con
+       !important porque sus reglas son mas especificas (`.titlebar-close:hover`)
+       y aqui basta con ser importante para ganarlas. */
+    background: none !important;
+  }
+
+  /* ------------------------------------------------------------------------
+     3. El circulo
+     `content: ""` corta la herencia de `content` que traia el glifo de Segoe:
+     el pseudo se sigue generando (caja vacia) pero ya no dibuja tipografia.
+     ------------------------------------------------------------------------ */
+  .titlebar-button::before {
+    content: '' !important;
+    display: block;
+    flex: 0 0 auto;
+    width: var(--zl-size-e);
+    height: var(--zl-size-e);
+    border-radius: 50%;
+    box-shadow: var(--zl-ring);
+    transition:
+      background-color 0.15s ease,
+      filter 0.12s ease;
+  }
+
+  .titlebar-close::before {
+    background-color: var(--zl-close-e);
+  }
+
+  .titlebar-min::before {
+    background-color: var(--zl-min-e);
+  }
+
+  /* Maximizar y restaurar son dos botones distintos; Firefox oculta uno u otro
+     segun `sizemode`. Comparten aspecto. */
+  .titlebar-max::before,
+  .titlebar-restore::before {
+    background-color: var(--zl-max-e);
+  }
+
+  /* ------------------------------------------------------------------------
+     4. Los simbolos
+     Dibujados con capas de gradiente sobre un `::after` centrado. El color sale
+     de `currentColor`, que se fija en el boton como una version oscura de su
+     propio circulo: asi un color personalizado arrastra su simbolo sin tener
+     que configurarlo aparte.
+     ------------------------------------------------------------------------ */
+  .titlebar-button::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: var(--zl-glyph);
+    height: var(--zl-glyph);
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+  }
+
+  .titlebar-close {
+    color: color-mix(in srgb, var(--zl-close-e) 38%, #000) !important;
+  }
+
+  .titlebar-min {
+    color: color-mix(in srgb, var(--zl-min-e) 38%, #000) !important;
+  }
+
+  .titlebar-max,
+  .titlebar-restore {
+    color: color-mix(in srgb, var(--zl-max-e) 38%, #000) !important;
+  }
+
+  /* Minimizar: una barra */
+  .titlebar-min::after {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 100% var(--zl-stroke);
+    background-position: center;
+  }
+
+  /* Cerrar: la misma cruz, girada. La caja se agranda un 15% porque al rotarla
+     45 grados cada barra pasa a ser una diagonal: mide lo mismo, pero su
+     anchura en pantalla se divide por raiz de 2, y sin corregir nada el aspa se
+     ve mas pequena que el menos de al lado. La correccion completa (x1.41)
+     tampoco vale: medido sobre el render, con ella los brazos llegan al borde
+     del circulo y el boton parece tachado en vez de llevar un aspa dentro. */
+  .titlebar-close::after {
+    width: calc(var(--zl-glyph) * 1.15);
+    height: calc(var(--zl-glyph) * 1.15);
+    background-image:
+      linear-gradient(currentColor, currentColor),
+      linear-gradient(currentColor, currentColor);
+    background-size: 100% var(--zl-stroke), var(--zl-stroke) 100%;
+    background-position: center, center;
+    rotate: 45deg;
+  }
+
+  /* Maximizar: los dos triangulos de macOS, cada uno con el angulo recto en su
+     esquina. Un gradiente lineal cortado a la mitad es exactamente medio
+     cuadrado en diagonal; el corte va de 49.5% a 50.5% en lugar de seco al 50%
+     porque un salto duro en diagonal sale dentado, y ese 1% es el antialias.
+
+     El 45% de la caja no es un numero redondo por casualidad: como cada
+     triangulo se ancla en una esquina opuesta, cualquier valor por encima del
+     50% hace que se solapen en el centro y los dos se lean como un unico
+     cuadrado partido por una raya. El 45% deja el hueco diagonal limpio. */
+  /* Maximizar y restaurar comparten simbolo a proposito, igual que en macOS: el
+     verde no cambia de dibujo segun el estado de la ventana, cambia de funcion.
+
+     La alternativa (puntas hacia dentro al estar maximizada) se probo y se
+     descarto midiendo: girando los angulos rectos hacia el centro los dos
+     triangulos se tocan y se leen como una sola figura, y separarlos lo
+     suficiente obliga a hacerlos tan pequenos que a 12px ya no se distingue
+     hacia donde apuntan. Un simbolo ambiguo es peor que uno constante. */
+  .titlebar-max::after,
+  .titlebar-restore::after {
+    width: calc(var(--zl-glyph) * 1.15);
+    height: calc(var(--zl-glyph) * 1.15);
+    background-image:
+      linear-gradient(135deg, currentColor 49.5%, transparent 50.5%),
+      linear-gradient(315deg, currentColor 49.5%, transparent 50.5%);
+    background-size: 45% 45%;
+    background-position: top left, bottom right;
+  }
+
+  /* ------------------------------------------------------------------------
+     5. Cuando aparecen los simbolos
+     Como en macOS: entran los tres a la vez al pasar por encima del grupo, no
+     uno a uno al apuntar cada boton.
+     ------------------------------------------------------------------------ */
+  .titlebar-buttonbox:hover .titlebar-button::after {
+    opacity: 1;
+  }
+
+  @media -moz-pref('zen-lights.always-symbols') {
+    .titlebar-button::after {
+      opacity: 1;
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     6. Pulsacion y ventana sin foco
+     ------------------------------------------------------------------------ */
+  .titlebar-button:hover::before {
+    filter: brightness(1.08);
+  }
+
+  .titlebar-button:active::before {
+    filter: brightness(0.85);
+  }
+
+  /* Los selectores de aqui llevan una pseudo-clase mas que los del circulo, asi
+     que ganan por especificidad sin necesidad de !important. */
+  @media -moz-pref('zen-lights.dim-inactive') {
+    .titlebar-button:-moz-window-inactive::before {
+      background-color: var(--zl-off);
+      box-shadow: none;
+    }
+
+    .titlebar-button:-moz-window-inactive::after {
+      opacity: 0;
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     7. Orden
+     En el DOM van minimizar, maximizar, restaurar y cerrar, en ese orden.
+     macOS los pone al reves: cerrar primero. Se reordena con `order` en lugar
+     de mover nodos, que es lo unico que puede hacer una hoja de estilo y
+     ademas no interfiere con la deteccion del boton de maximizar por parte de
+     Windows: esa se calcula sobre la caja real, este o donde este.
+     ------------------------------------------------------------------------ */
+  @media -moz-pref('zen-lights.mac-order') {
+    .titlebar-close {
+      order: -3;
+    }
+
+    .titlebar-min {
+      order: -2;
+    }
+
+    .titlebar-max,
+    .titlebar-restore {
+      order: -1;
+    }
+  }
+
+  /* ------------------------------------------------------------------------
+     8. Accesibilidad
+     ------------------------------------------------------------------------ */
+  @media (prefers-reduced-motion: reduce) {
+    .titlebar-button::before,
+    .titlebar-button::after {
+      transition: none;
+    }
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. HOOKS DE COMPATIBILIDAD
+   Convive con Acrylic Zen sin depender de el: aqui no se toca ningun fondo,
+   solo los tres botones. Si quieres que los circulos sigan la paleta de otro
+   mod, sobreescribe estos tokens desde el:
+
+     --zl-close-e / --zl-min-e / --zl-max-e   color de cada circulo
+     --zl-size-e                              diametro (todo lo demas escala)
+     --zl-ring                                anillo del borde
+     --zl-off                                 color con la ventana sin foco
+
+   Los mods se concatenan en zen-themes.css por orden de instalacion; si otro
+   mod se instala DESPUES y usa !important sobre `.titlebar-button`, gana el.
+   En ese caso reinstala este.
+   -------------------------------------------------------------------------- */

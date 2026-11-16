@@ -1,0 +1,149 @@
+{
+  "mod": "zen-modo-oscuro",
+  "name": "Zen Modo Oscuro",
+  "verificado_en": "Zen 1.23b / Gecko 157.0 / BuildID 20261002114451",
+  "testigo": "--zmo-testigo",
+  "nota": "Como Zen Sin Cristal, engancha en el chrome por codigo (la entrada del clic derecho) y en los procesos de contenido (el inyector), asi que casi todo su contrato es de Firefox y no de Zen. Lo que NO cabe aqui como enganche comprobable es lo de dentro de casa: el atributo `zen-modo-oscuro`, que escribe mods/appearance/dark-mode/nativo/proceso.js y leen las guardas de mods/appearance/acrylic-glass/web/50-sites.css y mods/appearance/acrylic-glass/web/90-exclusions.css. Lo vigila dev/tools/probar-css.mjs, selector por selector. Y tampoco cabe la frontera con el MOTOR: Dark Reader, vendorizado en mods/appearance/dark-mode/motor/. Su version esta anotada ahi, y proceso.js le aplica tres ajustes en memoria (la shim de window.chrome, el bloque del proxy de hojas, y la envoltura contra el `define` global) que buscan un texto concreto del motor y avisan en la consola si ya no lo encuentran: al actualizar Dark Reader hay que abrir una pagina clara y otra de Meta y mirar que sigue oscureciendo.",
+  "hooks": [
+    {
+      "token": "#contentAreaContextMenu",
+      "buscar": "contentAreaContextMenu",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "donde se cuelga la entrada 'Activar modo oscuro'",
+      "si_falta": "no hay interruptor. ventana.js lo dice en la consola del navegador con 'no hay #contentAreaContextMenu en esta ventana'. Buscar el id nuevo del popup del area de contenido y cambiarlo en mods/appearance/dark-mode/nativo/ventana.js",
+      "nota_ancla": "lo escribe browser-context.inc, que se inlinea en browser.xhtml al construir: la ruta que existe en el omni.ja es la del xhtml"
+    },
+    {
+      "token": "windowtype=\"navigator:browser\"",
+      "buscar": "navigator:browser",
+      "kind": "attr",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "distinguir una ventana de navegador de un dialogo cuando salta domwindowopened, para cargar ventana.js solo en las primeras",
+      "si_falta": "ventana.js no se carga en ninguna parte, en silencio",
+      "nota_ancla": "en el elemento raiz de la ventana"
+    },
+    {
+      "token": "#context-savepage",
+      "buscar": "context-savepage",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "cosmetico",
+      "opcional": true,
+      "motivo": "es solo el vecino ANTES del cual se inserta la entrada cuando no esta el submenu de Zen Cristal. Si no esta, se prueban context-take-screenshot, context-viewsource y context-selectall, y si tampoco, la entrada se anade al final del menu. Se ve peor colocada y funciona igual",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "colocar la entrada en el grupo de acciones sobre 'esta pagina' en vez de suelta al final",
+      "si_falta": "la entrada aparece al final del menu. Cambiar la lista VECINOS de mods/appearance/dark-mode/nativo/ventana.js"
+    },
+    {
+      "token": "document-element-inserted",
+      "buscar": "document-element-inserted",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "-",
+      "para": "el momento en que se arranca el motor: ya hay <html> y todavia no ha corrido ningun script de la pagina, asi que no hay un fogonazo claro antes del oscuro",
+      "si_falta": "ningun documento se oscurece. Es el mismo enganche que usan Zen Sintonia y Zen Sin Cristal: si se rompe, se rompen los tres",
+      "nota_ancla": "la emite Gecko al crear el elemento raiz de un documento: no vive en ningun archivo del omni.ja, asi que no hay ancla que comprobar",
+      "comprobable": false,
+      "motivo_no_comprobable": "es una notificacion de Gecko, no un nombre que viva en un archivo del omni.ja"
+    },
+    {
+      "token": "domwindowopened",
+      "buscar": "domwindowopened",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "-",
+      "para": "engancharse a las ventanas que nazcan despues del arranque, que son todas menos la primera",
+      "si_falta": "la entrada del menu solo aparece en las ventanas que ya estaban abiertas al cargar el mod, o sea en ninguna. Vive en core/config.js, compartido",
+      "comprobable": false,
+      "motivo_no_comprobable": "es una notificacion de Gecko, no un nombre que viva en un archivo del omni.ja"
+    },
+    {
+      "token": "loadSubScript",
+      "buscar": "loadSubScript",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (mozIJSSubScriptLoader)",
+      "para": "cargar ventana.js en el ambito de la ventana. Solo acepta esquemas de confianza, y file:// NO lo es; por eso el cargador registra una sustitucion resource://",
+      "si_falta": "la entrada del menu no aparece en ninguna ventana",
+      "comprobable": false,
+      "motivo_no_comprobable": "vive en xul.dll, no en el omni.ja"
+    },
+    {
+      "token": "sharedData",
+      "buscar": "sharedData",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (MozSharedMap)",
+      "para": "llevar el motor (355 KB) del cargador, que corre en el proceso padre, a los procesos de contenido, de forma SINCRONA: el inyector lo necesita en el momento en que nace el documento",
+      "si_falta": "el inyector dice 'sharedData no trae el motor' en la consola y ningun documento se oscurece. Es el mismo mecanismo que usa Zen Letra Viva",
+      "comprobable": false,
+      "motivo_no_comprobable": "vive en xul.dll, no en el omni.ja"
+    },
+    {
+      "token": "Cu.Sandbox",
+      "buscar": "Sandbox",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (Components.utils.Sandbox)",
+      "para": "el ambito donde corre Dark Reader: principal de la pagina, window como prototipo, sin Xray. Es lo mismo que un userscript",
+      "si_falta": "el motor no arranca en ninguna pagina. Es el mismo mecanismo que usan Zen Letra Viva y Zen Sintonia",
+      "comprobable": false,
+      "motivo_no_comprobable": "vive en xul.dll, no en el omni.ja"
+    },
+    {
+      "token": "getBaseDomainFromHost",
+      "buscar": "getBaseDomainFromHost",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "xul.dll (nsIEffectiveTLDService)",
+      "para": "apuntar el dominio BASE en la lista (shopify.com y no admin.shopify.com), que es el que acierta con sufijos publicos como .com.co",
+      "si_falta": "el interruptor cae a guardar el host entero: sigue funcionando, pero hay que pulsarlo en cada subdominio",
+      "nota_ancla": "expuesto como Services.eTLD"
+    },
+    {
+      "token": "zen.modooscuro.sitios",
+      "buscar": "zen.modooscuro.sitios",
+      "kind": "pref",
+      "owner": "zen",
+      "severity": "critico",
+      "declarado_en": "-",
+      "para": "la lista de sitios con el modo oscuro puesto: la escribe ventana.js y la leen los inyectores de todos los procesos, replicada por Gecko",
+      "si_falta": "la entrada del menu se marca y nada se oscurece",
+      "comprobable": false,
+      "motivo_no_comprobable": "la declara este repo en el directorio de instalacion (defaults/pref/zen-modo-oscuro.js), no la build de Zen",
+      "sin_default": true
+    }
+  ],
+  "vivo": [
+    {
+      "que": "la hoja del mod esta aplicada (el testigo llega al chrome)",
+      "js": "return getComputedStyle(document.documentElement).getPropertyValue('--zmo-testigo').trim();",
+      "espera": "1",
+      "severity": "degrada"
+    },
+    {
+      "que": "la entrada 'Activar modo oscuro' existe en el clic derecho de esta ventana",
+      "js": "const i = document.getElementById('zen-oscuro-item'); return i ? 'puesta' : 'sin-entrada';",
+      "espera": "puesta",
+      "severity": "critico",
+      "nota": "si sale 'sin-entrada', la pieza nativa no esta instalada o no cargo: node installer/instalar-modo-oscuro.mjs y reiniciar Zen del todo. Si estaba instalada, mirar la consola del navegador por '[modo-oscuro]'"
+    },
+    {
+      "que": "el motor llego a sharedData: el cargador lo publico",
+      "js": "try { const m = Services.ppmm.sharedData.get('zen-oscuro:motor'); return m && m.length > 100000 ? 'publicado' : 'sin-motor'; } catch (e) { return 'error: ' + e; }",
+      "espera": "publicado",
+      "severity": "critico"
+    }
+  ]
+}

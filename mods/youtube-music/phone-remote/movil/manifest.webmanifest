@@ -1,0 +1,13 @@
+{
+  "name": "Remoto de YouTube Music",
+  "short_name": "Remoto",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#141416",
+  "theme_color": "#141416",
+  "icons": [
+    { "src": "/icono.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icono-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "mod": "zen-sintonia",
+  "name": "Zen Sintonia",
+  "verificado_en": "music.youtube.com el 2026-07-31 / Zen 1.21.9b / Gecko 153",
+  "nota": "Cruza la frontera 6, que comparte con letra-viva porque la manda YouTube Music, y estrena la 7: el acuerdo con el widget, que vive en OTRO repo y no lo sincroniza nada (ver el ultimo enganche, zen.sintonia.puerto). Casi ningun enganche se puede comprobar contra los omni.ja, porque no vive en el navegador sino en una web ajena que se despliega cuando quiere y sin avisar; van marcados como comprobable 'vivo'. Lo que si se comprueba desde fuera son las prefs del cargador nativo, y lo que se comprueba sin nada de red es dev\\tools\\probar-sintonia.mjs, que monta los dos lados del puente con dobles. La diferencia con letra-viva es que este mod DEGRADA en lugar de romperse: casi todo tiene respaldo, y cuando falla el respaldo se pierde un campo, no el mod.",
+  "hooks": [
+    {
+      "token": "navigator.mediaSession.metadata",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "w3c",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "el estandar de Media Session; lo rellena music.youtube.com",
+      "para": "LA FUENTE PRINCIPAL: titulo, artista, album y las portadas. Es el enganche mas estable de todos porque no es de YouTube Music sino del navegador, y ademas es justo lo que ellos alimentan para que la cancion salga en el panel de volumen de Windows: si dejara de estar, se les rompe a ellos antes que a nosotros",
+      "si_falta": "se cae al respaldo por DOM (barra del reproductor) y se pierde la portada, que solo viene por aqui. El widget sigue mostrando titulo y artista"
+    },
+    {
+      "token": "video",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "youtube-music",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "el DOM de music.youtube.com",
+      "para": "saber si SUENA o esta en pausa, y el tiempo. Es HTML estandar, no un componente suyo, y es el mismo enganche que usa Zen Letra Viva de reloj",
+      "si_falta": "todo se manda como 'en pausa' y el widget deja de animarse; el titulo sigue llegando"
+    },
+    {
+      "token": "ad-showing",
+      "buscar": "-",
+      "kind": "class",
+      "owner": "youtube-music",
+      "severity": "degrada",
+      "comprobable": "vivo",
+      "declarado_en": "las clases de #movie_player",
+      "para": "distinguir un anuncio de una cancion. Mientras esta puesta, el titulo que da mediaSession es el DEL ANUNCIO, y el widget conserva el ultimo tema de verdad en lugar de ponerlo en pantalla",
+      "si_falta": "el nombre del anuncio aparece en el stream como si fuera una cancion. Es el mismo enganche que letra-viva; buscar la clase nueva en #movie_player con un anuncio en marcha y ajustar esAnuncio() en mods\\youtube-music\\obs-now-playing\\nativo\\proceso.js"
+    },
+    {
+      "token": "ytmusic-player-bar .title",
+      "buscar": "-",
+      "kind": "class",
+      "owner": "youtube-music",
+      "severity": "cosmetico",
+      "comprobable": "vivo",
+      "declarado_en": "la barra del reproductor, abajo",
+      "para": "titulo del tema por DOM. Es RESPALDO: solo se usa si mediaSession no trae nada",
+      "si_falta": "no se nota mientras mediaSession funcione. Si fallan los dos a la vez, no hay cancion que mandar y el widget se oculta"
+    },
+    {
+      "token": "ytmusic-player-bar .byline",
+      "buscar": "-",
+      "kind": "class",
+      "owner": "youtube-music",
+      "severity": "cosmetico",
+      "comprobable": "vivo",
+      "declarado_en": "la barra del reproductor, bajo el titulo",
+      "para": "artista y album por DOM, separados por un bullet. Es RESPALDO igual que el anterior",
+      "si_falta": "lo mismo. Si cambian el separador, el artista sale pegado al album, y eso ya indica que mediaSession habia fallado antes"
+    },
+    {
+      "token": "lh3.googleusercontent.com",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "google",
+      "severity": "cosmetico",
+      "comprobable": "vivo",
+      "declarado_en": "las URL de mediaSession.artwork",
+      "para": "de donde vienen las caratulas, y la cola =wNNN-hNNN de la URL es lo que permite pedirlas a 600px en vez de a 60. La lista de hosts esta acotada A PROPOSITO en los dos lados (mod y widget): es una URL que sale de una pagina web y termina descargandola otro proceso",
+      "si_falta": "si sirven las portadas desde un host nuevo, se descartan y el widget pinta su nota de repuesto. Anadir el host a PORTADAS en proceso.js Y a PortadasPermitidas en server.ps1: si solo se anade en uno, no sirve de nada"
+    },
+    {
+      "token": "document-element-inserted",
+      "buscar": "-",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "comprobable": "vivo",
+      "declarado_en": "notificacion del observador, en el proceso de contenido",
+      "para": "el momento en que el documento ya tiene raiz pero no ha corrido ningun script de la pagina: el equivalente exacto de @run-at document-start. Es donde se engancha el inyector",
+      "si_falta": "el mod no se inyecta en ninguna pestana. Habria que pasar a DOMWindowCreated o a un JSWindowActor; este mod aguanta una inyeccion mas tardia sin problema, porque de todas formas sondea. Lo comparte con letra-viva"
+    },
+    {
+      "token": "general.config.filename",
+      "buscar": "general.config.filename",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "modules/TelemetryEnvironment.sys.mjs",
+      "para": "que Zen ejecute core\\config.js al arrancar. ADMITE UN SOLO NOMBRE, no una lista: por eso el cargador es compartido por todos los mods nativos del repo en lugar de haber uno por mod. OJO con el archivo: ahi solo se LEE, para telemetria. Quien la implementa es nsReadConfig.cpp, compilado dentro de xul.dll, asi que no hay cadena que buscar en los omni.ja y ese es el unico sitio del paquete donde aparece el nombre",
+      "si_falta": "si Mozilla retira el autoconfig legado, este mod se queda sin via de instalacion: a diferencia de letra-viva, no tiene una segunda por gestor de userscripts, porque necesita el lado privilegiado para hablar con el widget sin CORS ni CSP",
+      "sin_default": true
+    },
+    {
+      "token": "general.config.obscure_value",
+      "buscar": "general.config.obscure_value",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "greprefs.js",
+      "para": "a 0 permite que config.js sea texto normal. Su valor por defecto es 13, y con el el navegador espera el archivo cifrado con un ROT-13 heredado de Netscape: con 13 y un archivo en claro, el cargador lee basura y NO dice nada",
+      "si_falta": "el cargador nativo no arranca en silencio. Es el fallo mas callado de esta pieza",
+      "sin_default": true
+    },
+    {
+      "token": "general.config.sandbox_enabled",
+      "buscar": "-",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "critico",
+      "comprobable": false,
+      "motivo": "no hay cadena que buscar: la implementa nsReadConfig.cpp, compilado dentro de xul.dll, y a diferencia de general.config.filename no aparece ni siquiera en la telemetria",
+      "declarado_en": "el cargador de autoconfig",
+      "para": "a false es lo que deja al config.js usar Services y Components. Sin eso corre en un entorno sin nada dentro y falla en la primera linea",
+      "si_falta": "el cargador no arranca. Se ve en la consola del navegador como un error de Components no definido"
+    },
+    {
+      "token": "zen.sintonia.puerto",
+      "buscar": "-",
+      "kind": "pref",
+      "owner": "repo",
+      "severity": "critico",
+      "comprobable": false,
+      "declarado_en": "mods\\youtube-music\\obs-now-playing\\nativo\\config-prefs.js, sembrada por el instalador",
+      "para": "el puerto del widget. TIENE QUE COINCIDIR con el -Port de widgets\\music\\server.ps1; son dos repos distintos y nada los sincroniza solo",
+      "si_falta": "el mod manda a 9463 por defecto. Si el widget escucha en otro, no llega nada y en consola sale 'el widget no contesta'"
+    }
+  ]
+}

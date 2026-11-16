@@ -1,0 +1,144 @@
+/* ==========================================================================
+   Acrylic Web — nivel base (siempre se incluye)
+   --------------------------------------------------------------------------
+   Por que esto hace falta y por que ninguna herramienta externa puede hacerlo:
+
+   Una pagina web es opaca porque ELLA MISMA pinta su fondo (`body { background:
+   #fff }`). Eso vive dentro del documento. Mica For Everyone, o cualquier cosa
+   que actue sobre la ventana, solo puede cambiar el backdrop del sistema por
+   detras: no tiene forma de tocar el DOM de la pagina. Por eso, con el acrilico
+   ya funcionando, las webs seguian tapandolo.
+
+   La unica forma de quitar ese fondo es inyectar CSS dentro del documento. Este
+   archivo se instala como `<perfil>\chrome\userContent.css`, que Gecko carga
+   como hoja de ORIGEN USUARIO. En la cascada CSS el `!important` de usuario gana
+   al `!important` del autor, asi que no hacen falta trucos de especificidad: la
+   regla se aplica aunque el sitio insista.
+
+   Requiere `toolkit.legacyUserProfileCustomizations.stylesheets = true`.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   LA SALIDA DE EMERGENCIA: html[zen-sin-cristal]
+
+   Todas las reglas de este archivo, de 10-wrappers y de 20-aggressive llevan
+   una guarda: dejan de aplicar en cuanto el documento tiene el atributo
+   `zen-sin-cristal` en su elemento raiz. Ese atributo lo pone el mod nativo
+   Zen Sin Cristal (mods/appearance/glass-toggle/) cuando el sitio esta en su lista de apagados,
+   y se pone y se quita en caliente, sin recargar la pagina.
+
+   POR QUE UNA GUARDA Y NO UN BLOQUE DE RESCATE AL FINAL. Deshacer esto desde
+   otra regla es imposible, y conviene saber por que en vez de intentarlo: la
+   unica forma de devolverle a la pagina SU fondo —su color, su imagen, su
+   degradado— es que nuestra regla no llegue a aplicar. `revert` no vale: en una
+   hoja de USUARIO retrocede al origen del NAVEGADOR, saltandose justo lo que
+   queremos recuperar, que es lo que dice el autor de la pagina. Y un
+   `background-color: Canvas` de rescate —lo que hace la lista de
+   90-exclusions.css— tapa el fondo propio del sitio: en una web que ya era
+   oscura la dejaria blanca con su texto claro encima, o sea ilegible. Por eso
+   el interruptor va ANTES, no despues.
+
+   LA GUARDA NO CAMBIA LA ESPECIFICIDAD, y eso es deliberado: subirla habria
+   hecho que estas reglas generales empezaran a ganarle a los bloques por sitio
+   de 50-sites.css, que hoy ganan por ir despues en la hoja. De ahi las dos
+   formas, que no son intercambiables:
+
+     html:not(:where([zen-sin-cristal]))         para el propio <html>
+     :where(html:not([zen-sin-cristal])) body    para lo de dentro
+
+   `:where()` aporta cero y `:not()` cuenta lo que lleva dentro: envolviendo el
+   ARGUMENTO en `:where()` la guarda sale gratis, y envolviendo el ANCESTRO
+   entero, el descendiente conserva la suya.
+
+   Y HAY UN TERCER CASO QUE NO ES NINGUNO DE LOS DOS ----------------- MEDIDO -
+   Si el primer compuesto del selector es una CLASE QUE VIVE EN `<html>` —una
+   clase de tema, tipico— la forma del prefijo no vale: pide esa clase DENTRO de
+   html, y html no es descendiente de si mismo. La regla deja de casar entera y
+   sin ruido. Paso de verdad con Spotify (`html.encore-dark-theme`) el
+   12-09-2026: el bloque murio y el sitio salio con el viewport en negro.
+   Ahi la guarda va de SUFIJO, pegada a esa clase:
+
+     html.encore-dark-theme:not(:where([zen-sin-cristal])) .Root
+
+   YA NO HAY LIMITE: 50-sites.css TAMBIEN LA LLEVA (12-09-2026)
+   Durante un tiempo aqui ponia que los 28 sitios que entonces tenian bloque se quedaban
+   fuera, y que la guarda se le anadiria a mano al que hiciera falta. Resulto ser
+   justo al reves de como se usa el interruptor: los sitios que uno apaga son los
+   que visita a diario, y los que visita a diario son precisamente los que tienen
+   bloque propio. En Kick o en YouTube el menu se marcaba y no pasaba nada.
+
+   Asi que ahora los 315 selectores de 50-sites.css llevan la guarda, en estas
+   mismas dos formas y por la misma razon de especificidad: si subiera, los
+   bloques por sitio empezarian a ganarle a 90-exclusions.css, que gana por ir el
+   ultimo a igual especificidad, y se caerian los rescates de Google y de los
+   wikis. La pasada se hizo con dev/tools/poner-guarda.mjs y la vigila
+   dev/tools/probar-css.mjs, que falla si una regla nueva se queda sin ella.
+
+   El unico que sigue SIN guarda es 90-exclusions.css, y tampoco es un olvido:
+   sus reglas devuelven el fondo solido, que es exactamente lo que el interruptor
+   quiere. Guardarlas seria apagar el rescate al pedir que se apague el cristal.
+   -------------------------------------------------------------------------- */
+
+/* --------------------------------------------------------------------------
+   EL LIMITE REAL DE ESTO, Y COMO SE GESTIONA
+   El cristal va tenido de oscuro. Un sitio que se pinta en claro tiene el texto
+   en negro: al quitarle el fondo blanco, ese texto queda sobre el acrilico
+   oscuro y se vuelve ilegible. No es un fallo del CSS, es contraste: no hay
+   forma en CSS de detectar si una pagina se esta renderizando clara u oscura,
+   asi que no se puede decidir automaticamente.
+
+   Se ataca por dos lados:
+     1. Aqui abajo se fuerza `color-scheme: dark`, y la pref
+        layout.css.prefers-color-scheme.content-override = 0 hace lo propio con
+        prefers-color-scheme. Con eso todo sitio que SEPA pintarse oscuro lo
+        hace, y esos quedan perfectos.
+     2. Los que no saben (Wikipedia sin cuenta, muchas webs viejas) van a la
+        lista de rescate de 90-exclusions.css, donde recuperan su fondo solido.
+   -------------------------------------------------------------------------- */
+
+/* Hace que el UA use su paleta oscura para lo que el sitio no pinte: lienzo,
+   texto por defecto, controles de formulario, scrollbars. Convierte muchas
+   paginas sin estilos propios de "texto negro invisible" a legibles. */
+html:not(:where([zen-sin-cristal])) {
+  color-scheme: dark !important;
+}
+
+/* El fondo del documento. Solo `background-color`: si el sitio usa una imagen o
+   un degradado de diseno se respeta, porque quitarlos rompe portadas y heros. */
+html:not(:where([zen-sin-cristal])),
+:where(html:not([zen-sin-cristal])) body {
+  background-color: transparent !important;
+}
+
+/* Gecko dibuja el lienzo por defecto detras del documento cuando la pagina no
+   declara color. Con el browser en modo transparente
+   (browser.tabs.allow_transparent_browser) ese lienzo ya no se pinta, asi que
+   lo de arriba basta para que se vea el cristal de la ventana. */
+
+/* Los iframes heredan el mismo tratamiento; si no, un iframe opaco a pantalla
+   completa (banners de cookies, reproductores incrustados) vuelve a tapar. */
+html:not([src]):not(:where([zen-sin-cristal])) > body {
+  background-color: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   SI VES MANCHAS NEGRAS: casi seguro es `backdrop-filter`
+
+   `backdrop-filter` necesita un backdrop que muestrear. En una pagina que
+   hemos vuelto transparente, muchas veces no hay nada pintado detras DENTRO
+   del documento: el velo de la ventana y el acrilico viven fuera de el. Gecko
+   fotografia ese vacio y lo compone en NEGRO.
+
+   Es el mismo limite que impide usar `mix-blend-mode: screen` sobre cristal:
+   el blending y el backdrop solo ven el interior del documento.
+
+   Lo usan muchas cabeceras pegajosas y muchos modales. Donde tienen contenido
+   detras funciona bien; donde no, sale un rectangulo negro. Por eso NO se
+   desactiva a lo bruto aqui: se perderian los que si funcionan.
+
+   Si una web concreta te sale con manchas negras, anade su dominio abajo:
+
+   @-moz-document domain(ejemplo.com) {
+     * { backdrop-filter: none !important; }
+   }
+   -------------------------------------------------------------------------- */

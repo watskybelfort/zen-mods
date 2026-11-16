@@ -1,0 +1,43 @@
+[
+  {
+    "property": "zen-motion.speed",
+    "label": "Velocidad del movimiento",
+    "type": "dropdown",
+    "defaultValue": "smooth",
+    "options": [
+      { "label": "Snappy — 120ms, responde al instante", "value": "snappy" },
+      { "label": "Smooth — 200ms, el equilibrio", "value": "smooth" },
+      { "label": "Cinematic — 340ms, mas presente", "value": "cinematic" }
+    ]
+  },
+  {
+    "property": "zen-motion.font-enabled",
+    "label": "Usar tipografia propia en la interfaz",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "zen-motion.urlbar",
+    "label": "Animar el buscador y sus resultados en cascada",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "zen-motion.tabs",
+    "label": "Animar la apertura de pestanas",
+    "type": "checkbox",
+    "defaultValue": true
+  },
+  {
+    "property": "zen-motion.font",
+    "label": "Tipografia de la interfaz (vacio = Montserrat)",
+    "type": "string",
+    "placeholder": "Montserrat"
+  },
+  {
+    "property": "zen-motion.duration",
+    "label": "Duracion exacta con unidad, para ajuste fino (vacio = usar la velocidad)",
+    "type": "string",
+    "placeholder": "0.2s"
+  }
+]

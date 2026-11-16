@@ -1,0 +1,19 @@
+// ==UserScript==
+// @name         Zen Letra Viva
+// @namespace    https://github.com/watskybelfort/zen-mods
+// @version      1.2.1
+// @description  La letra corre con la cancion en YouTube Music: karaoke palabra a palabra, escenario en lugar del video, pantalla completa y mini tira sobre la barra. Y pone el videoclip cuando la cancion lo tiene.
+// @author       local
+// @homepageURL  https://github.com/watskybelfort/zen-mods
+// @match        https://music.youtube.com/*
+// @run-at       document-start
+// @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// @grant        GM_listValues
+// @connect      lrclib.net
+// @connect      apic-desktop.musixmatch.com
+// @connect      www.youtube.com
+// @noframes
+// ==/UserScript==

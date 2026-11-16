@@ -1,0 +1,3677 @@
+/* ==========================================================================
+   Acrylic Web — ajustes por sitio
+   --------------------------------------------------------------------------
+   `@-moz-document` solo esta permitido en hojas de usuario, que es justo lo que
+   es userContent.css. Aqui van los sitios que no caen con las reglas genericas.
+
+   TRES FORMAS DE ATACAR UN FONDO, EN ORDEN DE PREFERENCIA
+     1. El token del sistema de diseno (`--bgColor-default`, `--color-background-body`).
+        Es lo mas estable: los nombres de clase cambian cada semana, los tokens
+        casi nunca. Ademas el sitio sigue calculando sus contrastes solo.
+     2. El elemento, cuando el token esta hasheado y no se puede nombrar.
+     3. La clase utilitaria, en sitios tipo Tailwind que no exponen tokens.
+
+   NUNCA se targetean clases con hash de build (`.cRMumF`, `.RNNXgb`): duran una
+   semana. Si un bloque deja de funcionar, casi siempre es que el sitio renombro
+   un token; vuelve a medirlo con la receta de abajo.
+
+   COMO MEDIR UN SITIO
+     1. Abrelo en Zen y pulsa F12.
+     2. En la consola, busca las capas grandes que siguen tapando. OJO: hay que
+        mirar el degradado ademas del color. Mirar solo `background-color` es
+        lo que dejo pasar la lamina de pagina entera de YouTube Music, que
+        tapaba con un `linear-gradient` y tenia el color transparente:
+
+        [...document.querySelectorAll('*')]
+          .filter(el => { const r = el.getBoundingClientRect();
+            const cs = getComputedStyle(el);
+            const a = cs.backgroundColor.match(/[\d.]+/g);
+            const grad = cs.backgroundImage !== 'none' && !cs.backgroundImage.includes('url(');
+            return r.width > 500 && r.height > 300 &&
+              (grad || (a && (a.length < 4 || +a[3] > 0.85))); })
+          .map(el => el.tagName + (el.id ? '#'+el.id : '') + ' ' +
+            getComputedStyle(el).backgroundColor + ' ' + getComputedStyle(el).backgroundImage.slice(0, 60))
+
+     3. Para saber si el color viene de un token, mira la regla en el inspector:
+        si dice `var(--algo)`, sobreescribe esa variable en `html, body`.
+     4. Si la capa tapa con degradado, `background-color: transparent` NO la
+        quita: hace falta `background-image: none`.
+   ========================================================================== */
+
+/* --- YouTube ------------------------------------------------------- MEDIDO -
+   `ytd-app` pinta #0f0f0f con `var(--t3e41d7b17b187f69)`: un token hasheado que
+   cambia en cada build, asi que ahi hay que ir por el elemento. Los tokens
+   semanticos con nombre estable si se sobreescriben, porque son los que usan
+   los componentes sueltos (menus, chips, paneles).
+   Medido en la home y en una pagina de video, con el tema oscuro activo. */
+@-moz-document domain(youtube.com) {
+  :where(html:not([zen-sin-cristal])) ytd-app,
+  :where(html:not([zen-sin-cristal])) #contentContainer,
+  :where(html:not([zen-sin-cristal])) #content-wrapper,
+  :where(html:not([zen-sin-cristal])) #guide-content,
+  :where(html:not([zen-sin-cristal])) #page-manager,
+  :where(html:not([zen-sin-cristal])) #skip-navigation,
+  :where(html:not([zen-sin-cristal])) ytd-masthead #background,
+  :where(html:not([zen-sin-cristal])) tp-yt-app-drawer,
+  :where(html:not([zen-sin-cristal])) tp-yt-app-header {
+    background: transparent !important;
+  }
+
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body {
+    --yt-sys-color-baseline--base-background: transparent !important;
+    --yt-deprecated-general-background-a: transparent !important;
+    --yt-deprecated-general-background-b: transparent !important;
+    --yt-sys-color-baseline--raised-background: rgb(255 255 255 / 0.07) !important;
+    --dark-theme-background-color: rgb(255 255 255 / 0.07) !important;
+  }
+
+  /* --- BUSCADOR FLOTANTE ------------------------------------------------
+     La barra superior es una banda fija (#masthead-container, position:fixed,
+     z-index 2020) con su propia capa opaca detras (#background.ytd-masthead,
+     rgb(15,15,15)). Sobre cristal esa capa se suma al velo de la ventana y la
+     banda se lee mas oscura que el resto de la pagina.
+
+     En vez de compensar el color a ojo, se quita la banda: el buscador pasa a
+     ser una pastilla de cristal centrada y flotante. Sin banda no hay doble
+     capa que compensar.
+
+     PARA DESACTIVARLO: Ajustes > Zen Mods > Acrylic Zen > "Buscador flotante
+     de YouTube". El interruptor es el apartado 2.quinquies, al final de este
+     bloque; no hace falta tocar el CSS ni reinstalar.
+     --------------------------------------------------------------------- */
+
+  /* 1. Fuera la banda y su fondo */
+  :where(html:not([zen-sin-cristal])) #masthead-container,
+  :where(html:not([zen-sin-cristal])) ytd-masthead,
+  :where(html:not([zen-sin-cristal])) #masthead,
+  :where(html:not([zen-sin-cristal])) #container.ytd-masthead {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytd-masthead #background {
+    background: transparent !important;
+    opacity: 0 !important;
+  }
+
+  /* 2. Centrado de verdad. YouTube usa flex con #center flexible, asi que el
+     buscador queda descentrado porque el logo (169px) y los botones (225px) no
+     miden lo mismo. Con una rejilla 1fr / auto / 1fr el centro es el centro
+     real de la ventana, ocupen lo que ocupen los lados.
+
+     LAS COLUMNAS VAN ESCRITAS, NO A LO QUE CAIGA. Al sacar #center del flujo
+     (apartado 2.bis) solo quedan dos hijos colocandose solos, y #start y #end
+     se meten en las columnas 1 y 2: el resultado es que los botones de la
+     derecha aparecen en MITAD de la barra, con la pagina asomando a su
+     derecha. Fijando la columna de cada uno, quitar el de en medio no mueve a
+     los otros dos. */
+  :where(html:not([zen-sin-cristal])) #container.ytd-masthead {
+    display: grid !important;
+    grid-template-columns: 1fr auto 1fr !important;
+    align-items: center !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #start.ytd-masthead {
+    grid-column: 1 !important;
+    justify-self: start !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #end.ytd-masthead {
+    grid-column: 3 !important;
+    justify-self: end !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead yt-searchbox,
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead .ytSearchboxComponentHost {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* 2.bis. EN LA BARRA EN REPOSO, Y AL CENTRO CUANDO SE USA ---------- MEDIDO -
+     El buscador vive donde ha vivido siempre: en la barra. Al pulsarlo salta al
+     centro de la ventana, con el centro al 20% desde arriba — o sea a un 80% de
+     altura — y la pagina se difumina detras (apartado 2.ter). Mientras se
+     escribe no hay nada mas que mirar; al soltar el foco vuelve solo a su sitio.
+
+     ESTO NO SE PUEDE HACER CON UNA TRANSICION Y NO SE INTENTA. El salto es de
+     `static` a `fixed`, y la posicion no es una propiedad animable: pedirle una
+     transicion no da un viaje suave, da el mismo salto mas tarde. Lo que si se
+     difumina con calma es el fondo, que es lo que hace que el salto se lea como
+     un cambio de modo y no como un tiron.
+
+     EL ANCHO EXPLICITO NO ES OPCIONAL: en una rejilla, la columna `auto`
+     colapsa al contenido minimo y el buscador de YouTube es flexible, asi que
+     sin esto se encoge de 536px a 197px. Medido.
+
+     LOS 14px NO SON UN GUSTO, SON LA CUENTA DE LO QUE CUELGA A LA DERECHA.
+     Centrar #center NO centra la pastilla: lo que se ve como buscador es
+     `.ytSearchboxComponentInputBox`, y dentro del bloque de 640px no esta en
+     medio, porque a su derecha cuelgan la lupa y el microfono. Medido:
+
+       hueco a la izquierda   76px   = 40 de margen del host + 4 de relleno
+                                       + 32 de margen propio de la pastilla
+       la pastilla           460px
+       hueco a la derecha    104px   = 12 + 40 de la lupa + 4 de relleno
+                                       + 8 + 40 del microfono
+
+     El descuadre es de 28px, asi que la pastilla se queda 14px a la izquierda
+     del centro. Se compensa con la mitad y el centro de la pastilla cae
+     exactamente en el centro de la ventana. Vale igual en la barra y flotando,
+     porque el descuadre es de dentro del bloque y no depende de donde este.
+
+     SI SE TOCA EL TAMAÑO O EL HUECO DE LA LUPA O DEL MICROFONO, ESTE NUMERO
+     CAMBIA: la pastilla es flexible y se come lo que sobre. Con la lupa como
+     la traia YouTube (64px y pegada al cuadro) aqui ponia 22. */
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead {
+    grid-column: 2 !important;
+    justify-self: center !important;
+    width: min(640px, 46vw) !important;
+    margin: 0 !important;
+    max-width: none !important;
+    transform: translateX(14px) !important;
+  }
+
+  /* LOS 14px DE LA BARRA NO VALEN AQUI, SON 30 ---------------------- MEDIDO -
+     Al enfocar, YouTube le quita a la pastilla su `margin-left: 32px` y la
+     deja crecer: pasa de 460 de ancho a 492, y empieza 32px antes. O sea que
+     el descuadre de dentro del bloque NO es el mismo en reposo que enfocado, y
+     la compensacion tampoco. Medido con el clic del usuario, ventana de 2558:
+
+       enfocada, con los 14 de la barra   pastilla @1017 (492)  centro 1263
+       centro de la ventana                                     centro 1279
+
+     Faltaban 16px. 14 + 16 = 30, y entonces la pastilla queda centrada y la
+     lista, que sale justo debajo del mismo borde, con ella.
+
+     SE ANCLA POR ARRIBA, NO POR EL CENTRO, Y ESO NO ES UN DETALLE. Antes aqui
+     habia `translate(..., -50%)`, que coloca el bloque por su punto medio. Eso
+     solo funciona si el bloque mide lo que se espera: 40px de alto. Y no
+     siempre mide eso.
+
+     YouTube no sirve el mismo buscador a todo el mundo — reparte experimentos
+     por carga de pagina, y en la misma sesion y el mismo navegador puede haber
+     una pestaña con `yt-searchbox` (el nuevo, con la lista de sugerencias
+     flotando en `position: absolute`) y otra con el antiguo, donde la lista es
+     un hijo EN FLUJO y por tanto `#center` crece hasta ~900px de alto. Con el
+     anclaje por el centro, ese bloque alto se sube media altura y el buscador
+     se va fuera de la pantalla: es exactamente el fallo que se veia, un
+     recuadro altisimo pegado arriba y ni rastro del buscador.
+
+     Anclando por arriba, donde acabe el bloque ya no depende de lo que cuelgue
+     debajo. Los 20px son la mitad de los 40 de alto que mide el campo de
+     busqueda en la barra, que si es estable: se restan para que el CENTRO del
+     campo siga cayendo en el 20%, igual que antes, pero sin depender de la
+     altura total.
+
+     EL 20 ES EL NUMERO A TOCAR SI SE QUIERE MAS ARRIBA O MAS ABAJO. Empezo en
+     25 (un 75% de altura), pero con la lista de sugerencias colgando debajo el
+     conjunto se lee mas bajo de lo que dice el numero: el peso visual no es el
+     campo, es el campo mas su lista. */
+
+  /* EL DISPARADOR ES EL BUSCADOR, NO LA BARRA ENTERA ---------------- MEDIDO -
+     Aqui ponia `#masthead-container:focus-within`, y de ahi salian los dos
+     fallos que se veian: el buscador saltaba al centro al pulsar el menu de la
+     esquina, y se quedaba flotando despues de buscar.
+
+     #masthead-container NO es el buscador. Dentro tiene NUEVE elementos que
+     admiten el foco y solo TRES son suyos. Contados en el navegador del
+     usuario, sobre youtube.com:
+
+       en #center   el campo de texto, la lupa, el microfono
+       fuera        #guide-button (el menu, en x=24 y=16), el logo, "Saltar
+                    navegacion", "Crear", "Notificaciones", el avatar
+
+     Cualquiera de esos seis encendia el modo foco. El del menu es el que se
+     nota, porque esta justo donde el raton entra en la barra — y como #start
+     se desvanece en cuanto el raton se va (apartado 4), el buscador se quedaba
+     en medio sin nada visible que explicara por que.
+
+     EL SEGUNDO FALLO ES EL MISMO BOTON. Al enviar la busqueda YouTube no deja
+     el foco en el campo: lo devuelve a #guide-button, que sigue colgando de
+     #masthead-container. Medido con Enter y con la lupa, las dos veces igual:
+
+       escrito      activeElement = input.ytSearchboxComponentInput  (en #center)
+       tras Enter   activeElement = button < yt-icon-button#guide-button
+       +2.5s        lo mismo, ya en /results?search_query=...
+
+     O sea que la barra no soltaba el foco NUNCA y el buscador se quedaba en
+     mitad de la pantalla con la pagina difuminada detras. Colgando el estado
+     de #center, al enviar la busqueda el foco se va del buscador solo y el
+     modo se apaga con el.
+
+     VA EN #center Y NO EN `.ytSearchboxComponentHost`: el microfono cuelga de
+     #center pero queda FUERA del host (lo mismo que hace que su hueco mida 16
+     y no 12), asi que anclarlo al host apagaria el modo justo al pulsarlo. */
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within {
+    position: fixed !important;
+    left: 50% !important;
+    top: calc(20vh - 20px) !important;
+    transform: translateX(calc(-50% + 30px)) !important;
+    z-index: 2030 !important;
+  }
+
+  /* 2.ter. EL FONDO, DETRAS DEL FOCO --------------------------------- MEDIDO -
+     Sin esto la pastilla es ilegible en cuanto se despega de la barra: el tinte
+     es blanco al 7% y debajo pasan miniaturas a todo color. Es el "no se ve el
+     buscador" — no es que desapareciera, es que no habia contraste.
+
+     SE DIFUMINA EL CONTENIDO, NO SE PONE UN CRISTAL DELANTE. Un velo con
+     `backdrop-filter` sobre estas paginas sale NEGRO, por lo explicado en el
+     apartado 3: el acrilico vive fuera del documento y Gecko fotografia un
+     vacio. `filter: blur()` no muestrea nada, difumina sus propios pixeles, asi
+     que funciona igual sobre una pagina transparente.
+
+     Y VA EN #page-manager Y #guide, NO EN #content. Medido en el navegador del
+     usuario, los tres son hermanos:
+
+       ytd-app > div#content > div#masthead-container   <- la barra
+                             > tp-yt-app-drawer#guide
+                             > ytd-page-manager
+
+     Difuminar #content se llevaria por delante la barra Y el propio buscador,
+     que cuelga de ella. Ademas un `filter` crea bloque contenedor para los
+     descendientes `fixed`, asi que ponerlo arriba tambien romperia el anclaje
+     de la barra. */
+  :where(html:not([zen-sin-cristal])) ytd-app:has(#center.ytd-masthead:focus-within) #page-manager,
+  :where(html:not([zen-sin-cristal])) ytd-app:has(#center.ytd-masthead:focus-within) #guide {
+    filter: blur(14px) saturate(80%) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #page-manager,
+  :where(html:not([zen-sin-cristal])) #guide {
+    transition: filter 0.18s ease !important;
+  }
+
+  /* El oscurecido va por debajo de la barra (z-index 2020) a proposito: la
+     barra crea su propio contexto de apilamiento y el buscador cuelga de ella,
+     asi que un velo por encima taparia justo lo unico que tiene que quedar
+     legible. */
+  :where(html:not([zen-sin-cristal])) ytd-app::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 2015;
+    background: rgb(6 7 9 / 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+
+  /* Con el velo pulsable, un clic fuera cierra el foco y no abre el video que
+     hubiera debajo. */
+  :where(html:not([zen-sin-cristal])) ytd-app:has(#center.ytd-masthead:focus-within)::after {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where(html:not([zen-sin-cristal])) #page-manager,
+    :where(html:not([zen-sin-cristal])) #guide,
+    :where(html:not([zen-sin-cristal])) ytd-app::after {
+      transition: none !important;
+    }
+  }
+
+  /* 2.quater. LA LISTA SE ALINEA SOLA. NO SE TOCA ------------------- MEDIDO -
+     Aqui hubo una regla que le sumaba 32px de margen a la lista de
+     sugerencias, porque parecia salir 32px a la izquierda de la pastilla. Era
+     un error de MEDICION, y conviene dejarlo escrito para no repetirlo:
+
+     se midio con `input.focus()` desde el agente, que si mueve
+     `document.activeElement` y si dispara el JS de YouTube (la lista aparece),
+     pero NO hace casar `:focus-within` — para eso hace falta el foco del
+     SISTEMA, y por el enlace no se consigue. En ese estado a medias la
+     pastilla conserva su `margin-left: 32px` y la lista, que se ancla al
+     wrapper, queda 32px a su izquierda. Real, pero de un estado que no existe.
+
+     Con foco de verdad YouTube le quita ese margen a la pastilla. Medido en el
+     navegador del usuario, con su propio clic:
+
+       en reposo   pastilla  460x40 @1049    (wrapper + 32 de margen)
+       enfocada    pastilla  492x40 @1017    (wrapper + 0)  <- donde esta la lista
+
+     O sea que YouTube ya lo tenia bien. Y como la lista SOLO existe con el
+     foco puesto, aquella regla estaba mal siempre. */
+
+  /* 3. Pastilla de cristal.
+
+     SIN backdrop-filter, y no por gusto: dentro de una pagina transparente ese
+     filtro no tiene backdrop que muestrear. El velo de la ventana y el
+     acrilico viven FUERA del documento, asi que Gecko fotografia un vacio y lo
+     compone en NEGRO. Es lo que ponia negra la pastilla y la banda. Mismo
+     limite que `mix-blend-mode`: el blending solo ve el interior del
+     documento.
+
+     El cristal se consigue con tinte claro y un filo de 1px, que sobre el
+     acrilico de la ventana ya se lee como vidrio. */
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentInputBox {
+    background-color: rgb(255 255 255 / 0.07) !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgb(255 255 255 / 0.14) !important;
+    border-radius: 999px !important;
+  }
+
+  /* CAMPO Y SUGERENCIAS DE CRISTAL ----------------------------------------
+     El fondo anterior del campo enfocado tenia un alfa de 0.94 y la lista
+     conservaba el fondo opaco de YouTube. Ahora ambos llevan tinte al 24%,
+     brillo tenue y un filo translucido, tambien en la lupa y el microfono.
+     No se baja la opacidad de textos ni miniaturas. El blur del contenido
+     sigue en #page-manager y #guide: sin backdrop-filter sobre el lienzo
+     transparente, que en Gecko producia una superficie negra.
+     Comprobado en Zen sobre Windows, con sugerencias abiertas y navegacion
+     por teclado. Se conserva la guarda de Zen Sin Cristal en cada selector. */
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead {
+    --az-yt-search-glass: rgb(24 27 32 / 0.24);
+    --az-yt-search-edge: rgb(255 255 255 / 0.20);
+  }
+
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead .ytSearchboxComponentInputBox,
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead .ytSearchboxComponentSearchButton,
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead #voice-search-button,
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within .ytSearchboxComponentInputBox,
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within .ytSearchboxComponentSearchButton,
+  :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within #voice-search-button {
+    background-color: var(--az-yt-search-glass) !important;
+    background-image: linear-gradient(135deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.01)) !important;
+    border-color: var(--az-yt-search-edge) !important;
+    backdrop-filter: none !important;
+    color: #f5f5f7 !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 8px 28px rgb(0 0 0 / 0.16) !important;
+  }
+
+  /* YouTube combina estas clases segun su variante y tema. */
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentSuggestionsContainer,
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentSuggestionsContainerDark {
+    background-color: rgb(24 27 32 / 0.24) !important;
+    background-image: linear-gradient(135deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.01)) !important;
+    backdrop-filter: none !important;
+    border: 1px solid rgb(255 255 255 / 0.18) !important;
+    box-sizing: border-box !important;
+    border-radius: 16px !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 18px 48px rgb(0 0 0 / 0.24) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentSuggestionsContainer [role='listbox'],
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentSuggestionsContainerDark [role='listbox'],
+  :where(html:not([zen-sin-cristal])) .ytSuggestionComponentSuggestion {
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  /* Hover y seleccion por teclado: resalte suave, sin bajar opacidad del texto. */
+  :where(html:not([zen-sin-cristal])) .ytSuggestionComponentSuggestion:hover,
+  :where(html:not([zen-sin-cristal])) .ytSuggestionComponentSuggestionHover,
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentSuggestionsContainer [aria-selected='true'],
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentSuggestionsContainerDark [aria-selected='true'] {
+    background-color: rgb(255 255 255 / 0.11) !important;
+    background-image: none !important;
+  }
+
+  /* PREVISUALIZACION DESTACADA ------------------------------------ MEDIDO -
+     Pedido el 16-11-2026: al previsualizar un video, ese crece un poco y se
+     ilumina, y los demas bajan el brillo.
+
+     LA PREVISUALIZACION NO ESTA EN LA TARJETA. Medido con raton real: el video
+     que se reproduce es `ytd-video-preview`, dentro de `#video-preview` en
+     ytd-app, posicionado ENCIMA de la miniatura. La tarjeta de debajo ni
+     siquiera queda en :hover (el raton esta sobre el preview). Las dos marcas:
+
+       .ytdVideoPreviewActive                  el preview esta puesto
+       .ytSpecTouchFeedbackShapeHovered        dentro de la tarjeta elegida
+
+     CRECEN LOS DOS DESDE ARRIBA. Tarjeta y preview escalan lo mismo (1.05) con
+     el origen en el centro de su borde superior: como el preview empieza donde
+     empieza la miniatura y mide lo mismo de ancho, siguen encajados. Con el
+     origen en el centro, la tarjeta (miniatura + titulo) y el preview (solo la
+     miniatura) creceran desde puntos distintos y se separarian. */
+  :where(html:not([zen-sin-cristal])) ytd-app:has(.ytdVideoPreviewActive) :is(ytd-rich-grid-renderer #contents > *, ytd-item-section-renderer #contents > ytd-video-renderer):not(:has(.ytSpecTouchFeedbackShapeHovered)) {
+    filter: brightness(0.42) saturate(0.8) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytd-app:has(.ytdVideoPreviewActive) :is(ytd-rich-item-renderer, ytd-video-renderer):has(.ytSpecTouchFeedbackShapeHovered) {
+    scale: 1.05 !important;
+    transform-origin: 50% 0 !important;
+  }
+
+  /* EL PREVIEW VA ENCIMA DE SU TARJETA, A PROPOSITO -------------- MEDIDO -
+     Con `scale` la tarjeta pasa a pintarse en la misma capa que el preview y,
+     como va despues en el arbol, queda DELANTE: el video sonaba tapado por la
+     miniatura quieta (medido: elementFromPoint daba la miniatura y el video
+     avanzaba de 2.9 a 4.4 s debajo). Un z-index propio en el preview lo
+     devuelve arriba. La tarjeta no lleva z-index: al crecer un 5% sobresale
+     ~8px por lado y ~16px por abajo, menos que el hueco entre tarjetas. */
+  :where(html:not([zen-sin-cristal])) .ytdVideoPreviewHost {
+    position: relative !important;
+    z-index: 4 !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .ytdVideoPreviewActive {
+    scale: 1.05 !important;
+    transform-origin: 50% 0 !important;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.55) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) :is(ytd-rich-grid-renderer #contents > *, ytd-item-section-renderer #contents > ytd-video-renderer, ytd-rich-item-renderer, .ytdVideoPreviewHost) {
+    transition: filter 0.35s ease, scale 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where(html:not([zen-sin-cristal])) :is(ytd-rich-grid-renderer #contents > *, ytd-item-section-renderer #contents > ytd-video-renderer, ytd-rich-item-renderer, .ytdVideoPreviewHost) {
+      transition: none !important;
+    }
+  }
+
+  /* LA LUPA, UN CIRCULO APARTE ------------------------------------- MEDIDO -
+     YouTube le da al boton de la lupa `border-radius: 0 40px 40px 0`: plano
+     por la izquierda, porque en su diseño va PEGADO al cuadro de texto y los
+     dos juntos forman una sola pastilla. Aqui el cuadro es un ovalo completo
+     de 999px, asi que ese lado plano choca contra la curva y deja un corte
+     raro justo en la union.
+
+     Se le da la forma del microfono, que ya es un circulo suelto: 40x40,
+     radio completo, 12px de aire y sin borde (el suyo era de 1px rgb(48,48,48),
+     el del microfono no tiene). Asi los tres trozos se leen como tres piezas
+     del mismo juego en vez de dos pegadas y una suelta. */
+  :where(html:not([zen-sin-cristal])) .ytSearchboxComponentSearchButton {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    margin-left: 12px !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background-color: rgb(255 255 255 / 0.1) !important;
+  }
+
+  /* El microfono queda FUERA del `yt-searchbox`, asi que a sus 12px de margen
+     se les suma el relleno de 4px del host y el hueco sale de 16 mientras que
+     el de la lupa es de 12. Se le quitan esos 4 para que los dos huecos midan
+     lo mismo y las tres piezas queden a la misma distancia. */
+  :where(html:not([zen-sin-cristal])) #voice-search-button {
+    margin-left: 8px !important;
+  }
+
+  /* 2.quinquies. EL INTERRUPTOR DEL MOD ----------------------------- MEDIDO -
+     Ajustes > Zen Mods > Acrylic Zen > "Buscador flotante de YouTube".
+     Apagado, el buscador vuelve a ser el de YouTube: en su sitio de la barra,
+     sin salto al centro y sin difuminar la pagina.
+
+     ES UNA HOJA DE USUARIO, POR ESO PUEDE LEER LA PREF. `-moz-pref` es una
+     media feature privilegiada, y en Gecko el permiso no depende de que la
+     hoja sea de chrome sino de que NO sea de autor: userContent.css se carga
+     como hoja de USUARIO, asi que entra. Lo mismo que usan los mods del marco,
+     solo que aqui dentro de una pagina.
+
+     VA AL REVES A PROPOSITO: LAS REGLAS BASE SON EL EFECTO COMPLETO Y ESTE
+     BLOQUE SOLO RESTA. Es la misma regla de la casa que siguen los cinco mods
+     de chrome, y aqui importa aun mas. Una media query con una feature
+     desconocida no casa NUNCA: escrito asi, si algun dia Gecko le cerrara la
+     puerta a las hojas de usuario, lo unico que se perderia es el interruptor
+     y el buscador seguiria funcionando. Escrito al reves —el buscador dentro
+     de un `@media -moz-pref(...)` afirmativo— se perderia el buscador entero,
+     y sin un solo aviso.
+
+     LO QUE HAY QUE DEVOLVER ES POCO, PORQUE YOUTUBE APENAS PONE NADA. Bajada y
+     leida su propia hoja (cssbin de ytmainappweb), esto es TODO lo que declara
+     de la barra y del centro:
+
+       #container.ytd-masthead { height:56px; padding:0 16px; display:flex;
+                                 align-items:center;
+                                 justify-content:space-between }
+       #center.ytd-masthead    { flex:0 1 732px; min-width:0; display:flex;
+                                 align-items:center }
+       .ytSearchboxComponentHost { flex:1; margin:0 0 0 40px; padding:0 4px;
+                                   height:40px }
+
+     O sea que `width`, `margin`, `max-width` y `transform` de #center no
+     existen en YouTube: sus valores iniciales YA son los de fabrica, y de los
+     nuestros solo hay que deshacer los dos que no lo son. Con #container otra
+     vez en flex, `grid-column` y `justify-self` se quedan sin efecto solos, y
+     el `width: 100%` del host tambien: con `flex: 1` manda la base flexible,
+     no el ancho.
+
+     LA PASTILLA SE QUEDA DE CRISTAL, Y NO ES UN OLVIDO. El apartado 3 (tinte,
+     filo y radio) y la lupa redonda no son el buscador flotante: son el mismo
+     acrilico que lleva el resto de la pagina, y el circulo de la lupa existe
+     porque la pastilla es un ovalo de 999px, no porque flote. Lo que si se
+     apaga es el PANEL solido del foco, que solo tiene sentido para leerse
+     sobre el fondo difuminado que aqui ya no hay. */
+  @media (not -moz-pref('acrylic-zen.youtube-search')) {
+    :where(html:not([zen-sin-cristal])) #container.ytd-masthead {
+      display: flex !important;
+    }
+
+    /* En una sola regla el reposo y el foco: `position: static` deja sin
+       efecto `top`, `left` y `z-index`, y `transform: none` hace falta en los
+       dos sitios (los 14px de la barra y los 30 de flotando). */
+    :where(html:not([zen-sin-cristal])) #center.ytd-masthead,
+    :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within {
+      position: static !important;
+      width: auto !important;
+      transform: none !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytd-app:has(#center.ytd-masthead:focus-within) #page-manager,
+    :where(html:not([zen-sin-cristal])) ytd-app:has(#center.ytd-masthead:focus-within) #guide {
+      filter: none !important;
+    }
+
+    /* El velo entero fuera, no solo su opacidad: asi tampoco queda una capa
+       invisible por delante de la pagina robando clics. */
+    :where(html:not([zen-sin-cristal])) ytd-app::after {
+      display: none !important;
+    }
+
+    /* Los mismos valores del apartado 3, repetidos sobre el selector del foco
+       para que gane por orden. El 0.1 de la lupa y del microfono es el color
+       propio de YouTube: medido en #voice-search-button, que lo saca de un
+       token hasheado (var(--t7f4f2c...)) y por eso va escrito el numero. */
+    :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within .ytSearchboxComponentInputBox {
+      background-color: rgb(255 255 255 / 0.07) !important;
+      border-color: rgb(255 255 255 / 0.14) !important;
+      box-shadow: none !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within .ytSearchboxComponentSearchButton,
+    :where(html:not([zen-sin-cristal])) #center.ytd-masthead:focus-within #voice-search-button {
+      background-color: rgb(255 255 255 / 0.1) !important;
+    }
+  }
+
+  /* 4. MODO MINIMALISTA: solo el buscador.
+
+     El problema del intento anterior no era el desvanecimiento en si, era que
+     al quitar la banda el contenido pasaba por debajo y se mezclaba con el
+     logo y los chips a medio desvanecer. Una sopa visual.
+
+     Se ataca por dos lados. Primero, la banda ya no desaparece: se convierte
+     en cristal helado, asi que lo que pasa por debajo se DIFUMINA en vez de
+     mezclarse. Segundo, se va todo lo que no es el buscador.
+
+     Nada se pierde: logo, menu y botones vuelven al pasar el raton por la
+     franja superior, y los chips con ellos. Por defecto solo ves el buscador
+     centrado sobre cristal.
+
+     PARA RECUPERAR LA BARRA COMPLETA: borra este apartado 4 y reinstala. */
+  /* ESTA ERA LA BANDA NEGRA.
+
+     YouTube tiene su propia capa de cristal detras de la barra, un div llamado
+     `#frosted-glass` colgando de ytd-app, con `rgba(15, 15, 15, 0.8)`. No es
+     el masthead ni su #background: es un elemento aparte que ninguna de las
+     reglas anteriores tocaba, y por eso la banda seguia negra por mucho que se
+     limpiara todo lo demas.
+
+     Comprobado con aritmetica sobre una captura real: 0.8 x 15 + 0.2 x 37 =
+     19.4 de luminancia, y lo medido en la banda era 18. Cuadra.
+
+     Se le quita el fondo aqui, y el velo al apuntar tambien se pone AQUI en
+     vez de en #masthead-container, porque #frosted-glass es el que cubre la
+     barra y la franja de chips a la vez. */
+  :where(html:not([zen-sin-cristal])) #frosted-glass,
+  :where(html:not([zen-sin-cristal])) #masthead-container {
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Solo al apuntar arriba aparece un velo degradado, para que el logo y los
+     botones se lean sobre el contenido que pasa por debajo. Degradado y no
+     blur, justamente porque el blur aqui saldria negro. */
+  :where(html:not([zen-sin-cristal])) ytd-app:has(#masthead-container:hover) #frosted-glass {
+    background: linear-gradient(
+      to bottom,
+      rgb(10 10 14 / 0.75),
+      rgb(10 10 14 / 0.45) 65%,
+      transparent
+    ) !important;
+    transition: background 0.18s ease !important;
+  }
+
+  /* Caja negra de la previsualizacion al pasar el raton por una miniatura.
+     Sale del mismo barrido: rgb(0,0,0) sobre ~115k px2. */
+  :where(html:not([zen-sin-cristal])) #player-container-wrapper.ytd-video-preview {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #start.ytd-masthead,
+  :where(html:not([zen-sin-cristal])) #end.ytd-masthead {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transition: opacity 0.18s ease !important;
+  }
+
+  /* AL APUNTAR, NO AL ENFOCAR. Estaban tambien con `:focus-within`, y con el
+     buscador saltando al centro eso dejaba la escena al reves: el fondo
+     difuminado, el foco en medio de la pantalla y arriba el logo, los botones y
+     los chips apareciendo de golpe, nitidos, para acompanar a un buscador que
+     ya no esta ahi. El raton ademas se va de la franja al bajar a escribir, asi
+     que se apagan solos justo cuando empieza el modo foco. */
+  :where(html:not([zen-sin-cristal])) #masthead-container:hover #start.ytd-masthead,
+  :where(html:not([zen-sin-cristal])) #masthead-container:hover #end.ytd-masthead {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  /* Los chips son una segunda banda entera: es lo que mas ensuciaba. Se
+     ocultan del todo (no a opacidad 0, que dejaria una franja invisible
+     robando clics) y vuelven con el resto al apuntar arriba. Al ser
+     `position: fixed` no arrastran el contenido: verificado que el feed sigue
+     empezando en y=56. */
+  :where(html:not([zen-sin-cristal])) #chips-wrapper {
+    display: none !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytd-app:has(#masthead-container:hover) #chips-wrapper {
+    display: block !important;
+  }
+
+  /* 5. LAS CAJAS NEGRAS.
+     `.html5-video-player` y `#movie_player` pintan el negro del letterbox
+     cuando el video no llena el reproductor. Con esto el video queda flotando
+     sobre el cristal en vez de dentro de una caja negra. El <video> se sigue
+     pintando encima, asi que la imagen no se toca. */
+  :where(html:not([zen-sin-cristal])) #shorts-player,
+  :where(html:not([zen-sin-cristal])) #movie_player,
+  :where(html:not([zen-sin-cristal])) .html5-video-player,
+  :where(html:not([zen-sin-cristal])) #player-theater-container,
+  :where(html:not([zen-sin-cristal])) #full-bleed-container {
+    background-color: transparent !important;
+  }
+
+  /* 6. EL AMBIENTE DE SHORTS ES OTRA COSA.
+     En la pagina de video el ambiente es el canvas de #cinematics. En Shorts
+     no: es `.reel-video-in-sequence-thumbnail`, un div SIN HIJOS que lleva
+     como `background-image` el frame del video a 660x1173, sin blur y sin
+     opacidad. Por eso se sentia distinto: no era luz, era una foto pegada
+     detras del video.
+
+     Se le da el mismo tratamiento que al ambiente de la pagina de video, para
+     que los dos se sientan igual. Verificado que el div no tiene hijos y que
+     #player-container y el <video> quedan intactos: el blur no toca la imagen
+     del Short. */
+  :where(html:not([zen-sin-cristal])) .reel-video-in-sequence-thumbnail {
+    background-color: transparent !important;
+    /* `scale` es la pieza que faltaba: el div mide 660px y el hueco a los
+       lados del Short es mucho mas ancho, asi que sin ampliarlo el resplandor
+       no llegaba y parecia que no hacia nada. Ampliado, la luz del video se
+       derrama por todo el espacio vacio, que es justo lo que hace el modo
+       ambiente en la pagina de video. */
+    transform: scale(1.4) !important;
+    filter: blur(80px) saturate(200%) !important;
+    opacity: 0.6 !important;
+    mask-image: radial-gradient(
+      ellipse 70% 62% at 50% 50%,
+      #000 10%,
+      transparent 85%
+    ) !important;
+  }
+
+  /* 7. MODO AMBIENTE de la pagina de video (cinematic lighting).
+     YouTube pinta en #cinematics un canvas con el video difuminado detras del
+     reproductor. Sobre fondo opaco funciona; sobre cristal es un rectangulo
+     nitido que tapa el acrilico y termina en un borde recto.
+
+     Nota tecnica: `mix-blend-mode: screen` seria lo ideal para que solo pasara
+     la luz, pero no sirve aqui. El blending solo ve el backdrop DENTRO del
+     documento, y la pagina ahora es transparente: no hay nada contra lo que
+     mezclar. Se consigue el mismo efecto con opacidad y mascara, que si
+     funcionan sobre cualquier fondo. */
+  :where(html:not([zen-sin-cristal])) #cinematics,
+  :where(html:not([zen-sin-cristal])) #cinematics-container {
+    opacity: 0.5 !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #cinematics canvas,
+  :where(html:not([zen-sin-cristal])) #cinematics-container canvas {
+    filter: blur(72px) saturate(180%) !important;
+    mask-image: radial-gradient(
+      ellipse 80% 70% at 50% 45%,
+      #000 30%,
+      transparent 76%
+    ) !important;
+  }
+
+  /* 8. LA PAGINA DE CANAL ------------------------------------------- MEDIDO -
+     Seguia con cajas opacas porque la cabecera de canal es un componente
+     APARTE del resto de YouTube: `ytd-tabbed-page-header`, que no comparte ni
+     un solo id con `ytd-browse` ni con el masthead, asi que ninguna de las
+     reglas de arriba llegaba hasta aqui.
+
+     Medido sobre youtube.com/@YouTube; estos son TODOS los que pintaban, y no
+     hay ninguno mas en los primeros 900px de la pagina:
+
+       #page-header-container.ytd-tabbed-page-header   1434 x 423   <- el bloque entero
+       #page-header.ytd-tabbed-page-header             1434 x 216   <- nombre, avatar, botones
+       #tabs-container.ytd-tabbed-page-header          1434 x  48   <- la tira de pestanas
+       #tabs-inner-container.ytd-tabbed-page-header    1434 x  48
+
+     El banner NO esta en la lista y no hace falta tocarlo: `#page-header-banner`
+     y `yt-image-banner-view-model` ya son transparentes, porque la foto es un
+     <img> de verdad y no un fondo CSS. Lo que se veia como "banner feo" era el
+     bloque opaco de 423px que lo rodea, que es el primero de la lista.
+
+     El reproductor del trailer de canal (`#c4-player`) ya cae con la regla 5:
+     lleva la clase `.html5-video-player`.
+
+     Comprobado despues sobre la captura real en Zen: la franja del contenedor
+     da luminancia 33.7 contra 29.3 del fondo de pagina, o sea acrilico. Si
+     siguiera pintando su #0f0f0f opaco daria 15. */
+  :where(html:not([zen-sin-cristal])) #page-header-container,
+  :where(html:not([zen-sin-cristal])) #page-header.ytd-tabbed-page-header,
+  :where(html:not([zen-sin-cristal])) #tabs-container.ytd-tabbed-page-header,
+  :where(html:not([zen-sin-cristal])) #tabs-inner-container.ytd-tabbed-page-header {
+    background-color: transparent !important;
+  }
+
+  /* 9. EL CHAT EN DIRECTO Y SU REPLAY, FUERA -------------------------- MEDIDO -
+     El panel que aparece solo en los directos y en los videos que FUERON un
+     directo, con la cabecera "Mostrar chat" / "Chat replay".
+
+     Se quita el contenedor entero y no el boton, porque el boton es solo la
+     cabecera del panel colapsado: ocultarlo dejaria el hueco. Medido sobre una
+     pagina de video, los hijos de `#secondary-inner` son:
+
+       ytd-playlist-panel-renderer#playlist  [hidden]
+       div#panels
+       div#chat-container            <- este, con un <dom-if#chat-template> dentro
+       div#inline-panels
+       div#persistent-panel-container
+       div#donation-shelf
+       div#related                   <- los videos sugeridos
+
+     `#chat-container` es donde Polymer estampa el `ytd-live-chat-frame`. Y aqui
+     esta lo que hace que esto sea seguro: en un video normal el contenedor YA
+     EXISTE y mide 0px de alto, asi que ocultarlo no cambia absolutamente nada;
+     solo hace efecto donde hay chat. Y como `#related` es su hermano, al
+     quitarlo los videos sugeridos suben a ocupar el sitio en vez de dejar un
+     hueco.
+
+     PARA RECUPERAR EL CHAT: borra este bloque y vuelve a ejecutar el instalador. */
+  :where(html:not([zen-sin-cristal])) #chat-container,
+  :where(html:not([zen-sin-cristal])) ytd-live-chat-frame {
+    display: none !important;
+  }
+
+  /* 10. LA PAGINA DE LISTA DE REPRODUCCION --------------------------- MEDIDO -
+     El mismo caso que el apartado 8: la cabecera de una lista es un
+     componente propio, `ytd-playlist-header-renderer`, y ninguna de las reglas
+     de arriba llegaba hasta ella. Medido sobre /playlist?list=WL en una
+     ventana de 2804, estas son TODAS las capas que pintan algo en la pagina:
+
+       .immersive-header-background-wrapper    360 x 1005   rgb(68,76,89)  OPACO
+       .immersive-header-gradient              360 x 1005   degradado, acaba opaco
+       #header.ytd-item-section-renderer      2176 x   32   rgb(15,15,15)  OPACO
+       ytd-alert-with-button-renderer         2116 x   56   blanco 0.1     <- se deja
+
+     EL GRIS DE LA TARJETA NO ESTA EN NINGUNA HOJA. Va en el atributo `style`
+     del div: YouTube saca el color dominante de la portada de la lista y lo
+     estampa ahi, asi que cambia con cada lista y no hay token que atacar.
+     Medido: `style="background-color:#444c59;"`. Un `!important` desde aqui si
+     lo tumba —hoja de USUARIO gana a un `style` de autor sin `!important`—,
+     pero un selector sin `!important` no haria nada.
+
+     EL DEGRADADO VA APARTE, Y ES LA TRAMPA DE SIEMPRE. Son dos divs distintos
+     y el segundo pinta con `background-image`, tambien en linea:
+     `linear-gradient(..., rgba(15,15,15,1) 100%)`. `background-color:
+     transparent` no lo toca; hace falta `background-image: none`. Es el mismo
+     fallo que dejo pasar la lamina de pagina entera de YouTube Music.
+
+     SE LE DEJA CUERPO, NO SE DESNUDA. La tarjeta es `position: fixed` y lleva
+     encima el titulo, el autor y los botones. Sin nada detras el texto se
+     queda al aire, asi que se le da el mismo tinte que a la pastilla del
+     buscador (apartado 3) y las dos piezas se leen igual. Sin borde ni radio:
+     el host ya recorta con `overflow: hidden` y la forma que se ve ahora es la
+     suya.
+
+     LA BANDA DE 32px NO ES SOLO DE LAS LISTAS. `#header.ytd-item-section-renderer`
+     es la fila donde van el desplegable de orden y el aviso de videos ocultos,
+     y sale en cualquier pagina con secciones. Pinta el #0f0f0f de siempre.
+
+     EL AVISO SE QUEDA COMO ESTA: su blanco al 10% ya es un tinte translucido,
+     del mismo tipo que usa el mod en todas partes. */
+  :where(html:not([zen-sin-cristal])) .immersive-header-background-wrapper.ytd-playlist-header-renderer {
+    background-color: rgb(255 255 255 / 0.05) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .immersive-header-gradient.ytd-playlist-header-renderer {
+    background-image: none !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #header.ytd-item-section-renderer {
+    background-color: transparent !important;
+  }
+}
+
+/* --- YouTube Music ------------------------------------------------- MEDIDO -
+   OJO: music.youtube.com es subdominio de youtube.com, asi que el bloque de
+   arriba TAMBIEN se le aplica. Comprobado que no le hace nada: ni
+   #masthead-container, ni #frosted-glass, ni #chips-wrapper, ni ytd-app
+   existen aqui — YouTube Music es otra app, con elementos `ytmusic-*`. Lo
+   unico que comparten son #contentContainer y tp-yt-app-drawer, y a esos el
+   bloque de YouTube ya les quita el fondo, que es lo que queremos.
+
+   Aqui SI hay tokens, al reves que en YouTube:
+     #nav-bar-background, #nav-bar-divider, #mini-guide-background
+                                       -> var(--ytmusic-nav-bar)
+     #player-bar-background, ytmusic-player-expanding-menu
+                                       -> var(--ytmusic-player-bar-background)
+     ytmusic-detail-header-renderer    -> var(--ytmusic-detail-header)
+
+   Lo que no sale de un token va por elemento: #guide-wrapper y el body se
+   pintan rgb(3,3,3) literal, y #player-page tambien.
+
+   La barra del reproductor va con TINTE y no transparente: es el control que
+   siempre esta ahi y tiene que leerse. El resto, cristal.
+
+   Medido en circuito cerrado: 2 capas opacas antes, 1 despues; y la que queda
+   es el <body>, del que ya se encarga 00-base.css. */
+@-moz-document domain(music.youtube.com) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body,
+  :where(html:not([zen-sin-cristal])) ytmusic-app,
+  :where(html:not([zen-sin-cristal])) ytmusic-app-layout,
+  :where(html:not([zen-sin-cristal])) ytmusic-nav-bar,
+  :where(html:not([zen-sin-cristal])) ytmusic-player-page {
+    --ytmusic-nav-bar: transparent !important;
+    /* De donde sale el fondo de #guide-wrapper. Lo dijo el propio auditor en
+       la columna `regla`, una vez que dejo de ser ciego a los degradados. */
+    --ytmusic-background: transparent !important;
+    --ytmusic-general-background-a: transparent !important;
+    --ytmusic-general-background-b: transparent !important;
+    --ytmusic-general-background-c: transparent !important;
+    --ytmusic-detail-header: transparent !important;
+
+    /* --- LA BARRA DEL REPRODUCTOR ---------------------------------- MEDIDO -
+       Estaba en `rgb(255 255 255 / 0.07)`, o sea 7% de BLANCO, y de ahi salia
+       que no se leyera nada: la barra lleva su texto y sus iconos en blanco, y
+       un velo blanco al 7% no oscurece, ACLARA. Sobre las caratulas claras que
+       pasan por debajo, blanco sobre blanco.
+
+       Medido en vivo en Zen: `ytmusic-player-bar` -> rgba(255, 255, 255, 0.07),
+       position fixed, 72px de alto.
+
+       Ahora: cristal de verdad. Blur del contenido que pasa por debajo, mas un
+       tinte oscuro que garantiza el contraste.
+
+       EL TINTE NO SOBRA AUNQUE HAYA BLUR. Difuminar no oscurece: si por debajo
+       pasa una fila de caratulas claras, el blur devuelve un borron CLARO y el
+       texto blanco de la barra sigue sin leerse. Al 78% sobre contenido claro
+       la barra queda en luminancia ~75, que con texto blanco da 4.9:1 — por encima
+       del minimo AA de 4.5:1—, y el 38% restante es por donde se ve el
+       difuminado. Bajar mas empieza a comerse el texto. */
+    --ytmusic-player-bar-background: rgb(12 12 14 / 0.62) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytmusic-app,
+  :where(html:not([zen-sin-cristal])) ytmusic-app-layout,
+  :where(html:not([zen-sin-cristal])) #layout,
+  :where(html:not([zen-sin-cristal])) #guide-wrapper,
+  :where(html:not([zen-sin-cristal])) #mini-guide,
+  :where(html:not([zen-sin-cristal])) #mini-guide-background,
+  :where(html:not([zen-sin-cristal])) #nav-bar-background,
+  :where(html:not([zen-sin-cristal])) #nav-bar-divider,
+  :where(html:not([zen-sin-cristal])) ytmusic-player-page,
+  :where(html:not([zen-sin-cristal])) #player-page,
+  :where(html:not([zen-sin-cristal])) ytmusic-browse-response,
+  :where(html:not([zen-sin-cristal])) #browse-page,
+  :where(html:not([zen-sin-cristal])) tp-yt-app-drawer,
+  :where(html:not([zen-sin-cristal])) #contentContainer {
+    background-color: transparent !important;
+  }
+
+  /* El mismo tinte por elemento, no solo por token: `#player-bar-background`
+     es una capa aparte que se pinta DETRAS de la barra, y si se queda clara
+     vuelve el problema aunque el token este bien. */
+  :where(html:not([zen-sin-cristal])) ytmusic-player-bar,
+  :where(html:not([zen-sin-cristal])) #player-bar-background,
+  :where(html:not([zen-sin-cristal])) ytmusic-player-expanding-menu {
+    background-color: rgb(12 12 14 / 0.62) !important;
+  }
+
+  /* EL BLUR VA EN LA BARRA, NO EN LA CAPA DE DETRAS.
+     `#player-bar-background` es hijo de `ytmusic-player-bar`: poner el filtro
+     en los dos lo aplicaria dos veces y, peor, el de dentro solo muestrearia
+     lo que ya ha pintado su padre. Un solo `backdrop-filter`, en el elemento
+     de fuera, que es el que tiene debajo el contenido de la pagina.
+
+     `saturate` acompana al blur a proposito: al difuminar, los colores de las
+     caratulas se promedian y salen lavados; subirlos un 40% devuelve algo del
+     color del album, que es lo que hace que parezca cristal y no plastico. */
+  :where(html:not([zen-sin-cristal])) ytmusic-player-bar {
+    backdrop-filter: blur(28px) saturate(140%) !important;
+    border-top: 1px solid rgb(255 255 255 / 0.1) !important;
+  }
+
+  /* EL PANEL DE LA COLA, CON ZEN INTERNET PUESTO -------------------- MEDIDO -
+     Su hoja le da a `#side-panel` un `backdrop-filter: blur(20px)` con #0005, y
+     en la vista del reproductor ese panel no tiene nada pintado detras: medido
+     el 24-09-2026, 9 de 9 puntos de su caja vacios, o sea una franja NEGRA a la
+     derecha. Sin el filtro queda su 33% de negro sobre el cristal, que se lee
+     igual. Nuestra hoja es de usuario, asi que esto le gana a la suya aunque
+     las dos lleven !important. */
+  :where(html:not([zen-sin-cristal])) #side-panel {
+    backdrop-filter: none !important;
+  }
+
+  /* --- LA LAMINA DE PAGINA ENTERA -------------------------------------
+     Esto es lo que hacia que YouTube Music se viera raro, y se me escapo la
+     primera vez por un fallo de metodo: la auditoria solo miraba
+     `background-color`, y esto es un DEGRADADO, o sea `background-image`.
+     Medido:
+
+       div.background-gradient   1585 x 2782  (la pagina entera)
+       linear-gradient(rgba(0, 0, 0, 0.6), rgb(3, 3, 3))
+
+     Arriba es negro al 60%, asi que el acrilico se cuela a medias y el
+     escritorio tine la zona superior; abajo llega a `rgb(3,3,3)` opaco y
+     mata el cristal del todo. De ahi la mancha de color arriba y el corte
+     plano a media pantalla.
+
+     Se le quita la imagen ademas del color: `background-color: transparent`
+     por si solo no habria hecho NADA aqui, que es justo el error anterior. */
+  :where(html:not([zen-sin-cristal])) .background-gradient,
+  :where(html:not([zen-sin-cristal])) #background-gradient {
+    background-image: none !important;
+    background-color: transparent !important;
+  }
+
+  /* El velo del cajon lateral: rgba(0,0,0,0.5) sobre 240 x 1120, encima de
+     la barra de listas. Medido. */
+  :where(html:not([zen-sin-cristal])) tp-yt-app-drawer #scrim,
+  :where(html:not([zen-sin-cristal])) #scrim.tp-yt-app-drawer {
+    background-color: transparent !important;
+    opacity: 0 !important;
+  }
+
+  /* --- LA FOTO DE CABECERA --------------------------------------------
+     Quitar el degradado de arriba destapo esto, porque el degradado hacia
+     DOS trabajos a la vez: era la lamina opaca de la pagina y era tambien
+     el velo que oscurecia esta foto. Sin el, la foto quedaba a pleno color
+     y se comia el tema entero.
+
+     Es un <img> de verdad, no un fondo CSS:
+
+       ytmusic-fullbleed-thumbnail-renderer   position: absolute
+         > picture > img  1585 x 490 en la portada, 1585 x 688 en artista
+         src  https://yt3.googleusercontent.com/...
+
+     Se oculta con `display: none` y NO mueve nada, porque el renderer esta
+     en `position: absolute`. Comprobado: el primer carrusel se queda en
+     y=160 y el alto del documento no cambia (2782 antes y despues).
+
+     Lo mismo vale para la cabecera de artista: ahi el renderer es el mismo,
+     asi que el nombre y los botones se quedan y solo se va la foto.
+
+     OJO CON LO QUE ESTO NO HACE: el navegador SIGUE DESCARGANDO la imagen.
+     Un <img src> se pide por estar en el documento, no por pintarse, y no
+     hay CSS que cancele eso. Visualmente no queda ni rastro; si quieres
+     ahorrarte tambien los bytes hace falta un bloqueador de contenido, que
+     es otra herramienta. */
+  :where(html:not([zen-sin-cristal])) ytmusic-fullbleed-thumbnail-renderer {
+    display: none !important;
+  }
+
+  /* La cabecera de artista se pinta rgb(3,3,3) por debajo de la foto, y
+     ademas lleva su propio velo para fundirla con la pagina:
+     linear-gradient(360deg, rgb(3,3,3) 8.98%, transparent). Sin foto, ese
+     velo es solo una banda oscura. */
+  :where(html:not([zen-sin-cristal])) ytmusic-immersive-header-renderer {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .gradient-container.ytmusic-immersive-header-renderer {
+    background-image: none !important;
+  }
+
+  /* --- BUSCADOR FLOTANTE ------------------------------------------- MEDIDO -
+     El mismo de YouTube, traido aqui: en reposo vive en la barra, y al usarlo
+     salta al centro de la ventana —con el centro del campo al 20% desde
+     arriba— y la pagina se difumina detras.
+
+     AQUI NO HAY BANDA QUE QUITAR, que es lo que motivo el de YouTube. La barra
+     de YouTube Music (#nav-bar-background) ya sale transparente por el bloque
+     de arriba. Se trae por lo otro que hace: mientras se escribe no hay nada
+     mas que mirar.
+
+     LA ESTRUCTURA NO SE PARECE EN NADA A LA DE YOUTUBE. Medida en vivo:
+
+       ytmusic-nav-bar                fixed, z-index 5, 64px de alto
+         > div#left-content           240px (el menu y el logo)
+         > div.center-content         absolute, left 50%, translateX(-50%),
+                                      margin-left 120px, padding 8px 0
+             > ytmusic-search-box     relative, width 100%, max-width 480px
+                 > .search-container
+                     > .search-box    la pastilla, 42px de alto
+                     > #suggestion-list  absolute, top 40px, width 100%
+         > div#right-content          absolute (el avatar)
+
+     PARA DESACTIVARLO: Ajustes > Zen Mods > Acrylic Zen > "Buscador flotante
+     de YouTube Music". El interruptor es el apartado 5, al final del bloque.
+     --------------------------------------------------------------------- */
+
+  /* 1. CENTRADO DE VERDAD EN LA BARRA ------------------------------- MEDIDO -
+     .center-content ya se coloca con left:50% + translateX(-50%), asi que
+     esta centrado... y el buscador no. Dos cosas lo descuadran:
+
+       margin-left: 120px    la mitad de los 240 del cajon lateral, para que
+                             el centro sea el del contenido y no el de la
+                             ventana
+       justify-content       flex-start, y el bloque mide 1478px, asi que la
+                             pastilla de 480 se queda pegada a su izquierda
+
+     Medido en una ventana de 2804: pastilla en x=783, o sea con su centro en
+     1023 cuando el de la ventana es 1402. Casi 400px de descuadre.
+
+     Con el margen a cero y el contenido centrado, la pastilla cae en 1162 y su
+     centro en 1402 clavado. Comprobado en vivo. */
+  :where(html:not([zen-sin-cristal])) ytmusic-nav-bar .center-content {
+    margin-left: 0 !important;
+    justify-content: center !important;
+  }
+
+  /* 2. AL USARLO, AL CENTRO ----------------------------------------- MEDIDO -
+     EL DISPARADOR ES EL BUSCADOR, NO LA BARRA, por lo mismo que se explica en
+     el bloque de YouTube: ahi colgaba de #masthead-container y el menu de la
+     esquina encendia el modo foco. `ytmusic-search-box` contiene el campo, la
+     lupa y el aspa de borrar, y nada mas — el logo y el avatar viven en
+     #left-content y #right-content, que son sus hermanos.
+
+     Y ADEMAS DE `:focus-within`, `[opened]`. Es un atributo que pone el JS de
+     YouTube Music cuando despliega la lista de sugerencias, y aqui vale doble:
+
+       - es un estado real que el CSS puede leer, asi que el modo tambien se
+         enciende si la lista se abre sin que el campo tenga el foco;
+       - y es LO UNICO DE ESTO QUE SE PUEDE PROBAR POR EL ENLACE. `:focus-within`
+         necesita el foco del sistema y por BiDi no se consigue (ver la nota en
+         el bloque de YouTube); `[opened]` sale con solo escribir en el campo
+         desde el agente, y con el se ha medido todo lo de aqui abajo.
+
+     `[has-query]` NO sirve de disparador aunque lo parezca: se queda puesto
+     despues de buscar, con el buscador ya vacio de foco.
+
+     LOS 21px SON LA MITAD DE LOS 42 QUE MIDE EL CAMPO. Se restan del 20vh para
+     que lo que caiga en el 20% sea el CENTRO del campo y no su borde de
+     arriba, igual que en YouTube (alli son 20 porque mide 40).
+
+     EL ANCHO HAY QUE ESCRIBIRLO: de fabrica el buscador es `width: 100%` con
+     `max-width: 480px`, o sea que en cuanto pasa a `fixed` ese 100% se mide
+     contra la VENTANA y no contra la barra. Medido: se queda en los mismos
+     480px, que flotando en mitad de la pantalla se ven estrechos. Se le dan
+     los 640 de YouTube, y el max-width de fabrica hay que apagarlo o los 640
+     no llegan nunca.
+
+     Z-INDEX 10 Y NO 2030: quien pone esto por encima del velo NO es este
+     numero, es su padre. `ytmusic-nav-bar` es fixed con z-index 5, o sea que
+     crea su propio contexto de apilamiento y aqui dentro solo se compite con
+     #left-content y #right-content, que llevan z-index 1. */
+  :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) {
+    position: fixed !important;
+    left: 50% !important;
+    top: calc(20vh - 21px) !important;
+    transform: translateX(-50%) !important;
+    width: min(640px, 46vw) !important;
+    max-width: none !important;
+    z-index: 10 !important;
+  }
+
+  /* 3. EL FONDO, DETRAS DEL FOCO ------------------------------------ MEDIDO -
+     `filter: blur()` y no un velo con `backdrop-filter`, por lo mismo que en
+     YouTube: el acrilico vive FUERA del documento, asi que un backdrop-filter
+     dentro de una pagina transparente fotografia un vacio y sale NEGRO.
+
+     SON TRES HERMANOS Y NO UNO. En YouTube bastaba con #page-manager y #guide;
+     aqui el contenido esta repartido en cajas que cuelgan de
+     ytmusic-app-layout, todas hermanas de la barra:
+
+       div#content                 el feed              <- se difumina
+       tp-yt-app-drawer#guide      el cajon lateral     <- se difumina
+       div#mini-guide-background   la tira de iconos    <- se difumina
+       ytmusic-player-page         la cancion en grande <- NO se difumina
+       ytmusic-player-bar          la barra de abajo    <- NO se difumina
+
+     LA CANCION EN GRANDE SE QUEDA NITIDA, Y ESO NO ES UN OLVIDO. Aqui estuvo
+     difuminada y estaba mal: `#player-page` no es fondo, es lo que estas
+     mirando. Con el buscador abierto se iban con el la caratula, el video y la
+     letra, y quedaba una mancha borrosa donde estaba la cancion.
+
+     Y NO HACE FALTA TOCARLA PARA QUE EL FONDO SE DIFUMINE: la vista es
+     transparente por el bloque de arriba, asi que lo que se ve a traves de ella
+     es #content, que si se difumina. El fondo se va y la cancion se queda.
+
+     Apagarla igual se apaga: el velo de aqui abajo va en z-index 4 y la vista
+     en 2, o sea que le pasa por encima. Lo mismo que a la barra del
+     reproductor, que ademas es un control y no pagina.
+
+     LO QUE AQUI NO PASA, AUNQUE LO PAREZCA: difuminar `#player-page` NO deja
+     sin efecto los `backdrop-filter` de lo que lleva dentro —el panel y el velo
+     de Zen Letra Viva, por ejemplo—. Suena razonable (un `filter` crea Backdrop
+     Root) y se comprobo antes de escribir esto: un cristal de prueba con
+     `backdrop-filter: blur(20px)` dentro de #player-page, con y sin
+     `filter: saturate(1)` en el ancestro, y las dos capturas salen iguales. El
+     motivo para no difuminarla es el de arriba, no este.
+
+     `:is()` en el estado y no seis selectores repetidos: ademas de que se lee,
+     dentro de `:is()` un selector que el navegador no entienda se ignora solo
+     en vez de tumbar la regla entera. */
+  /* ESTILO INMERSIVO (16-11-2026). El del buscador de YouTube en Zen Internet
+     ("yt-Immersive search" del catalogo my-internet), llevado aqui a peticion
+     del usuario: difuminado de 20px con un zoom de 1.05 detras, y la curva con
+     rebote de 0.5s. El mismo trato tienen YouTube (lo pone el catalogo) y la
+     barra flotante de Zen (mod/acrylic-zen, seccion 6). */
+  :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #content,
+  :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #guide,
+  :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #mini-guide-background {
+    filter: blur(20px) saturate(80%) !important;
+    scale: 1.05 !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #content,
+  :where(html:not([zen-sin-cristal])) #guide,
+  :where(html:not([zen-sin-cristal])) #mini-guide-background {
+    transition: filter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+  }
+
+  /* El velo va en z-index 4 y no mas alto A PROPOSITO: por encima del feed y
+     del reproductor (z-index 2 y 4, y con el player-bar empata pero gana este
+     por ir despues en el arbol), y por DEBAJO de la barra, que lleva 5. Asi lo
+     unico que queda legible es el buscador, que cuelga de ella.
+
+     Con el velo pulsable, un clic fuera cierra el buscador y no lanza la
+     cancion que hubiera debajo: el clic sigue burbujeando hasta el documento,
+     que es donde YouTube Music escucha para cerrar la lista. */
+  :where(html:not([zen-sin-cristal])) ytmusic-app::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    background: rgb(6 7 9 / 0.55);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within))::after {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* El logo y el avatar se apagan con el resto. No les llega el velo —viven en
+     la barra, que va por encima— y dejarlos a pleno color deja la escena al
+     reves: todo difuminado menos las dos esquinas. No se difuminan, se
+     atenuan: un logo con blur se lee como un fallo de pintado. */
+  :where(html:not([zen-sin-cristal])) #left-content,
+  :where(html:not([zen-sin-cristal])) #right-content {
+    transition: opacity 0.18s ease !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #left-content,
+  :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #right-content {
+    opacity: 0.3 !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where(html:not([zen-sin-cristal])) #content,
+    :where(html:not([zen-sin-cristal])) #guide,
+    :where(html:not([zen-sin-cristal])) #mini-guide-background,
+    :where(html:not([zen-sin-cristal])) #left-content,
+    :where(html:not([zen-sin-cristal])) #right-content,
+    :where(html:not([zen-sin-cristal])) ytmusic-app::after {
+      transition: none !important;
+    }
+  }
+
+  /* 4. LA PASTILLA -------------------------------------------------- MEDIDO -
+     De fabrica es `rgba(255,255,255,0.15)` con filo del mismo color y 8px de
+     radio. Se le baja el tinte al 0.07 que lleva todo lo demas en este mod,
+     para que sea el mismo cristal que el resto de la pagina.
+
+     EL RADIO NO SE TOCA, y eso es distinto de YouTube. Alli la pastilla es un
+     ovalo de 999px y por eso hubo que redondear la lupa aparte; aqui los 8px
+     son los que hacen que la pastilla y la lista de sugerencias encajen como
+     una sola pieza: al abrirse, YouTube Music le pone `8px 8px 0 0` al campo y
+     `0 0 8px 8px` a la lista. Con 999px eso se rompe.
+
+     AL ABRIRSE PASA A SER UN PANEL. De fabrica es `rgb(3,3,3)` opaco, campo y
+     lista. Se le da el mismo `rgb(33 33 33 / 0.94)` que al de YouTube: el 0.94
+     deja pasar un hilo de acrilico, y opaco del todo mataria el cristal. La
+     lista entra en el mismo trato o el grupo queda a medias. */
+  /* LA PASTILLA DE YOUTUBE (16-11-2026). La misma que el buscador de YouTube
+     en reposo, medida alli: tinte rgb(24 27 32 / .24) con un degradado, filo
+     al 20%, redonda del todo, 40px de alto y una sombra suave. La de fabrica
+     de YouTube Music tenia esquinas de 8px y tinte blanco. Al abrirse se
+     queda con su forma de panel (mas abajo). */
+  :where(html:not([zen-sin-cristal])) ytmusic-search-box .search-box {
+    background-color: rgb(24 27 32 / 0.24) !important;
+    background-image: linear-gradient(135deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.01)) !important;
+    border: 1px solid rgb(255 255 255 / 0.2) !important;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07), 0 8px 28px rgb(0 0 0 / 0.16) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytmusic-search-box:not([opened]):not(:focus-within) .search-box {
+    border-radius: 999px !important;
+    height: 40px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* SIEMPRE A LA VISTA (16-11-2026). La funcion "Hover" del tema de YouTube
+     Music (Zen Inmersivo / catalogo my-internet) deja ytmusic-nav-bar a
+     opacidad 0.01 hasta que el raton pasa por encima, y el buscador vive
+     dentro: desaparecia. Un hijo no puede ser mas opaco que su padre, asi que
+     la barra vuelve a 1 y lo que se esconde hasta pasar el raton son solo sus
+     dos lados (logo y avatar). Esto gana al catalogo sin tocarlo: es una hoja
+     de usuario, y un !important de usuario va por delante de uno de autor. */
+  :where(html:not([zen-sin-cristal])) ytmusic-nav-bar {
+    opacity: 1 !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytmusic-nav-bar :is(#left-content, #right-content) {
+    opacity: 0.01 !important;
+    transition: opacity 0.5s ease-in-out !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) ytmusic-nav-bar:hover :is(#left-content, #right-content) {
+    opacity: 1 !important;
+  }
+
+  /* Inmersivo: casi negro (#000b del original) con el halo negro de 30px. */
+  :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) .search-box,
+  :where(html:not([zen-sin-cristal])) ytmusic-search-box[opened] #suggestion-list {
+    background-color: rgb(0 0 0 / 0.73) !important;
+    border-color: rgb(255 255 255 / 0.18) !important;
+    box-shadow: black 0 0 30px !important;
+  }
+
+  /* La entrada con rebote: el original anima el salto al centro; aqui el
+     buscador pasa a `fixed` y ese salto no se puede animar, asi que lo que
+     rebota es la pastilla al aparecer. Y en pantallas grandes, un 10% mas
+     grande, como el original. */
+  @keyframes az-inmersivo-entra {
+    from { scale: 0.92; opacity: 0.4; }
+    to { scale: 1; opacity: 1; }
+  }
+
+  :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) .search-box {
+    animation: az-inmersivo-entra 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35) both;
+  }
+
+  @media (min-width: 1400px) {
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) {
+      scale: 1.1 !important;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) .search-box {
+      animation: none;
+    }
+  }
+
+  /* 5. EL INTERRUPTOR DEL MOD --------------------------------------- MEDIDO -
+     Ajustes > Zen Mods > Acrylic Zen > "Buscador flotante de YouTube Music".
+     Apagado, el buscador vuelve a ser el suyo: en su sitio de la barra, sin
+     salto al centro y sin difuminar la pagina.
+
+     VA AL REVES A PROPOSITO: LAS REGLAS BASE SON EL EFECTO COMPLETO Y ESTE
+     BLOQUE SOLO RESTA. Es la regla de la casa, y el motivo esta escrito en el
+     interruptor gemelo del bloque de YouTube: una media query con una feature
+     que el navegador no conozca no casa NUNCA, asi que escrito asi lo unico
+     que se perderia es el interruptor. Al reves se perderia el buscador
+     entero, y sin un solo aviso.
+
+     AQUI HAY QUE DEVOLVER MAS QUE EN YOUTUBE, porque YouTube Music si declara
+     lo suyo. Todo lo de abajo esta medido en vivo con la pref quitada, no
+     deducido:
+
+       .center-content     margin 0 0 0 120px, justify-content flex-start
+       ytmusic-search-box  position relative, width 100%, max-width 480px
+       .search-box         abierto rgb(3,3,3), filo rgba(255,255,255,0.15)
+       #suggestion-list    rgb(3,3,3), el mismo filo
+
+     `left` Y `top` HAY QUE APAGARLOS UNO A UNO, y esto es distinto de
+     YouTube. Alli el buscador vuelve a `position: static`, que deja sin
+     efecto `left`, `top` y `z-index` de golpe. Aqui el valor de fabrica es
+     `relative`, y en relative `left: 50%` SI desplaza: sin apagarlo, el
+     buscador se iria media ventana a la derecha con el interruptor apagado.
+
+     EL Z-INDEX VA EN DOS REGLAS PORQUE DE FABRICA TIENE DOS VALORES: `auto`
+     en reposo y `2` cuando el sitio lo abre. Van en este orden para que,
+     cuando se den los dos estados a la vez (que es lo normal: se escribe con
+     el foco puesto), gane el 2 por ir despues.
+
+     LA PASTILLA SE QUEDA DE CRISTAL, igual que en YouTube y por lo mismo: el
+     tinte al 0.07 no es el buscador flotante, es el mismo acrilico que lleva
+     el resto de la pagina. Lo que si vuelve es el PANEL de fabrica, que aqui
+     —al reves que en YouTube— no es un invento nuestro: rgb(3,3,3) opaco es
+     lo que YouTube Music pinta al desplegar las sugerencias. */
+  @media (not -moz-pref('acrylic-zen.ytmusic-search')) {
+    :where(html:not([zen-sin-cristal])) ytmusic-nav-bar .center-content {
+      margin-left: 120px !important;
+      justify-content: flex-start !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      transform: none !important;
+      width: 100% !important;
+      max-width: 480px !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box:focus-within {
+      z-index: auto !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box[opened] {
+      z-index: 2 !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #content,
+    :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #guide,
+    :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #mini-guide-background {
+      filter: none !important;
+      scale: none !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) {
+      scale: none !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) .search-box {
+      animation: none !important;
+    }
+
+    /* El velo entero fuera, no solo su opacidad: asi tampoco queda una capa
+       invisible por delante de la pagina robando clics. */
+    :where(html:not([zen-sin-cristal])) ytmusic-app::after {
+      display: none !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #left-content,
+    :where(html:not([zen-sin-cristal])) ytmusic-app:has(ytmusic-search-box:is([opened], :focus-within)) #right-content {
+      opacity: 1 !important;
+    }
+
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box:is([opened], :focus-within) .search-box,
+    :where(html:not([zen-sin-cristal])) ytmusic-search-box[opened] #suggestion-list {
+      background-color: rgb(3 3 3) !important;
+      border-color: rgb(255 255 255 / 0.15) !important;
+      box-shadow: none !important;
+    }
+  }
+}
+
+/* --- YouTube Studio --------------------------------------------- MEDIDO -
+   Otra aplicacion con otro sistema, no la de youtube.com: Polymer con prefijo
+   `ytcp-`. Medido el 24-09-2026 en el panel del canal: cabecera, cajon
+   lateral, `#main` y las tarjetas en #0f0f0f, el 85% del viewport. Todo sale
+   de un solo token, `--ytcp-brand-background-solid`, que Studio declara en
+   `html` (#fff) y reescribe en oscuro.
+
+   El token NO se vacia en la raiz: tambien pinta los dialogos (el de subir un
+   video, sin ir mas lejos), y un dialogo transparente encima del panel es
+   ilegible. Se vacia dentro de `#main`, que no los contiene, y la cabecera y el
+   cajon van por elemento. Las tarjetas pasan a velo para seguir leyendose como
+   tarjetas: resuelven su fondo por `--ytcp-card-background`, que en esta
+   version cae al mismo #0f0f0f.
+
+   Solo con `html[dark]`, que es el atributo que Studio pone en oscuro (medido):
+   en claro el bloque no casa y el blanco se queda. */
+@-moz-document domain(studio.youtube.com) {
+  html[dark]:not(:where([zen-sin-cristal])) #main.ytcp-entity-page {
+    --ytcp-brand-background-solid: transparent !important;
+    --ytcp-card-background: rgb(255 255 255 / 0.04) !important;
+  }
+
+  html[dark]:not(:where([zen-sin-cristal])) ytcp-header.ytcpAppHeaderHost,
+  html[dark]:not(:where([zen-sin-cristal])) ytcp-navigation-drawer {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Twitch -------------------------------------------------------- MEDIDO -
+   Reglas reales del sitio:
+     body    -> var(--color-background-body)
+     .cRMumF -> var(--color-background-base)
+   Se atacan los dos tokens. Los tokens se declaran segun el tema en html o en
+   body, asi que se sobreescriben en ambos. */
+@-moz-document domain(twitch.tv) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body {
+    --color-background-body: transparent !important;
+    --color-background-base: transparent !important;
+    --color-background-alt: rgb(255 255 255 / 0.05) !important;
+    --color-background-alt-2: rgb(255 255 255 / 0.07) !important;
+  }
+}
+
+/* --- GitHub -------------------------------------------------------- MEDIDO -
+   Regla real: [data-color-mode] -> var(--bgColor-default, var(--color-canvas-default))
+   GitHub migro de `--color-canvas-*` a `--bgColor-*`; los canvas ya NO existen
+   en el sitio actual, sobreescribirlos no hacia nada. */
+@-moz-document domain(github.com) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body {
+    --bgColor-default: transparent !important;
+    --bgColor-inset: transparent !important;
+    --bgColor-muted: rgb(255 255 255 / 0.05) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .application-main,
+  :where(html:not([zen-sin-cristal])) #repository-container-header {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Kick ---------------------------------------------------------- MEDIDO -
+   REESCRITO EL 12-09-2026: KICK CAMBIO DE SISTEMA DE DISENO Y SE LO LLEVO TODO.
+
+   El bloque anterior colgaba de `.bg-surface-lowest`, `.bg-surface-base` y
+   `.bg-surface-highest`. Medido en vivo el 12-09-2026 con la sesion iniciada:
+   `document.querySelectorAll('.bg-surface-lowest').length` -> **0**. Ni una. La
+   escala se renombro a `bg-surface-bg-*`, o sea que el bloque entero llevaba
+   quien sabe cuanto sin casar con nada, en silencio, que es exactamente el fallo
+   que este repo se pasa el dia intentando cazar.
+
+   LA BUENA NOTICIA: AHORA HAY TOKENS.
+   Cuando se escribio el bloque viejo, la cabecera de este archivo decia que Kick
+   "no expone tokens de fondo en :root" y por eso habia que atacar la utilidad.
+   Ya no es verdad. Hoy publica un sistema completo, `--edge-color-*`, y las
+   clases lo consumen. Comprobado como se comprueba esto: poniendo el token en
+   magenta desde el inspector y mirando quien cambia.
+
+     --edge-color-surface-bg-lowest    #090b0f   el lienzo, la columna del chat,
+                                                 la lista de mensajes y el nav
+     --edge-color-surface-bg-default   #181b1f   la barra de info del canal
+                                                 Y TAMBIEN los botones
+     --edge-color-surface-bg-highest   #23272b   estados elevados y activos
+     --edge-color-surface-bg-overlay   #23272b   los emergentes
+     --edge-color-surface-bg-sunken    #0006     ya translucido
+     --edge-color-glass-bg-default     #090b0fa6 ya translucido
+
+   Con `--edge-color-surface-bg-lowest: transparent` cambian de golpe las cuatro
+   capas que tapaban la pagina: 2328x1309 (el area principal), 308x1309 (la
+   columna del chat), 308x1080 (la lista de mensajes) y el nav. Un token en vez
+   de cuatro selectores de clase, y ademas el que aguanta los rediseños.
+
+   `-default` NO SE VACIA, Y ESO ES LO IMPORTANTE DE ESTE BLOQUE.
+   Es la misma trampa de siempre —una escala que comparten la pagina y los
+   controles— pero ahora se puede ver: de los elementos que usan `-default`, el
+   unico grande es la barra de informacion del canal (1964x144); el resto son
+   botones de 260x64 para abajo. Vaciar el token dejaria los botones sin caja.
+   Asi que la barra se ataca por el elemento y el token se queda como esta.
+
+   Y `-overlay` tampoco se toca: es el token de los emergentes, y un panel
+   flotante tiene que seguir tapando o deja de servir para nada. Es la misma
+   decision que en Reddit con `--color-ui-modalbackground`.
+
+   EL REPRODUCTOR (.z-player, `bg-black`) SE DEJA NEGRO a proposito, como antes.
+
+   SE VA `nav.relative`, QUE ERA EL SELECTOR MAS FRAGIL DEL REPO. `relative` es
+   una utilidad de posicion sin ninguna semantica: casaba con cualquier <nav>
+   posicionado y habria dejado de casar en silencio en cuanto Kick lo pasara a
+   `sticky`. El token cubre ese nav sin adivinar nada.
+
+   Antes / despues, medido con el auditor en kick.com/<canal> con sesion:
+     antes   3 capas opacas grandes: el area principal, la columna del chat y la
+             lista de mensajes, todas en rgb(9, 11, 15)
+     despues solo `.z-player` en negro, que es deliberado */
+@-moz-document domain(kick.com) {
+  html:not(:where([zen-sin-cristal])) {
+    --edge-color-surface-bg-lowest: transparent !important;
+  }
+
+  /* La barra de informacion del canal. Por el elemento y no por el token,
+     porque el token lo comparte con los botones. `*=` y no `~=` a proposito: la
+     clase real lleva prefijo responsive (`lg:bg-surface-bg-default`), y para el
+     CSS eso es un nombre de clase distinto, no una variante. Acotado a
+     `section`, que no es nada sobre lo que se pase el raton. */
+  :where(html:not([zen-sin-cristal])) section[class*='bg-surface-bg-default'] {
+    background-color: transparent !important;
+  }
+
+  /* Un id, de los pocos que sobrevivieron al rediseño entero. Hoy ya sale
+     transparente por el token; se queda porque no cuesta nada y porque es lo
+     unico estable que hay para esa columna. */
+  :where(html:not([zen-sin-cristal])) #sidebar-wrapper {
+    background-color: transparent !important;
+  }
+
+  /* --- LOS PANELES FLOTANTES -------------------------------------------
+     Menus, dialogos y avisos. Con `-overlay` intacto la mayoria ya conserva su
+     fondo sola; esta regla es para los dos casos que no:
+
+     1. Lo que cuelgue del portal (`body > .pointer-events-auto`) usando la
+        escala `-lowest`, que es la que acabamos de vaciar. Kick monta los
+        paneles flotantes FUERA del arbol de la aplicacion, colgando de <body>:
+        da igual como se llame por dentro el panel, si flota esta ahi.
+     2. Los roles de ARIA, que cubren los paneles montados dentro del arbol
+        normal. Es lo mas robusto del bloque: sobrevive a cualquier rediseño de
+        clases, y de hecho es lo unico que sobrevivio a este.
+
+     LLEVA `backdrop-filter`, Y AQUI HUBO UN ERROR QUE CONVIENE NO REPETIR.
+     Una version anterior lo quitaba afirmando que "no difumina", con una
+     supuesta medida detras. La medida estaba mal hecha: las capturas se tomaban
+     con `browsingContext.captureScreenshot` de WebDriver BiDi, Y ESE CAMINO DE
+     DIBUJADO NO PINTA `backdrop-filter`. La captura salia nitida aunque el
+     navegador lo estuviera difuminando en pantalla perfectamente.
+
+     Regla para el futuro: cualquier comprobacion de `backdrop-filter`,
+     `filter`, `mix-blend-mode` o del acrilico se valida con captura de
+     ESCRITORIO, nunca con la del protocolo.
+
+     EL TINTE NO SOBRA AUNQUE HAYA BLUR. Difuminar no oscurece: si por detras
+     pasa chat sobre fondo claro, el blur devuelve un borron claro y los emotes y
+     el texto siguen compitiendo con el. El 72% garantiza el contraste y el 28%
+     restante es por donde se ve el difuminado. */
+  :where(html:not([zen-sin-cristal])) body > .pointer-events-auto [class*='bg-surface-bg-lowest'],
+  :where(html:not([zen-sin-cristal])) [role='dialog'],
+  :where(html:not([zen-sin-cristal])) [role='menu'],
+  :where(html:not([zen-sin-cristal])) [role='listbox'] {
+    background-color: rgb(16 16 19 / 0.72) !important;
+    backdrop-filter: blur(26px) saturate(140%) !important;
+    border: 1px solid rgb(255 255 255 / 0.09) !important;
+  }
+
+  /* --- EL SELECTOR DE EMOTES ------------------------------------- MEDIDO -
+     Sigue sin estar en el portal, igual que la ultima vez: medido en vivo con
+     sesion iniciada, la cadena de ancestros de dentro a fuera es
+
+       input#search-emotes-input                bg-surface-bg-lowest
+       ...
+       div.relative.rounded-t.bg-surface-bg-default   <- la tarjeta que se ve
+       div#chat-emotes-picker-panel                   <- z-popover, absolute
+       div#chatroom-footer
+       div#channel-chatroom                     bg-surface-bg-lowest
+
+     Ni un nivel con `closest('body > .pointer-events-auto')`. Esta anclado
+     dentro del propio chat, asi que la regla del portal de arriba no lo alcanza
+     y necesita la suya.
+
+     La tarjeta usa `-default`, que NO vaciamos, o sea que hoy ya conserva fondo
+     solido: esta regla no lo rescata, le pone cristal, que es lo que se pedia
+     desde el principio. Va por el hijo directo del panel y no por su clase
+     porque la clase es justo lo que Kick acaba de renombrar; el id aguanto.
+
+     El buscador de dentro si lleva `bg-surface-bg-lowest`, o sea que el token lo
+     vacia y se quedaria sin caja donde escribir: se le devuelve un relleno tenue.
+
+     Pendiente de verlo con el panel abierto y el chat corriendo por detras: si
+     los emotes no se distinguen, LO QUE SUBE ES EL TINTE, no se quita el blur. */
+  :where(html:not([zen-sin-cristal])) #chat-emotes-picker-panel > div {
+    background-color: rgb(16 16 19 / 0.72) !important;
+    backdrop-filter: blur(26px) saturate(140%) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #chat-emotes-picker-panel #search-emotes-input {
+    background-color: rgb(255 255 255 / 0.07) !important;
+  }
+}
+
+/* --- El panel de creador de Kick -------------------------------- MEDIDO -
+   dashboard.kick.com cae dentro de `domain(kick.com)`, pero su rejilla no se
+   parece a la del canal. Medido el 24-09-2026 en /stream: la barra lateral ya
+   salia de cristal y todo lo demas era un contenedor `bg-black` (2166x1174)
+   con los paneles —sesion, vista previa, chat, acciones— en
+   `--edge-color-surface-bg-default` (#181b1f).
+
+   Ese token es el que el bloque de kick.com deja a proposito sin tocar porque
+   lo comparten los botones, y aqui tambien, asi que se va por elemento: el
+   contenedor de la rejilla, y los `div` que lo usan pasan a velo (un boton
+   nunca es un `div`). Un panel dentro de otro no suma dos velos.
+   `--color-black` tampoco se toca: es el negro de toda la escala. */
+@-moz-document domain(dashboard.kick.com) {
+  :where(html:not([zen-sin-cristal])) div.grow.overflow-hidden.bg-black {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) div[class~='bg-surface-bg-default'] {
+    background-color: rgb(255 255 255 / 0.04) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) div[class~='bg-surface-bg-default'] div[class~='bg-surface-bg-default'] {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Google (buscador) --------------------------------------------- MEDIDO -
+   Solo IDs estables. Las clases de Google (.RNNXgb, .b2Rnsc) son ofuscadas y
+   cambian sin aviso.
+
+   ESTE BLOQUE SOLO SIRVE CON GOOGLE EN TEMA OSCURO. Google elige el tema por el
+   ajuste de la cuenta y no por `prefers-color-scheme`, asi que puede estar
+   sirviendo su CSS claro; vaciarle el fondo entonces deja texto casi negro sobre
+   el cristal y no se lee nada.
+
+   No hay que elegir a mano: 90-exclusions.css lleva un rescate condicional que
+   mira el `<meta name="color-scheme">` de la propia pagina —Google solo lo emite
+   con el tema oscuro— y devuelve el fondo solido cuando hace falta. Con el tema
+   oscuro puesto, ese rescate no casa y este bloque hace su trabajo. Alli esta la
+   medida completa. */
+@-moz-document domain(google.com) {
+  :where(html:not([zen-sin-cristal])) body#gsr,
+  :where(html:not([zen-sin-cristal])) #main,
+  :where(html:not([zen-sin-cristal])) #cnt,
+  :where(html:not([zen-sin-cristal])) #rcnt,
+  :where(html:not([zen-sin-cristal])) #appbar,
+  :where(html:not([zen-sin-cristal])) #fbar {
+    background-color: transparent !important;
+  }
+
+  /* LA FRANJA DE ARRIBA, QUE SOLO APARECE AL BAJAR --------------- MEDIDO -
+     El catalogo daba este sitio por bueno con 60k de area opaca, "la caja del
+     buscador, que es un control". Faltaba algo mucho mas grande, y la razon de
+     que no saliera es de metodo: la auditoria se hizo SIN desplazar la pagina, y
+     esta franja no existe hasta que bajas. Medido el 17-09-2026, con la pagina
+     en scrollY 800:
+
+       div#searchform   204k   rgb(34, 36, 42)   la banda de lado a lado
+       div.RNNXgb        45k   rgb(54, 56, 64)   la caja de busqueda, dentro
+
+     `#searchform` es un id y lleva ahi desde siempre; el resto de la cabecera
+     son clases con hash (.CvDJxb, .YNk70c) que aqui no se tocan.
+
+     VELO Y NO VACIADO, y se paga un precio que conviene saber. Esta banda existe
+     para que los resultados no se lean por debajo del buscador al desplazarse.
+     Vaciarla del todo devolveria esa superposicion, que es justo de lo que uno
+     se queja cuando la ve. Asi que se queda como panel —el mismo 6% que la
+     cabecera de Codebase Memory, por la misma razon— y el texto que pasa por
+     debajo se sigue intuyendo. Es el trato que ya estaba aceptado ahi.
+
+     La caja de busqueda NO se toca: es un control, tiene que verse como un
+     objeto sobre el que se escribe, y a 45k no es lo que tapaba nada. */
+  :where(html:not([zen-sin-cristal])) #searchform {
+    background-color: rgb(255 255 255 / 0.06) !important;
+  }
+}
+
+/* --- Gmail --------------------------------------------------- A MEDIAS, MEDIDO -
+   Aqui esta hecha la mitad que es correcta en cualquier tema. La otra mitad
+   espera a que Gmail este en su tema oscuro, y no por pereza: medido en la
+   bandeja real, con el tema que trae puesto este perfil, los asuntos y
+   remitentes son `rgb(32, 33, 36)` —luminancia 33, casi negro— sobre un panel
+   `rgba(255, 255, 255, 0.8)`. Vaciar ese panel no da un Gmail de cristal, da un
+   Gmail sin texto.
+
+   LA ESTRUCTURA, MEDIDA. Cuatro capas, y el reparto importa:
+
+     .wl        3172k   rgb(68, 68, 68)                 el fondo del tema, la pantalla entera
+     .nH        2605k   rgba(255, 255, 255, 0.8)        el panel del correo: el 82% de la pantalla
+     .wq         722k   linear-gradient(negro 0.3 ->)   sombra superior del panel
+     .wp         354k   linear-gradient(90deg, ...)     sombra izquierda del panel
+     .gb_*       349k   rgb(255, 255, 255)              la barra de Google de arriba
+
+   Se quitan `.wl` y las dos sombras. Eso deja de cristal el marco y la zona de la
+   barra lateral, cuyo texto es blanco (medido, luminancia 255) y por tanto se lee
+   perfectamente sobre el acrilico. Ensayado en caliente: de 5 capas grandes se
+   queda en 2.
+
+   Y se dice lo que eso vale, sin adornar: como el panel ocupa el 82%, esto
+   descubre alrededor del 7% de la pantalla. La ganancia visible de verdad es
+   quitar el gris 68,68,68 y las dos sombras negras, que sobre acrilico es justo
+   lo que lo ensucia.
+
+   LO QUE FALTA: con Gmail en tema oscuro, anadir `.nH` (y la barra `.gb_*`) a la
+   lista de abajo. Entonces el panel pasa a cristal y el texto, que ya sera claro,
+   se sigue leyendo. Se cambia en Gmail: engranaje > Ver todos los ajustes >
+   Temas > Oscuro.
+
+   AVISO SOBRE ESTOS SELECTORES. `.wl`, `.wq` y `.wp` son clases ofuscadas, que es
+   lo que la cabecera de este archivo dice no targetear. Aqui se hace a
+   sabiendas, porque no hay alternativa: esos divs no llevan NI UN atributo
+   —comprobado, ni `role`, ni `gh`, ni `jsname`—, ni tokens, y sus hojas son de
+   otro origen. Las de Gmail al menos son ofuscadas ESTABLES, con anos a la
+   espalda, no hashes por build como las de YouTube. Si un dia deja de funcionar,
+   se vuelve a medir: la receta esta en la cabecera. */
+@-moz-document domain(mail.google.com) {
+  :where(html:not([zen-sin-cristal])) .wl {
+    background-color: transparent !important;
+  }
+
+  /* Sombras del panel, pintadas con degradado: `background-color: transparent`
+     no las toca, hace falta quitar la imagen. */
+  :where(html:not([zen-sin-cristal])) .wq,
+  :where(html:not([zen-sin-cristal])) .wp {
+    background-image: none !important;
+  }
+}
+
+/* --- Google Drive -------------------------------------------------- MEDIDO -
+   El caso de libro del metodo 1 de la cabecera: Drive esta tokenizado de arriba
+   abajo con Material 3 (`--gm3-sys-color-*`) mas su propia capa (`--dt-*`), y no
+   hace falta nombrar ni una clase de las suyas para vaciarlo. Medidas en Mi
+   unidad, con el navegador pidiendo modo oscuro:
+
+     .YkfxEe   2861k   var(--dt-surface-container-low)   el armazon de la pagina
+     .zyephd   2282k   var(--dt-surface)                 la region del listado
+     .PolqHc   2081k   var(--dt-surface)                 el panel de contenido
+
+   Tres capas, dos tokens. Vaciando esos dos (y sus gemelos gm3, porque los
+   componentes sueltos leen la familia gm3 y no la de Drive) se cae el 100% de
+   lo que tapaba: medido despues, no queda NI UNA capa opaca de mas de 250x120.
+
+   ESTO PIDE EL TEMA OSCURO DE DRIVE, Y NO ES PEREZA
+   Drive trae su tema oscuro entero servido en la pagina, pero en DOS mitades:
+   los 221 tokens de color, y 84 reglas de arreglo para sus componentes viejos
+   que cuelgan de la clase de tema del <body>. Los tokens si se pueden forzar
+   desde aqui; las 84 reglas no, porque van con clases de hash de build, justo
+   lo que la cabecera dice no targetear.
+
+   Se probo forzar solo los tokens, con Drive en claro: la pantalla principal
+   queda impecable, pero los menus viejos (el de "Nuevo") se quedan sin la mitad
+   de los arreglos. Y fingir la clase tampoco vale: se le pone al <body> y el JS
+   de Drive la revierte a los pocos segundos.
+
+   Asi que el oscuro se enciende donde toca, en Drive: engranaje > Configuracion
+   > Aspecto > Oscuro. Con eso Google aplica sus dos mitades y aqui solo queda
+   quitar fondos. Si algun dia lo pones en Claro, esto se te vera mal: el texto
+   pasa a negro sobre el cristal. En ese caso, devuelve `domain(drive.google.com)`
+   a la lista de rescate de 90-exclusions.css.
+
+   POR QUE `--dt-surface` NO SE PUEDE VACIAR A SECAS
+   Ese token no pinta solo el fondo de la pagina: pinta TAMBIEN el panel de los
+   menus y dialogos, que cuelgan del <body> y lo heredan. Vaciandolo sin mas, el
+   menu de "Nuevo" sale transparente y se lee el listado de archivos a traves de
+   sus opciones. Por eso el segundo bloque se lo devuelve, pero solo dentro de
+   los emergentes, y los encuentra por ROL ARIA —`[role=menu]`, `[role=dialog]`,
+   `[role=listbox]`, `[role=tooltip]`—, que son estables y no hashes.
+   El valor no se inventa: `--dt-surface-container-high` es el que Material 3
+   reserva para menus y dialogos, y es el propio de Drive.
+
+   Ojo con anadir `[role=grid]` a esa lista: el listado de archivos es una
+   rejilla, y devolverle el fondo vuelve a tapar la pagina entera. */
+@-moz-document domain(drive.google.com) {
+  /* `#drive-main-page` NO ES DECORACION ------------------------------ MEDIDO -
+     Revisado el 12-09-2026: la pagina volvia a salir opaca —`.YkfxEe` en
+     rgb(40,42,44), 2584x1369, el viewport entero— con la regla aplicandose.
+     Recorriendo la cadena de ancestros y leyendo el token en cada nivel:
+
+       div.YkfxEe          --dt-surface-container-low = #282a2c   <- pintaba
+       div#drive-main-page --dt-surface-container-low = #282a2c   <- lo declara
+       body                --dt-surface-container-low = transparent
+       html                --dt-surface-container-low = transparent
+
+     O sea que Drive metio un envoltorio nuevo que RE-DECLARA la paleta, y una
+     declaracion propia le gana a lo que se herede del padre, venga del origen
+     que venga. La herencia no atraviesa una declaracion. Por eso hay que
+     nombrarlo: no basta con `html, body`. */
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body,
+  :where(html:not([zen-sin-cristal])) #drive-main-page {
+    --dt-background: transparent !important;
+    --dt-surface: transparent !important;
+    --dt-surface-dim: transparent !important;
+    --dt-surface-container-low: transparent !important;
+    --dt-surface-container-lowest: transparent !important;
+    --gm3-sys-color-background: transparent !important;
+    --gm3-sys-color-surface: transparent !important;
+    --gm3-sys-color-surface-dim: transparent !important;
+    --gm3-sys-color-surface-container-low: transparent !important;
+    --gm3-sys-color-surface-container-lowest: transparent !important;
+  }
+
+  /* Los emergentes recuperan cuerpo. Todos cuelgan del <body>, pero de dos
+     formas distintas, y hacen falta las dos mitades del selector: casi siempre
+     el rol va dentro de un envoltorio (`body > div` que lo contiene), y a veces
+     el emergente ES el hijo directo, sin envoltorio.
+
+     Contados en Mi unidad: de los 112 elementos con rol de emergente que Drive
+     tiene en el DOM, la primera mitad cubre 111; el que se escapaba era el
+     tooltip de "Asistencia", que cuelga del body a pelo. Sin la segunda mitad
+     se quedaba transparente. */
+  :where(html:not([zen-sin-cristal])) body > [role='menu'],
+  :where(html:not([zen-sin-cristal])) body > [role='dialog'],
+  :where(html:not([zen-sin-cristal])) body > [role='listbox'],
+  :where(html:not([zen-sin-cristal])) body > [role='tooltip'],
+  :where(html:not([zen-sin-cristal])) body > div:has([role='menu'], [role='dialog'], [role='listbox'], [role='tooltip']) {
+    --dt-background: var(--dt-surface-container-high, #282a2c) !important;
+    --dt-surface: var(--dt-surface-container-high, #282a2c) !important;
+    --dt-surface-dim: var(--dt-surface-container-high, #282a2c) !important;
+    --dt-surface-container-low: var(--dt-surface-container-high, #282a2c) !important;
+    --dt-surface-container-lowest: var(--dt-surface-container-high, #282a2c) !important;
+    --gm3-sys-color-background: var(--dt-surface-container-high, #282a2c) !important;
+    --gm3-sys-color-surface: var(--dt-surface-container-high, #282a2c) !important;
+    --gm3-sys-color-surface-dim: var(--dt-surface-container-high, #282a2c) !important;
+    --gm3-sys-color-surface-container-low: var(--dt-surface-container-high, #282a2c) !important;
+    --gm3-sys-color-surface-container-lowest: var(--dt-surface-container-high, #282a2c) !important;
+  }
+}
+
+/* --- Google Docs: el documento ------------------------------------- MEDIDO -
+   Este es el unico sitio del archivo que entra A MEDIAS Y A PROPOSITO, y la
+   mitad que falta no es un pendiente: es la que no debe hacerse.
+
+   Docs NO TIENE MODO OSCURO EN LA WEB. Medido el 17-09-2026 con el navegador
+   pidiendo oscuro (`prefers-color-scheme: dark` = true en la propia pagina, y
+   ningun `<meta name="color-scheme">`):
+
+     #docs-editor-container   3060k   rgb(248, 250, 253)   el gris de alrededor
+     #docs-chrome              320k   rgb(248, 250, 253)   la barra de arriba
+     .navigation-widget        298k   rgb(248, 250, 253)   el panel de la izquierda
+     #docs-toolbar-wrapper     112k   rgb(240, 244, 249)   la barra de herramientas
+
+   y el texto de toda esa interfaz en rgb(31, 31, 31), luminancia 31. Casi negro.
+   Vaciar la barra o el panel lateral daria un Docs sin menus legibles: es el
+   limite de contraste del README, y por eso este dominio esta en la lista de
+   90-exclusions.css desde el principio.
+
+   LO QUE SI SE PUEDE, QUE ES LO QUE SE PEDIA: EL ALREDEDOR DEL FOLIO.
+   El margen que rodea la hoja no tiene texto encima. Es solo el lienzo sobre el
+   que flota el documento, y ahi el cristal no se come nada:
+
+     #docs-editor-container  ->  el contenedor exterior
+     #docs-editor            ->  el que pinta el gris de verdad
+     #kix-appview            ->  ya venia transparente, se nombra por si cambia
+
+   EL FOLIO SOBREVIVE PORQUE NO ES CSS. Comprobado antes de escribir esto: el
+   papel se pinta en un <canvas> de 794x1123 —el tamano exacto de la pagina— y
+   `.kix-page-paginated` sale con `rgba(0, 0, 0, 0)`. O sea que el blanco del
+   documento esta dentro del mapa de bits y no hay ninguna regla que pueda
+   quitarlo. Se probo inyectando estas mismas tres reglas en la pagina viva: el
+   folio se quedo blanco y el margen dejo ver el fondo.
+
+   Y POR QUE `url-prefix` Y NO `domain`. En docs.google.com viven tambien Sheets
+   y Slides, y ahi no hay alrededor que ensenar: la rejilla de Sheets mide
+   2870k —el viewport entero menos las barras— y ES la hoja de calculo, con su
+   texto en negro. Vaciarla es dejar la hoja sin numeros. Esos se quedan en
+   90-exclusions.css, nombrados uno a uno. */
+@-moz-document url-prefix(https://docs.google.com/document/) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body,
+  :where(html:not([zen-sin-cristal])) #docs-editor-container,
+  :where(html:not([zen-sin-cristal])) #docs-editor,
+  :where(html:not([zen-sin-cristal])) #kix-appview {
+    background-color: transparent !important;
+  }
+}
+
+/* --- X / Twitter --------------------------------------------------------- MEDIDO -
+   X NO TIENE TOKENS. Comprobado leyendo sus hojas en vivo: el sitio esta hecho
+   con react-native-web, que emite una clase atomica por cada declaracion y con
+   el color literal dentro. Medido:
+
+     .r-kemksi   -> rgb(0, 0, 0)
+     .r-14lw9ot  -> rgb(255, 255, 255)
+     .r-1m3jxhj  -> rgb(15, 20, 25)
+
+   Ni una sola `var(--algo)` de fondo en todo el sitio. Por eso el metodo 1 de
+   la cabecera (atacar el token) no existe aqui, y el metodo 3 (la utilidad)
+   tampoco: `r-kemksi` es un hash, justo lo que este archivo no targetea.
+
+   Queda el metodo 2, el elemento — y en X es el bueno, porque sus `data-testid`
+   llevan anos sin cambiar (son los que usan todos los bloqueadores de la barra
+   lateral).
+
+   POR QUE SE VEIA TODO NEGRO
+   La regla anterior vaciaba `#react-root > div`, un solo nivel. X mete varios
+   divs de layout entre la raiz y las columnas, y el fondo lo pinta uno de los
+   de abajo, asi que seguia tapando. En vez de adivinar cuantos niveles hay, se
+   usa `:has()`: "todo div que contenga la columna principal" son exactamente
+   los contenedores del armazon, ni uno mas — ninguna tarjeta contiene una
+   columna entera. Si manana X mete otro div, tambien cae. */
+@-moz-document domain(x.com), domain(twitter.com) {
+  /* 1. El armazon entero, tenga los niveles que tenga */
+  :where(html:not([zen-sin-cristal])) #react-root,
+  :where(html:not([zen-sin-cristal])) #react-root div:has([data-testid='primaryColumn']),
+  :where(html:not([zen-sin-cristal])) #react-root div:has([data-testid='sidebarColumn']),
+  :where(html:not([zen-sin-cristal])) [data-testid='primaryColumn'],
+  :where(html:not([zen-sin-cristal])) [data-testid='sidebarColumn'],
+  :where(html:not([zen-sin-cristal])) header[role='banner'] {
+    background-color: transparent !important;
+  }
+
+  /* 2. LOS PANELES DE LA DERECHA.
+     Aqui hubo un intento fallido que vale la pena dejar escrito: se targeteo
+     `[data-testid="sidebarColumn"] aside`, porque asi es como los bloqueadores
+     de toda la vida se cargan estos modulos. No cazo nada — "You might like" y
+     "What's happening" siguieron negros. X ya no los envuelve en <aside>.
+
+     Y ese es el problema de fondo: sin tokens y sin clases utilizables (ver
+     arriba), CADA nombre de elemento que se elija es una apuesta a que X no lo
+     cambie. Ya fallo una vez.
+
+     Asi que se deja de apostar. La columna lateral no tiene nada dentro que
+     necesite fondo propio salvo los botones "Follow", los avatares y el campo
+     de busqueda. Se vacia TODO lo demas con `*` y se devuelven esos tres.
+     Ahora da igual como se llame el envoltorio de los modulos: no hay
+     elemento, del tipo que sea, que pueda volver a pintar negro ahi.
+
+     El truco de especificidad es `:where()`, que vale 0. Asi la regla general
+     se queda en (0,1,0) y cualquier excepcion de abajo le gana sin tener que
+     inflarla con !important encadenados. */
+  :where(html:not([zen-sin-cristal])) [data-testid='sidebarColumn']
+    *:not(
+      :where(button, [role='button'], button *, [role='button'] *, img, svg, video, canvas)
+    ) {
+    background-color: transparent !important;
+  }
+
+  /* Si algun dia X vuelve a envolver los modulos en <aside>, recuperan tinte de
+     tarjeta. Mientras no exista, esta regla simplemente no caza a nadie: cuesta
+     una linea y cubre la vuelta atras.
+
+     Sin `backdrop-filter`, por lo de siempre: dentro de una pagina transparente
+     no hay backdrop que muestrear y Gecko lo compone en NEGRO. El filo de 1px
+     hace el trabajo del cristal. */
+  :where(html:not([zen-sin-cristal])) [data-testid='sidebarColumn'] aside {
+    background-color: rgb(255 255 255 / 0.06) !important;
+    border: 1px solid rgb(255 255 255 / 0.1) !important;
+  }
+
+  /* 3. EL COMPOSITOR DE LA PORTADA.
+     La caja de "What's happening?" que hay encima del timeline seguia negra:
+     vive en la columna PRINCIPAL, no en la lateral, asi que la regla de arriba
+     no la tocaba.
+
+     Mismo truco que con el armazon: todo div que contenga el area de texto es
+     envoltorio del compositor, ni uno mas. `tweetTextarea_0` es de los
+     data-testid mas viejos de X. El boton "Post" no es antepasado del area de
+     texto, asi que conserva su blanco solo.
+
+     LA FRANJA QUE QUEDABA: la fila de iconos.
+     Vaciar los antepasados del area de texto no bastaba, y la razon es de
+     arbol: la barra de iconos y el boton Post NO cuelgan del area de texto,
+     son sus HERMANOS. Su fila propia no es antepasada de nada que se
+     targeteara, asi que se quedaba negra aunque el compositor entero ya no lo
+     estuviera.
+
+     Se anaden los antepasados de la barra de iconos, que son los que faltaban,
+     y lo que cuelga de ella. Los botones se excluyen con `:where()` para que
+     Post y los iconos conserven lo suyo. */
+  :where(html:not([zen-sin-cristal])) [data-testid='primaryColumn'] div:has([data-testid='tweetTextarea_0']),
+  :where(html:not([zen-sin-cristal])) [data-testid='primaryColumn'] div:has([data-testid='toolBar']),
+  :where(html:not([zen-sin-cristal])) [data-testid='toolBar'],
+  :where(html:not([zen-sin-cristal])) [data-testid='toolBar']
+    div:not(:where(button, [role='button'], button *, [role='button'] *)) {
+    background-color: transparent !important;
+  }
+
+  /* El buscador: sin fondo no se ve donde escribir. Se ataca el envoltorio
+     directo del input, que es la pastilla, sin depender de como se llame la
+     clase; y si ese envoltorio no existiera, el formulario hace de pastilla.
+
+     El `:not(:has(...))` no es adorno: las dos reglas cazarian a la vez y, al
+     estar una dentro de la otra, los dos tintes se sumarian y el buscador
+     saldria al doble de claro que el resto. Asi solo se aplica una. */
+  :where(html:not([zen-sin-cristal])) [data-testid='sidebarColumn'] div:has(> input),
+  :where(html:not([zen-sin-cristal])) [data-testid='sidebarColumn'] form:not(:has(div > input)) {
+    background-color: rgb(255 255 255 / 0.07) !important;
+  }
+
+  /* 4. LA BARRA NEGRA DE ARRIBA ------------------------------------- MEDIDO -
+     La cabecera fija de la columna (flecha de volver y nombre, o las pestañas
+     de la portada) lleva `backdrop-filter: blur(12px)` y un 65% de negro. En la
+     parte alta de la pagina no tiene nada pintado detras, y Gecko compone ese
+     vacio en negro: medido el 24-09-2026, 9 de 9 puntos de su caja sin nada
+     opaco debajo. Con Zen Internet puesto es peor, porque su hoja le quita el
+     65% y deja el blur solo. Sin el filtro queda su propio 65% sobre el
+     cristal, que es la barra translucida que X pretendia. Se apaga en toda la
+     columna, que solo lo usa ahi y en dos botones de 36px. */
+  :where(html:not([zen-sin-cristal])) [data-testid='primaryColumn'] * {
+    backdrop-filter: none !important;
+  }
+}
+
+/* --- La consola de desarrolladores de X ---------------------------- MEDIDO -
+   console.x.com cae dentro de `domain(x.com)`, pero ese bloque va por
+   `data-testid` de la red social y aqui no casa nada. Medido el 24-09-2026: el
+   100% del viewport en negro, de tres tokens de su propio sistema:
+
+     --console-canvas    el lienzo (.bg-canvas)                #000
+     --x-bg-primary      la barra lateral y el `main`           #000 / #0a0a0a
+     --console-surface   las tarjetas (.bg-surface)            #0a0a0a
+
+   Ningun texto ni borde usa ese negro (medido: cero elementos), asi que vaciar
+   `--x-bg-primary` no deja botones sin letra. Las tarjetas pasan a velo.
+   Solo con `html[data-theme=dark]`, que es como marca el tema oscuro: en claro
+   el bloque no casa. */
+@-moz-document domain(console.x.com) {
+  html[data-theme='dark']:not(:where([zen-sin-cristal])) {
+    --console-canvas: transparent !important;
+    --x-bg-primary: transparent !important;
+    --console-surface: rgb(255 255 255 / 0.04) !important;
+  }
+}
+
+/* --- Prime Video --------------------------------------------------- MEDIDO -
+   Casi todo lo tapaba UNA capa: `div#a-page`, 6739k px2, `rgb(0, 5, 13)`. Ese id
+   es el envoltorio de pagina de Amazon, el mismo que usan en todas sus webs
+   desde hace años: no es de build y no hay que tocar ni una clase para el.
+
+   Debajo, las bandas de la portada:
+     section...Magnet__wrapper   1070k  x6   rgb(0, 5, 13)
+     footer...Footer__footer      216k       rgb(34, 34, 34)
+
+   Esas SI llevan hash de CSS Modules (`DVPAWebWidgetsCustomComponents_Magnet__
+   wrapper`), pero el hash va al final y el nombre legible va delante, asi que se
+   cogen por `[class*='_Magnet__wrapper']`: se nombra la parte que puso una
+   persona y se ignora la que pone el compilador. Mismo truco que en Spotify.
+
+   OJO CON EL ALCANCE, Y ES LO IMPORTANTE DE ESTE BLOQUE: `#a-page` existe
+   TAMBIEN en amazon.com, que sale en el historial y se pinta EN CLARO, con el
+   texto negro. Por eso el `@-moz-document` dice `primevideo.com` a secas y no
+   `amazon.com`. Ampliarlo al dominio de la tienda dejaria Amazon sin fondo y sin
+   texto legible. Si algun dia hace falta la tienda, va a la lista de rescate de
+   90-exclusions.css, no aqui.
+
+   Medido antes y despues: de 5 capas opacas —la mayor el viewport entero— a 2, y
+   las dos que quedan son un `nav` con clase de hash puro (105k, sin nombre
+   legible del que tirar) y un boton blanco, que es contenido. */
+@-moz-document domain(primevideo.com) {
+  :where(html:not([zen-sin-cristal])) #a-page,
+  :where(html:not([zen-sin-cristal])) [class*='_Magnet__wrapper'],
+  :where(html:not([zen-sin-cristal])) [class*='_Footer__footer'] {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Shopify Dev Docs ------------------------------------------------ MEDIDO -
+   Es OTRO dominio que `shopify.com`, y va al reves que el: la documentacion
+   viene oscura de fabrica —`html.Mode-Dark`, texto a luminancia 215— asi que
+   aqui si hay cristal que ganar. El panel de la tienda, que es claro, esta en la
+   lista de rescate de 90-exclusions.css.
+
+   Todo va con hash de CSS Modules y el nombre legible delante, asi que se coge
+   por ese trozo y no por el hash:
+
+     body.Theme-Docs        4664k   rgb(13, 18, 19)   el lienzo
+     _PageLayout_           4588k   rgb(13, 18, 19)   el armazon
+     _Hero_                  585k   rgb(9, 31, 33)    la cabecera tenida
+     _Panel_ (#DevAssistant) 536k   rgb(10, 29, 38)   el panel del asistente
+     _PageFooter_            400k   rgb(21, 29, 30)
+     _HomeCard_              170k   rgb(16, 27, 46)
+     _Header_ / _Nav_         76k   rgb(13, 18, 19)
+     _Card_                   66k   rgb(48, 75, 79) y rgb(21, 29, 30)
+
+   Lienzo y armazon se vacian; las tarjetas y los dos paneles van con velo,
+   porque son fichas de documentacion y tienen que seguir separandose del fondo.
+
+   UNA NOTA SOBRE COMO SE MIDIO ESTO, que sirve para todo el archivo. Probando
+   desde una hoja normal de pagina, `[class*='_PageLayout_']` NO ganaba: la regla
+   del sitio empata en especificidad y a veces la supera, asi que el div seguia
+   opaco y parecia que el selector estaba mal. No lo estaba —`querySelectorAll`
+   encontraba el elemento— y subiendo la especificidad a `html body [class*=...]`
+   se vaciaba entero. Aqui eso NO hace falta: este archivo se instala como
+   `userContent.css`, o sea hoja de ORIGEN USUARIO, y ahi un `!important` de
+   usuario gana a cualquier `!important` de autor pase lo que pase con la
+   especificidad. Es exactamente lo que dice la cabecera de 00-base.css. Si
+   alguna vez mides con una extension o pegando CSS en la consola y una regla
+   "no funciona", mira esto antes de reescribirla.
+
+   Medido antes y despues: de 5 capas opacas —la mayor de 4664k— a 0 de lienzo,
+   quedando solo lo que va con velo a proposito. */
+@-moz-document domain(shopify.dev) {
+  html.Mode-Dark:not(:where([zen-sin-cristal])) body,
+  :where(html:not([zen-sin-cristal])) [class*='_PageLayout_'],
+  :where(html:not([zen-sin-cristal])) [class*='_PageFooter_'],
+  :where(html:not([zen-sin-cristal])) [class*='_Header_'],
+  :where(html:not([zen-sin-cristal])) [class*='_Nav_'],
+  :where(html:not([zen-sin-cristal])) [class*='_Hero_'] {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) [class*='_Card_'],
+  :where(html:not([zen-sin-cristal])) [class*='_HomeCard_'],
+  :where(html:not([zen-sin-cristal])) [class*='_Panel_'] {
+    background-color: rgb(255 255 255 / 0.06) !important;
+  }
+}
+
+/* --- Leetify ------------------------------- MEDIDO EN LA PORTADA, PARCIAL -
+   Se dice el alcance por delante: esto arregla la PORTADA. El panel de
+   estadisticas, que es donde se pasa el tiempo de verdad, pide cuenta de Steam
+   y no se ha podido abrir. No es que el bloque se quede corto por vago; es que
+   Leetify no da por donde cogerlo a distancia, y aqui esta el por que.
+
+   NO HAY UN SOLO TOKEN DE FONDO. Los 30 tokens de `:root` son la paleta de
+   Bootstrap heredada —`--indigo`, `--teal`, `--gray-dark`, los breakpoints— y
+   ni uno pinta superficie. Todos los fondos son colores literales:
+   `rgb(24, 22, 29)` y `rgb(25, 23, 30)`. O sea que el metodo 1 de la cabecera,
+   el bueno, aqui no existe.
+
+   LO QUE SI SIRVE: es Angular, y sus componentes son ELEMENTOS con nombre
+   propio, no divs con clase. `app-landing-home-achievements` no es un hash de
+   build: es el nombre del componente, y esos duran lo que dura el componente.
+   Vaciando los que pintan se cae la portada entera:
+
+     app-landing-home-performance-tracking   1199k   degradado (24,22,29)
+     app-landing-home-achievements            996k   rgb(24, 22, 29)
+
+   Se listan tambien los hermanos que hoy no pintan pero son del mismo grupo
+   (`-hero`, `-compare`, `-highlights`...): nombrar un componente que no pinta
+   no cuesta nada y cubre el dia que cambien de sitio el color.
+
+   LA TRAMPA QUE CASI CUELA, Y QUE VALE POR TODO ESTE BLOQUE
+   Quedaba un `div.fill` de 756k con el color del lienzo, y el reflejo es
+   meterlo en la lista. NO. Contados en la pagina: hay 26 elementos con clase
+   `.fill`, y solo UNO pinta el lienzo. Los otros son
+     rgb(248, 73, 130)  x2   rosa
+     rgb(77, 196, 158)  x2   turquesa
+     rgb(89, 86, 98)    x5   gris
+   o sea las BARRAS DE LAS GRAFICAS y los medidores. `.fill` no significa
+   "fondo", significa "relleno". Vaciarla habria dejado el panel de estadisticas
+   sin colores en ninguna barra, que es justo lo que uno va a mirar a Leetify.
+   Se queda fuera, y ese unico div de lienzo se acepta como precio.
+
+   TAMPOCO ENTRAN: `div.video-wrapper` (rgb(0,0,0) detras de un video, que es
+   donde el negro va bien), `div.steam-chat-wrapper` (degradado de diseño) ni
+   los dos `div.overlay`, que ya son translucidos —`rgba(25, 23, 30, 0.85)` y un
+   degradado— y estan ahi para que se lea el texto sobre el video.
+
+   EL PANEL, LO QUE SE SABE SIN VERLO: `body` pinta `rgb(25, 23, 30)` y eso lo
+   vacia el nivel base, asi que el lienzo del panel deberia caer solo. Lo que no
+   se sabe es si sus componentes repintan por encima, como hace la portada. Si
+   se ve a medias, se mide con sesion y se añaden sus `app-*` a esta lista, que
+   para eso esta escrita asi. */
+@-moz-document domain(leetify.com) {
+  :where(html:not([zen-sin-cristal])) app-root,
+  :where(html:not([zen-sin-cristal])) app-landing-layout,
+  :where(html:not([zen-sin-cristal])) app-landing-layout-masthead,
+  :where(html:not([zen-sin-cristal])) app-landing-layout-footer,
+  :where(html:not([zen-sin-cristal])) app-landing-home,
+  :where(html:not([zen-sin-cristal])) app-landing-home-hero,
+  :where(html:not([zen-sin-cristal])) app-landing-home-achievements,
+  :where(html:not([zen-sin-cristal])) app-landing-home-performance-tracking,
+  :where(html:not([zen-sin-cristal])) app-landing-home-match-report,
+  :where(html:not([zen-sin-cristal])) app-landing-home-compare,
+  :where(html:not([zen-sin-cristal])) app-landing-home-highlights,
+  :where(html:not([zen-sin-cristal])) app-landing-home-steam-notifications,
+  :where(html:not([zen-sin-cristal])) app-landing-home-supported-data-sources {
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+}
+
+/* --- Cuentas de Google (Material 3) --------------------------------- MEDIDO -
+   `accounts.google.com` es el tercer dominio mas visitado del historial y no lo
+   cubria nadie: el bloque de `google.com` de mas abajo solo nombra IDs del
+   buscador (`body#gsr`, `#rcnt`, `#fbar`), que aqui no existen.
+
+   Esta pagina va con Material 3 y expone su paleta entera en tokens
+   `--gm3-sys-color-*`, que son nombres de sistema de diseño, no hashes. Es la
+   misma familia que ya ataca el bloque de Google Drive de mas arriba, asi que
+   el metodo esta probado en este repo; lo que cambia es el reparto, porque
+   Drive vacia toda la escala y aqui se conserva escalonada (ver debajo):
+
+     --gm3-sys-color-background                 rgb(0 0 0)
+     --gm3-sys-color-surface                    rgb(19 19 20)
+     --gm3-sys-color-surface-dim                rgb(19 19 20)
+     --gm3-sys-color-surface-container-lowest   rgb(14 14 14)   <- las dos capas
+     --gm3-sys-color-surface-container-low      rgb(27 27 27)
+     --gm3-sys-color-surface-container          rgb(30 31 32)
+     --gm3-sys-color-surface-container-high     rgb(40 42 44)
+     --gm3-sys-color-surface-container-highest  rgb(51 53 55)
+
+   Tapaban dos: `div.S7xv8` a pantalla completa (1520k) y la tarjeta de entrada
+   (418k), las dos con `var(--gm3-sys-color-surface-container-lowest, #fff)`.
+   Las clases son ofuscadas, pero no hace falta tocarlas: van por token.
+
+   La escala se respeta como escala. Del `-lowest` para abajo es lienzo y se
+   vacia; de `-low` para arriba son contenedores que en Material existen para
+   levantarse del fondo, asi que van con velo creciente, igual de separados
+   entre si que en el original.
+
+   POR QUE VA DENTRO DE UN `@media (prefers-color-scheme: dark)`
+   Porque estos tokens cambian de valor con el tema, y en claro
+   `-container-lowest` es casi blanco con el texto casi negro: vaciarlo ahi deja
+   la pagina en blanco. Medido aqui con el navegador pidiendo oscuro, la pagina
+   sirve su paleta nocturna y el texto sale con luminancia mediana 227 sobre 11
+   muestras, o sea claro y legible sobre el cristal. Este repo fuerza
+   `layout.css.prefers-color-scheme.content-override = 0`, asi que dentro de Zen
+   la condicion siempre se cumple; fuera, el bloque se apaga solo.
+
+   Ojo con el `#fff` del final de ese `var()`: es el valor de reserva de Google
+   si el token no existiese. No llega a usarse porque aqui SE DEFINE el token, y
+   definido a `transparent` ya no hay reserva que valga. Pero si algun dia Google
+   renombra la familia, ese blanco es lo que aparecera, y sera la pista.
+
+   MEDIDO ANTES Y DESPUES en la pagina de entrada: de 2 capas opacas —una el
+   viewport entero— a 0.
+
+   LO QUE NO ENTRA, Y POR QUE: `console.cloud.google.com` usa esta MISMA familia
+   de tokens, y son 53 visitas, asi que apetece meterlo aqui. No se hace porque
+   no se ha podido medir —redirige a esta misma pantalla de entrada si no hay
+   sesion— y porque la Consola tiene su PROPIO ajuste de tema, con opcion Claro
+   independiente del navegador. Si esta en Claro, este bloque la dejaria con
+   texto negro sobre cristal, que es el fallo que no se puede permitir. Cuando
+   alguien pueda abrirla con sesion y comprobar que va en oscuro, se añade
+   `domain(console.cloud.google.com)` a la linea de abajo y ya esta: los tokens
+   son los mismos.
+
+   ACTUALIZACION 24-09-2026: se pudo medir, y NO eran los mismos. La Consola
+   tiene su propio bloque justo debajo, con su familia `--cm-sys-color-*`. */
+@-moz-document domain(accounts.google.com) {
+  @media (prefers-color-scheme: dark) {
+    html:not(:where([zen-sin-cristal])),
+    :where(html:not([zen-sin-cristal])) body {
+      --gm3-sys-color-background: transparent !important;
+      --gm3-sys-color-surface: transparent !important;
+      --gm3-sys-color-surface-dim: transparent !important;
+      --gm3-sys-color-surface-container-lowest: transparent !important;
+
+      --gm3-sys-color-surface-container-low: rgb(255 255 255 / 0.04) !important;
+      --gm3-sys-color-surface-container: rgb(255 255 255 / 0.06) !important;
+      --gm3-sys-color-surface-container-high: rgb(255 255 255 / 0.09) !important;
+      --gm3-sys-color-surface-container-highest: rgb(255 255 255 / 0.12) !important;
+    }
+  }
+}
+
+/* --- Consola de Google Cloud ------------------------------------ MEDIDO -
+   La que el bloque de arriba dejaba fuera por no poder medirla. Medida el
+   24-09-2026 con sesion, en la portada de un proyecto: el cristal llegaba a la
+   barra de arriba y se cortaba en un panel central flotante, con las esquinas
+   redondeadas, que tapaba el 91% del viewport en #131314:
+
+     cfc-panel.cfc-panel-center.cfc-panel-color-white    2778k
+     cfc-router-outlet                                    2778k, el mismo hueco
+     div.pcc-scrollable-panel                             2778k, el mismo hueco
+     div.cfc-background-contrast                           119k
+     a.quick-access-card (x8)                              las tarjetas
+
+   NO usa la familia `--gm3-*` de la pantalla de entrada, como se suponia, sino
+   la suya, `--cm-sys-color-*`. Ese #131314 es `--cm-sys-color-backdrop`, y en su
+   hoja solo se declara bajo `body[data-cm-color-scheme=dark]`. De ahi la
+   condicion, que resuelve el miedo de arriba al ajuste de tema propio de la
+   Consola: en Claro ese atributo no esta, el bloque no casa y la Consola se
+   queda blanca y legible. Solo se vacia lo que ya se pinta oscuro.
+
+   Van el token y los elementos medidos. El panel central conserva un velo
+   minimo para que su silueta redondeada se siga leyendo como tal. */
+@-moz-document domain(console.cloud.google.com) {
+  :where(html:not([zen-sin-cristal])) body[data-cm-color-scheme='dark'] * {
+    --cm-sys-color-backdrop: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) body[data-cm-color-scheme='dark'] cfc-router-outlet,
+  :where(html:not([zen-sin-cristal])) body[data-cm-color-scheme='dark'] .pcc-scrollable-panel,
+  :where(html:not([zen-sin-cristal])) body[data-cm-color-scheme='dark'] .cfc-background-contrast,
+  :where(html:not([zen-sin-cristal])) body[data-cm-color-scheme='dark'] .quick-access-card {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) body[data-cm-color-scheme='dark'] cfc-panel.cfc-panel-color-white {
+    background-color: rgb(255 255 255 / 0.03) !important;
+  }
+}
+
+/* --- Speedtest (Ookla) ---------------------------------- MEDIDO, GANA POCO -
+   Se anota el tamaño de la ganancia por delante, porque es pequeño y conviene
+   no vender humo: en la portada el nivel base ya hace casi todo el trabajo, y
+   despues de este bloque la tabla baja de 4 capas a 3. Lo que se gana es el
+   boton GO y los paneles de resultado, que son justo donde te quedas mirando.
+
+   Es Material UI, y sus tokens son de los mas estables que hay porque los
+   genera la libreria, no el sitio:
+
+     --mui-palette-background-default   #000000   el boton GO (31k) y el lienzo
+     --mui-palette-common-background    #000
+     --mui-palette-background-paper     #0F0F0F   los paneles de resultado
+
+   `paper` va con velo y no vaciado: en MUI eso es literalmente "la hoja que se
+   levanta del fondo", y sobre el acrilico tiene que seguir levantandose.
+
+   LA CABECERA: hasta septiembre no se tocaba, porque salia de
+   `color-mix(in srgb, var(--mui-palette-custom-primary) 70%, ...)` y eso ya era
+   un cristal propio. Desde el rediseno ese mismo token pinta la pagina entera
+   y hay que vaciarlo (ver dentro del bloque), con lo que la cabecera se queda
+   sin su 70%: el velo que lleva ahora la sustituye, no la pisa.
+
+   TAMPOCO SE TOCAN los dos degradados que quedan: el `linear-gradient` turquesa
+   de la tarjeta y el `conic-gradient` de la aguja del medidor. El segundo ES el
+   medidor —el dibujo del velocimetro—, o sea contenido puro.
+
+   El sitio ya se pinta oscuro solo: trae `data-mui-color-scheme="dark"` y
+   `color-scheme: dark` en el `html` (medido), asi que no hace falta condicion. */
+@-moz-document domain(speedtest.net) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body {
+    --mui-palette-background-default: transparent !important;
+    --mui-palette-common-background: transparent !important;
+    --mui-palette-background-paper: rgb(255 255 255 / 0.06) !important;
+
+    /* EL REDISENO DE SEPTIEMBRE ----------------------------------- MEDIDO -
+       Speedtest paso a montar la pagina en un contenedor Tailwind
+       (`div.flex.min-h-full.flex-1`) que se pinta con
+       `var(--mui-palette-custom-primary)`: negro en oscuro, y por eso la pagina
+       entera salia opaca aunque los tres tokens de arriba siguieran vacios.
+       Medido el 24-09-2026: 100% del viewport tapado. Ningun texto, borde ni
+       relleno usa ese token como color, solo este fondo y el de la barra de
+       arriba (`color-mix` al 70%), asi que vaciarlo no se lleva nada mas. */
+    --mui-palette-custom-primary: transparent !important;
+  }
+
+  /* La barra de arriba es fija y la pagina pasa por debajo al desplazar: sin
+     su 70% de negro se leeria encima del texto. Un velo la mantiene como capa.
+     Y sin su `blur(4px)`: arriba del todo no tiene nada pintado detras, y
+     medido con el velo puesto, 9 de 9 puntos vacios, o sea barra negra otra vez. */
+  :where(html:not([zen-sin-cristal])) .MuiAppBar-root {
+    background-color: rgb(16 16 19 / 0.45) !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* --- Modrinth ------------------------------------------------------- MEDIDO -
+   Tokenizado entero y con nombres estables, asi que va todo por token y no hay
+   ni un selector de elemento. `html.dark-mode` es la marca de su tema oscuro.
+
+     --color-bg / --surface-1   #16181c   el lienzo
+     --surface-1-5 .. --surface-5         la escala de superficies
+     --surface-3                #27292e   las TARJETAS de mod, que es lo que
+                                          de verdad tapaba: 7 fichas de 205k
+                                          mas la navegacion y las cajas
+     --surface-4                #34363c   los campos de busqueda
+     --color-raised-bg, --color-super-raised-bg, --color-button-bg
+
+   Solo el lienzo se vacia; de `--surface-1-5` para arriba van velos crecientes,
+   porque son fichas y campos: si se vacian, las tarjetas de mod dejan de tener
+   borde visual y la rejilla se convierte en texto suelto sobre el cristal.
+
+   COMPROBADO QUE NO HACE FALTA EL `*` DE CHATGPT. Se probaron las tres formas en
+   la misma pagina y en estado estable —`html.dark-mode` sola, con `body`, y
+   `.dark-mode *`— y las tres dejan exactamente el mismo resultado: Modrinth no
+   redeclara sus tokens en descendientes. Se usa la mas corta.
+
+   AVISO SOBRE MEDIR ESTE SITIO: mientras carga la rejilla pone veinte esqueletos
+   `div.w-full.h-full` que tambien pintan `--surface-3`. Salen en la tabla, se
+   quedan ahi aunque la regla ya este puesta, y desaparecen solos cuando entran
+   los datos. Si mides a los dos segundos vas a creer que la regla no funciona.
+   Hay que medir con la pagina ya quieta.
+
+   LO QUE SE DEJA: `footer.footer-brand-background` con
+   `var(--brand-gradient-strong-bg)`, 498k, y todos los `--landing-*` de la
+   portada. Son la marca y el diseño de la home, no fondo de pagina. Quitarlos
+   deja la portada rota a cambio de nada.
+
+   Medido antes y despues con la pagina quieta en /mods: de 6 capas opacas a 1,
+   y esa una es el pie de marca, que se deja a proposito. */
+@-moz-document domain(modrinth.com) {
+  html.dark-mode:not(:where([zen-sin-cristal])) {
+    --color-bg: transparent !important;
+    --surface-1: transparent !important;
+
+    --surface-1-5: rgb(255 255 255 / 0.04) !important;
+    --surface-2: rgb(255 255 255 / 0.05) !important;
+    --surface-2-5: rgb(255 255 255 / 0.06) !important;
+    --surface-3: rgb(255 255 255 / 0.07) !important;
+    --surface-4: rgb(255 255 255 / 0.1) !important;
+
+    --color-raised-bg: rgb(255 255 255 / 0.07) !important;
+    --color-super-raised-bg: rgb(255 255 255 / 0.1) !important;
+    --color-button-bg: rgb(255 255 255 / 0.1) !important;
+  }
+}
+
+/* --- Claude ------------------------------------------- MEDIDO EN LA ENTRADA -
+   Hermano del bloque de ChatGPT de mas abajo, y con la misma forma: tokens de
+   superficie a transparente para el lienzo, velo claro para lo que tiene que
+   seguir leyendose como panel.
+
+   El sistema se llama `cds` y marca su raiz con `html.cds-root`, con
+   `data-mode="dark"` y `data-theme="claude"` puestos (medido). Los tokens:
+
+     --cds-page-bg      #151515   el lienzo de la pagina
+     --cds-surface-0    #0b0b0b   el mas hondo
+     --cds-surface-1    #151515   el principal
+     --cds-surface-2    #1a1a19   paneles
+     --cds-surface-3    #20201f   paneles elevados
+     --cds-surface-panel   #1a1a19
+     --cds-surface-popover #20201f
+     --cds-tooltip-bg      #20201f
+
+   LOS TRES ULTIMOS NO SE VACIAN, Y ES A PROPOSITO: un menu, un popover o un
+   tooltip existen para despegarse de lo que hay detras. Vaciados sobre el
+   acrilico se leen encima del texto de la pagina y dejan de cumplir su unico
+   trabajo. Van con velo, y el del tooltip mas fuerte que el resto porque es el
+   que aparece flotando sobre cualquier cosa.
+
+   SE DEJAN QUIETOS los tokens que YA son translucidos —`--cds-bg-neutral` y
+   `--cds-bg-user-message` son `hsl(from #fff h s l / 5%)`, o sea velo blanco al
+   5%, que es exactamente lo que pondriamos— y los de color semantico
+   (`--cds-bg-accent`, `--cds-bg-danger`, `--cds-bg-pro`...): esos son etiquetas
+   de estado, no fondo.
+
+   POR QUE `*` Y NO `html, body`: por lo mismo que en ChatGPT, explicado en su
+   bloque. Aqui no se ha reproducido el fallo, pero declarar una propiedad
+   personalizada en todos los elementos no cuesta dibujado y cierra la puerta.
+
+   POR QUE ADEMAS VAN LAS UTILIDADES `.bg-surface-*`: el armazon de la pantalla
+   de entrada pinta `rgb(17, 17, 17)` y NO sale de un token `--cds-*`, sale de
+   `dark:bg-neutral-30`, una utilidad de la paleta de Tailwind. Ese elemento
+   lleva las dos clases a la vez (`bg-surface-1 dark:bg-neutral-30`), asi que
+   basta con ganarle a la utilidad desde aqui.
+
+   MEDIDO EN LA PANTALLA DE ENTRADA: de 5 capas opacas —la mayor de 5523k px2— a
+   0, y 0 elementos con `backdrop-filter`.
+
+   LO QUE NO SE PUDO MEDIR: la aplicacion de dentro pide sesion. Va cubierta por
+   los tokens, que son los del sistema de diseno y valen para toda ella, pero no
+   esta vista. Si al abrir un chat aparecen rectangulos NEGROS, no es este
+   bloque: es `backdrop-filter`, y el remedio esta escrito en 00-base.css y
+   aplicado en el bloque de ChatGPT. Se copia de alli y ya. */
+@-moz-document domain(claude.ai) {
+  :where(html:not([zen-sin-cristal])) * {
+    --cds-page-bg: transparent !important;
+    --cds-surface-0: transparent !important;
+    --cds-surface-1: transparent !important;
+    --cds-surface-2: rgb(255 255 255 / 0.05) !important;
+    --cds-surface-3: rgb(255 255 255 / 0.07) !important;
+    --cds-surface-panel: rgb(255 255 255 / 0.05) !important;
+    --cds-surface-popover: rgb(255 255 255 / 0.09) !important;
+    --cds-tooltip-bg: rgb(255 255 255 / 0.12) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .bg-surface-0,
+  :where(html:not([zen-sin-cristal])) .bg-surface-1,
+  :where(html:not([zen-sin-cristal])) .bg-page-bg {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Claude Console (platform.claude.com) ------------------------- MEDIDO -
+   Mismo sistema de diseño que claude.ai, `--cds-*` declarado en `.cds-root` y
+   no en la raiz, de ahi el `*`. Medido el 24-09-2026 en la portada: el 100%
+   del viewport en `--cds-surface-1` (#151515), la barra de arriba incluida, y
+   el pie en `--cds-surface-2`. La trama de puntos de encima es un degradado
+   decorativo con `currentColor` y se queda: sobre el cristal sigue siendo trama.
+
+   NO se copian los tokens de emergentes del bloque de claude.ai (popover al 9%
+   y tooltip al 12%): con eso un menu se lee a traves. Aqui conservan su fondo.
+
+   `data-mode=system` sigue a `prefers-color-scheme`, que en Zen pide oscuro;
+   si alguien fija el claro en la propia consola, `data-mode=light` lo apaga. */
+@-moz-document domain(platform.claude.com) {
+  @media (prefers-color-scheme: dark) {
+    :where(html:not([zen-sin-cristal]):not([data-mode='light'])) * {
+      --cds-page-bg: transparent !important;
+      --cds-surface-0: transparent !important;
+      --cds-surface-1: transparent !important;
+      --cds-surface-2: rgb(255 255 255 / 0.04) !important;
+    }
+  }
+}
+
+/* --- Steam (tienda y comunidad) ------------------------------------- MEDIDO -
+   LA BUENA NOTICIA PRIMERO: Steam ya casi es de cristal sin hacer nada. Su
+   armazon —`.responsive_page_frame`, `.responsive_page_content`,
+   `.responsive_page_template_content`— sale ya con `rgba(0, 0, 0, 0)` medido, y
+   el fondo de pagina lo pinta en `body`, que el nivel base vacia. Lo que queda
+   opaco no es lienzo: es cromo y tarjetas, y esas NO se vacian, se ponen en
+   velo. Una tarjeta transparente sobre cristal deja el texto flotando.
+
+   LO QUE TAPABA, MEDIDO EN LAS DOS PORTADAS:
+     comunidad   .apphub_Card         rgb(13, 19, 27)   43 tarjetas, hasta 455k
+                 #global_header       rgb(23, 29, 37)   165k
+     tienda      #footer              rgba(15, 25, 36, 0.9)  416k
+                 --page-background    #0f1924           el token de lienzo
+
+   Los dos sitios comparten plantilla y cabecera, por eso van en el mismo bloque
+   con los dos dominios.
+
+   LOS DOS RESTOS QUE APARECIERON AL SEGUNDO PASE, y que valen la pena:
+     - `.apphub_CardContentGuideTitle`, 10 tiras de rgb(39, 47, 56) dentro de las
+       tarjetas de guia. Con la tarjeta ya en velo se quedaban como un rectangulo
+       macizo dentro de algo translucido. Van a velo tambien, un punto mas fuerte
+       para que la tira siga leyendose como tira.
+     - `.apphub_Card .gradient`, tres degradados que se desvanecen HACIA
+       `rgb(13, 19, 27)`, o sea hacia el color viejo de la tarjeta. Vaciada la
+       tarjeta, ese degradado deja una mancha oscura que no desvanece a nada.
+       Se le quita la imagen. Va colgado de `.apphub_Card` a proposito: a secas,
+       `.gradient` es un nombre demasiado comun para tocarlo a ciegas.
+
+   LO QUE SE DEJA A PROPOSITO EN LA TIENDA. Despues de la regla siguen saliendo
+   en la tabla `div.home_tab_bg_ctn` (1662k), el carrusel y las cabeceras de
+   widget, todos con `linear-gradient`. Son diseño de la portada, no fondo de
+   pagina: el de `home_tab_bg_ctn` es un velo de `rgba(0, 0, 0, 0.2)` que sobre
+   el acrilico solo lo entinta un poco, y queda bien. Quitarlos rompe la portada
+   para no ganar nada.
+
+   Medido antes y despues en la comunidad: de 43 tarjetas opacas mas cabecera a
+   0 capas opacas. En la tienda solo quedan los degradados de diseño de arriba. */
+@-moz-document domain(steamcommunity.com), domain(steampowered.com) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body {
+    --page-background: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #global_header,
+  :where(html:not([zen-sin-cristal])) #global_header .content,
+  :where(html:not([zen-sin-cristal])) #global_header .supernav_container,
+  :where(html:not([zen-sin-cristal])) .responsive_page_menu_ctn,
+  :where(html:not([zen-sin-cristal])) .responsive_header {
+    background-color: rgb(255 255 255 / 0.06) !important;
+    background-image: none !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .apphub_Card,
+  :where(html:not([zen-sin-cristal])) .apphub_CardContentMain,
+  :where(html:not([zen-sin-cristal])) .blotter_block,
+  :where(html:not([zen-sin-cristal])) .modalContentLink {
+    background-color: rgb(255 255 255 / 0.05) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .apphub_CardContentGuideTitle,
+  :where(html:not([zen-sin-cristal])) .apphub_CardContentNewsTitle {
+    background-color: rgb(255 255 255 / 0.07) !important;
+  }
+
+  /* Desvanecia hacia el color macizo de la tarjeta, que ya no existe. */
+  :where(html:not([zen-sin-cristal])) .apphub_Card .gradient {
+    background-image: none !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #footer,
+  :where(html:not([zen-sin-cristal])) .footer_content,
+  :where(html:not([zen-sin-cristal])) #footer_text {
+    background-color: rgb(255 255 255 / 0.04) !important;
+  }
+}
+
+/* --- Spotify (reproductor web) -------------------------------------- MEDIDO -
+   EL ARMAZON, MEDIDO. Cuatro capas y ninguna se va sola con el nivel base,
+   porque Spotify no pinta en `body` sino dentro de su arbol:
+
+     div.<hash>            1520k   rgb(0, 0, 0)     la pantalla entera
+     #main-view             939k   rgb(18, 18, 18)  el panel de contenido
+     .main-view-container__mh-footer-container
+                            526k   rgb(18, 18, 18)
+     nav.footer             422k   rgb(18, 18, 18)
+     #Desktop_LeftSidebar_Id 296k  rgb(0, 0, 0)     la barra lateral
+
+   El `rgb(18, 18, 18)` es `--background-base`, o sea token: ese cae solo. El
+   negro de la pantalla entera NO: lo pinta un div cuya unica clase es un hash
+   (`zXqmJUq4Orp0Adt90GGA`), sin id ni un solo atributo mas —comprobado, el
+   elemento lleva `class` y nada mas—, y su regla vive en una hoja que no se
+   puede leer desde la pagina.
+
+   POR DONDE SE COGE ESE DIV SIN TOCAR EL HASH
+   Por su padre. `.Root` es el contenedor de la aplicacion y ese nombre lleva
+   años sin cambiar, no es de build. Y `.Root` tiene exactamente tres hijos:
+   el armazon de 1600x950 y dos divs de altura CERO que son anclas de portal
+   (medido). O sea que `.Root > div` no puede alcanzar nada mas que el armazon:
+   los otros dos no pintan nada porque no ocupan nada.
+
+   LO QUE NO SE TOCA, Y POR QUE
+     - `--background-press` (#000) se queda: no es lienzo, es el estado pulsado
+       de los controles. Vaciarlo deja los botones sin respuesta visual.
+     - El bloque de `rgb(83, 83, 83)` de 299k que sigue saliendo en la auditoria
+       es la cabecera tenida con el color dominante de la portada, y va en
+       `style=` en linea. Es contenido, no fondo de pagina. Se queda.
+
+   Y LA GUARDA AQUI VA COMO SUFIJO, NO COMO PREFIJO ------------------ MEDIDO -
+   La clase de tema esta en el PROPIO `<html>`, asi que la forma normal de la
+   guarda —`:where(html:not([zen-sin-cristal])) .encore-dark-theme`— pide un
+   `.encore-dark-theme` DENTRO de html, y html no es descendiente de si mismo:
+   el bloque entero dejaba de casar. Medido el 12-09-2026 en open.spotify.com,
+   que salio con 87 capas opacas y el viewport entero en negro.
+
+   Es el unico caso del archivo donde el primer compuesto de la cadena vive en
+   `<html>`. Si algun dia se anade otro sitio que ponga su clase de tema ahi,
+   la guarda le va detras de esa clase y no delante.
+
+   POR QUE VA COLGADO DE `.encore-dark-theme`
+   Es la clase que Spotify pone en `html` cuando sirve su paleta oscura. Colgar
+   de ella todo el bloque —tokens y selectores— sale gratis y cubre el resto del
+   dominio: `accounts.spotify.com` y las paginas de cuenta se pintan en claro y
+   NO llevan esa clase, asi que no les entra nada y siguen legibles. Un
+   `domain(spotify.com)` a pelo si se las habria llevado por delante.
+
+   Medido antes y despues: de 5 capas opacas —una de ellas el viewport entero—
+   a 0. Lo que queda en la tabla es portada y degradados de contenido. */
+@-moz-document domain(spotify.com) {
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) {
+    --background-base: transparent !important;
+    --background-highlight: rgb(255 255 255 / 0.06) !important;
+    --background-elevated-base: rgb(255 255 255 / 0.05) !important;
+    --background-elevated-highlight: rgb(255 255 255 / 0.09) !important;
+    --background-elevated-press: rgb(255 255 255 / 0.12) !important;
+  }
+
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) .Root,
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) .Root > div,
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) #main,
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) #main-view,
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) #global-nav-bar,
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) #Desktop_LeftSidebar_Id,
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) nav.footer,
+  html.encore-dark-theme:not(:where([zen-sin-cristal])) .main-view-container__mh-footer-container {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Radio Garden --------------------------------------- MEDIDO, Y NO LLEVA -
+   Es el sitio sin regla mas visitado del historial, asi que la pregunta se
+   contesta aqui de una vez: NO se le pone cristal, y no es por pereza.
+
+   Radio Garden es un globo a pantalla completa. `div#map` mide 1520k px2 —el
+   viewport entero— y pinta `var(--color-map-background)`, `rgb(45, 0, 255)`, un
+   azul opaco y saturado. Ese azul es CONTENIDO, el mar del mapa, no cromo de
+   pagina: quitarlo no descubre el escritorio, descubre un agujero en el mapa.
+
+   De ahi sale la conclusion: por debajo del globo no hay nada que enseñar, asi
+   que el acrilico no puede asomar en este sitio HAGAS LO QUE HAGAS. Lo unico
+   que queda por vaciar son los tres paneles de la esquina —el cajon
+   `_contentContainer_` con `--color-background-1` (43,43,43) y las dos barras
+   `_mainUI_` con (25,25,25)— y esos no tienen detras el cristal: tienen el mapa.
+
+   ENSAYADO EN CALIENTE, LAS DOS FORMAS, Y LAS DOS SALEN PEOR:
+     - velo claro `rgb(255 255 255 / 0.07)`: los rotulos "Bogota", "Poliradio" y
+       la fila Explore/Favorites/Browse/Search/Settings quedan lavados sobre el
+       azul.
+     - velo oscuro `rgb(18 18 20 / 0.62)`, y hasta `0.72` en las barras: sigue
+       sin leerse comodo. El azul del mapa es tan claro y saturado que se come
+       cualquier velo que aun deje ver a traves.
+   Con sus colores de fabrica, solidos, el texto se lee perfecto. O sea que aqui
+   la transparencia se paga entera en contraste y no compra nada.
+
+   Y NO HACE FALTA RESCATARLO en 90-exclusions.css: el nivel base le vacia `html`
+   y `body`, pero como el globo los tapa por completo eso no se ve, y el sitio ya
+   se pinta oscuro por su cuenta. Sin regla ninguna, Radio Garden se ve
+   exactamente como sus autores lo hicieron. Esta bien asi.
+
+   La regla general que deja este caso, y que conviene mirar antes de abrir un
+   bloque nuevo: un sitio solo gana cristal si su propio contenido no tapa ya el
+   viewport entero. Si lo tapa, no hay nada debajo que enseñar. */
+
+/* --- Codebase Memory (el visor del grafo, en local) ----------------- MEDIDO -
+   Otro servidor local, asi que otra vez `url-prefix` en vez de `domain`. Van las
+   DOS formas de escribir la misma direccion —`127.0.0.1` y `localhost`— porque
+   `url-prefix` compara la cadena tal cual: son el mismo servidor pero no la
+   misma cadena, y por una sola de ellas la otra se quedaria sin cristal. El
+   puerto 9749 esta fijado dentro del binario del servidor, no en una variable de
+   entorno (comprobado), asi que no se mueve.
+
+   AQUI ESTA LA LECCION, Y VALE PARA CUALQUIER SITIO CON TAILWIND v4
+   La pagina expone `--color-background: #0a161a` en `:root`, o sea que parece el
+   caso ideal del metodo 1 de la cabecera. NO LO ES. Sobreescribir ese token no
+   hace absolutamente nada, y es facil pasarse una tarde sin entender por que.
+
+   El motivo esta en el CSS compilado:
+
+     .bg-background { background-color: #0a161a }     <- literal, sin var()
+
+   Tailwind v4 en build de PRODUCCION mete el valor a pelo en la utilidad. El
+   token sigue declarado en `@layer theme`, pero ya no lo lee nadie: es un
+   fosil. Contados en la hoja de este sitio: de 31 utilidades `.bg-*` con color,
+   30 son literales y solo UNA conserva `var()`.
+
+   Y el contraste que lo deja claro: otro sitio de la red local, TAMBIEN
+   Tailwind v4, donde `.bg-nav` si compila a `var(--color-nav)`.
+
+   AQUI HUBO UNA EXPLICACION EQUIVOCADA, y se deja escrita porque el error es
+   util: se atribuyo la diferencia al modo de compilacion —aquel era un
+   servidor de desarrollo, este es una build— y no es eso. Al mudarse aquel a
+   su build de produccion se leyo su hoja construida y sus utilidades SIGUEN con
+   `var()`. Dos sitios, mismo framework, mismo modo de compilar, resultado
+   distinto: lo que cambia es como declara sus tokens cada proyecto.
+
+   La leccion practica no se mueve, y es la unica que hay que recordar: en un
+   sitio Tailwind no basta con ver el token en `:root`, hay que abrir la utilidad
+   y comprobar si de verdad lo lee. Lo que se cae es el atajo de deducirlo del
+   modo de compilacion sin mirar.
+
+   Por eso aqui se atacan las UTILIDADES. Son nombres puestos por una persona en
+   el tema (`bg-background`, `bg-card`, `bg-secondary`) o valores arbitrarios que
+   se escriben tal cual (`bg-[#0b1920]`), no hashes de build.
+
+   EL REPARTO SE DECIDE POR EL ALFA QUE YA TRAE EL SITIO, que es la mejor pista
+   de que es cada cosa:
+     - solidos y `/80`  ->  cromo (el lienzo y la cabecera). Lienzo a
+       transparente, cabecera a velo.
+     - `/90` y `/95`    ->  NO SE TOCAN. Que el autor los pusiera casi opacos
+       significa que son capas flotantes —desplegables, modales—, y esas tienen
+       que seguir tapando lo que hay debajo o dejan de servir para nada.
+     - `bg-black/30..60`, `bg-white/[0.02..0.1]` -> ya son velos, se quedan.
+     - `bg-primary`, `bg-destructive`, `bg-accent`, `bg-emerald-400`... -> color
+       semantico, o sea contenido. Ni tocarlos.
+
+   LA BARRA NEGRA QUE HABRIA SALIDO: la cabecera lleva
+   `backdrop-filter: blur(12px)` sobre `rgba(11, 25, 32, 0.8)`. Es el caso de
+   libro que describe 00-base.css: en una pagina que hemos vuelto transparente no
+   hay backdrop que muestrear, Gecko fotografia el vacio y lo compone en NEGRO.
+   Se apaga en todo el sitio, con el mismo remedio y el mismo razonamiento que en
+   el bloque de ChatGPT. Aqui no se pierde nada: con la cabecera ya en velo, ese
+   desenfoque no tenia mas trabajo que hacer.
+
+   MEDIDO ANTES Y DESPUES: de 2 capas opacas —una de ellas `div.h-screen`, el
+   viewport entero, en `rgb(10, 22, 26)`— a 0, y de 1 `backdrop-filter` a 0.
+   Visto en las pestañas Graph y Projects.
+
+   Y NO le pasa lo de Radio Garden: se comprobo que no hay ningun `canvas` ni
+   `svg` opaco tapando el viewport, asi que aqui el cristal si tiene por donde
+   asomar. */
+@-moz-document url-prefix(http://127.0.0.1:9749),
+  url-prefix(http://localhost:9749) {
+  html.dark:not(:where([zen-sin-cristal])) body,
+  html.dark:not(:where([zen-sin-cristal])) .bg-background,
+  html.dark:not(:where([zen-sin-cristal])) .bg-\[\#0a0a10\] {
+    background-color: transparent !important;
+  }
+
+  /* Cabecera y barras: velo, no vaciado. */
+  html.dark:not(:where([zen-sin-cristal])) .bg-\[\#0b1920\],
+  html.dark:not(:where([zen-sin-cristal])) .bg-\[\#0b1920\]\/80 {
+    background-color: rgb(255 255 255 / 0.06) !important;
+  }
+
+  html.dark:not(:where([zen-sin-cristal])) .bg-card,
+  html.dark:not(:where([zen-sin-cristal])) .bg-\[\#0e2028\] {
+    background-color: rgb(255 255 255 / 0.05) !important;
+  }
+
+  html.dark:not(:where([zen-sin-cristal])) .bg-secondary {
+    background-color: rgb(255 255 255 / 0.08) !important;
+  }
+
+  /* El desenfoque de la cabecera, que sobre pagina transparente solo puede
+     pintar negro. Los pseudoelementos van aparte porque `*` no los caza. */
+  html.dark:not(:where([zen-sin-cristal])) *,
+  html.dark:not(:where([zen-sin-cristal])) *::before,
+  html.dark:not(:where([zen-sin-cristal])) *::after {
+    backdrop-filter: none !important;
+  }
+}
+
+/* ==========================================================================
+   A partir de aqui: NO MEDIDOS todavia.
+   Escritos contra los tokens que estos sitios documentan, pero sin comprobar en
+   vivo. Si alguno no queda bien, mide con la receta de arriba y corrigelo: es
+   inofensivo mientras tanto, porque sobreescribir una variable que no existe no
+   hace nada.
+   ========================================================================== */
+
+/* --- Reddit -------------------------------------------------------------- */
+/* --- Reddit -------------------------------------------------------- MEDIDO -
+   POR QUE LA VERSION ANTERIOR NO LLEGABA A LAS TARJETAS
+   Declaraba los tokens en `html, body`, y ahi el valor SI entraba: medido,
+   `--color-neutral-background` resolvia a `transparent` en `html`. Pero cada
+   tarjeta de post seguia pintando `rgb(14, 17, 19)`.
+
+   Subiendo por los ancestros de un `shreddit-post` se ve donde se pierde:
+
+     shreddit-post                     #0E1113   <- pinta
+     article / shreddit-feed / main    #0E1113
+     div.grid-container.theme-rpl      #0E1113   <- AQUI se redeclara
+     shreddit-app                      transparent
+     body / html                       transparent   <- nuestro valor
+
+   `.theme-rpl` es la clase de paleta del sistema de diseno de Reddit (Reddit
+   Product Language): declara los 626 tokens de golpe, asi que todo lo que
+   cuelga de ella ignora lo que pusieramos en la raiz.
+
+   Y NO ES LA UNICA. Con `html, body, .theme-rpl` las tarjetas ya salian bien,
+   pero la cabecera seguia opaca; midiendo su cadena, el valor se pierde otra vez
+   dentro de `reddit-header-large`, que redeclara la paleta por su cuenta. Ir
+   persiguiendo componentes de uno en uno no acaba nunca: hoy son dos, manana
+   sale el tercero.
+
+   De ahi el `*`, que es la misma solucion que ya documenta el bloque de ChatGPT
+   —alli el sitio declaraba con selector universal, aqui son los componentes— y
+   por el mismo motivo: una propiedad personalizada no pinta nada por si misma,
+   asi que declararla en todos los elementos no cuesta un solo repintado. Ademas
+   alcanza a los componentes con shadow DOM, porque su elemento anfitrion SI vive
+   en el documento de fuera, y en el mismo elemento el `!important` de usuario le
+   gana al `:host` del autor.
+
+   LAS HOJAS DE REDDIT SON DE OTRO ORIGEN (redditstatic.com) y no se pueden leer
+   sus reglas: `sheet.cssRules` lanza y hay que saltarla. La paleta se saco de
+   `getComputedStyle`, que SI enumera las propiedades personalizadas — 626 en
+   total, 170 con "background" en el nombre.
+
+   QUE SE TOCA Y QUE NO. Solo las superficies de pagina y de tarjeta. Los
+   botones, las etiquetas de moderador y NSFW, los votos y los interruptores
+   tienen su color por significado, no por decoracion: dejarlos en cristal seria
+   quitarles la informacion. De las 170, aqui se tocan 14.
+
+   Las tarjetas llevan velo y no transparencia total: son superficie ELEVADA
+   sobre la pagina, y vaciadas del todo el feed se convierte en texto flotando
+   sin principio ni fin de post. El velo mantiene la tarjeta legible como
+   tarjeta sobre el acrilico.
+
+   Barrido en circuito cerrado: 25 capas opacas antes, 5 despues. Las 5 que
+   quedan estan bien y se dejan a proposito: el negro detras de las imagenes
+   (letterboxing, no fondo de pagina), dos tarjetas del widget de acceso de
+   Google —ese borde #dadce0 es suyo, no de Reddit— y el enlace de "saltar al
+   contenido", que solo se ve al tabular. */
+@-moz-document domain(reddit.com) {
+  :where(html:not([zen-sin-cristal])) * {
+    /* La pagina: fuera */
+    --color-ui-canvas: transparent !important;
+
+    /* La tarjeta de post y los paneles: velo, no vacio */
+    --color-neutral-background: rgb(255 255 255 / 0.045) !important;
+    --color-neutral-background-pinned: rgb(255 255 255 / 0.07) !important;
+    --color-neutral-background-container: rgb(255 255 255 / 0.06) !important;
+    --color-neutral-background-container-strong: rgb(255 255 255 / 0.09) !important;
+    --color-neutral-background-strong: rgb(255 255 255 / 0.07) !important;
+    --color-neutral-background-canvas: rgb(255 255 255 / 0.05) !important;
+
+    /* `-weak` es #000000 en oscuro: mas oscuro que la base, no mas claro. Sobre
+       cristal un negro solido es justo lo que hay que quitar. */
+    --color-neutral-background-weak: rgb(255 255 255 / 0.03) !important;
+    --color-neutral-background-medium: rgb(255 255 255 / 0.05) !important;
+
+    /* Los estados tienen que seguir NOTANDOSE, asi que suben en vez de bajar:
+       sobre cristal un hover mas oscuro que el fondo no se ve. */
+    --color-neutral-background-hover: rgb(255 255 255 / 0.1) !important;
+    --color-neutral-background-weak-hover: rgb(255 255 255 / 0.08) !important;
+    --color-neutral-background-strong-hover: rgb(255 255 255 / 0.12) !important;
+    --color-neutral-background-container-hover: rgb(255 255 255 / 0.11) !important;
+    --color-neutral-background-selected: rgb(255 255 255 / 0.13) !important;
+  }
+
+  /* El armazon, por si algun contenedor pinta sin pasar por el token */
+  :where(html:not([zen-sin-cristal])) shreddit-app,
+  :where(html:not([zen-sin-cristal])) #main-content,
+  :where(html:not([zen-sin-cristal])) #subgrid-container,
+  :where(html:not([zen-sin-cristal])) .grid-container,
+  :where(html:not([zen-sin-cristal])) .main-container {
+    background: transparent !important;
+  }
+
+  /* NO SE TOCA `--color-ui-modalbackground` a proposito: un dialogo encima de
+     cristal con el contenido de la pagina asomando por detras es ilegible.
+     Ahi el fondo solido es la decision correcta. */
+}
+
+/* --- ChatGPT ------------------------------------------------------- MEDIDO -
+   La barra lateral usa SU PROPIA familia de tokens, `--sidebar-surface-*`, no
+   los `--main-surface-*` que se atacaban antes. Por eso el area principal
+   quedaba de cristal y la barra seguia siendo un panel solido.
+
+   El elemento es #stage-slideover-sidebar con la clase utilitaria
+   `bg-token-sidebar-surface-primary`, que resuelve a `--sidebar-surface-primary`
+   (medido: #fcfcfc). Las clases de ChatGPT son semanticas, no hashes de build,
+   asi que aguantan; aun asi se ataca primero el token.
+
+   Barrido en circuito cerrado: 4 capas opacas antes, 0 despues. */
+@-moz-document domain(chatgpt.com) {
+  /* POR QUE `*` Y NO `html, body`, QUE ES LO NORMAL EN ESTE ARCHIVO
+     Porque con `html, body` uno de los tokens NO LLEGABA, y ese era justo el
+     de la banda negra. ChatGPT declara `--main-surface-primary` con un
+     selector universal, asi que html y body cogian nuestro valor y TODO
+     descendiente volvia a coger el suyo, `#000`.
+
+     Medido en vivo: con `html, body`, 517 elementos seguian resolviendo el
+     token a #000. Con `*`, cero. Los otros 18 tokens si llegaban bien; se
+     ponen aqui igual porque no cuesta nada y cierra la puerta a que manana
+     ChatGPT haga lo mismo con otro.
+
+     Una propiedad personalizada no pinta nada por si misma, asi que
+     declararla en todos los elementos no tiene coste de dibujado. */
+  :where(html:not([zen-sin-cristal])) * {
+    /* Superficie principal */
+    --main-surface-primary: transparent !important;
+    --main-surface-secondary: rgb(255 255 255 / 0.05) !important;
+    --surface-primary: transparent !important;
+    --bg-primary: transparent !important;
+
+    /* Barra lateral */
+    --sidebar-surface-primary: transparent !important;
+    --sidebar-surface-secondary: rgb(255 255 255 / 0.05) !important;
+    --sidebar-surface-tertiary: rgb(255 255 255 / 0.07) !important;
+    --component-sidebar-bg: transparent !important;
+
+    /* Paneles elevados y el aviso de cookies. Tinte en vez de transparente:
+       son superficies que deben seguir leyendose como tales. */
+    --bg-elevated-primary: rgb(255 255 255 / 0.04) !important;
+    --bg-elevated-secondary: rgb(255 255 255 / 0.06) !important;
+    --bg-tertiary: rgb(255 255 255 / 0.06) !important;
+
+    /* --- LA BANDA QUE SOLO SALIA DENTRO DE UN CHAT --------------------
+       No se veia midiendo en la portada porque el elemento que la pinta
+       SOLO EXISTE cuando hay hilo: el contenedor `thread-bottom-container`
+       monta un `::after` para que los mensajes se desvanezcan al pasar por
+       debajo del compositor. Medido en una conversacion de verdad:
+
+         ::after  background-color  rgb(0, 0, 0)
+                  mask-image        linear-gradient(transparent 0, #000 32px)
+                  1310 x 76, justo encima del compositor
+
+       Ese negro sale de `var(--main-surface-primary)`, el token que no
+       llegaba (ver la explicacion del `*` arriba). Con el token
+       resolviendo a transparente, el ::after se apaga: comprobado en vivo,
+       de rgb(0,0,0) a rgba(0,0,0,0).
+
+       El resto salen del bloque `.dark` de ChatGPT, comparado entero
+       contra esta lista para no dejarse ninguno suelto. */
+    --main-surface-background: transparent !important;
+    --main-surface-tertiary: rgb(255 255 255 / 0.07) !important;
+    --bg-secondary: rgb(255 255 255 / 0.06) !important;
+    --bg-secondary-surface: transparent !important;
+    --sidebar-surface: transparent !important;
+
+    /* La burbuja de tus mensajes (#323232d9). Tinte, no transparente: sin
+       ella no se distingue lo que escribiste tu de lo que respondio el. */
+    --message-surface: rgb(255 255 255 / 0.09) !important;
+
+    /* El compositor tiene SU PROPIA familia, `--composer-*`, igual que la
+       barra lateral tenia la suya. Resolvia a rgb(33, 33, 33) con todo lo
+       demas ya de cristal porque ningun --main-surface-* ni --bg-* la
+       alcanza. */
+    --composer-surface-primary: rgb(255 255 255 / 0.07) !important;
+    --composer-surface: rgb(255 255 255 / 0.07) !important;
+    --composer-background-color: rgb(255 255 255 / 0.07) !important;
+
+    /* --- EL FRONTEND NUEVO, EL QUE SALIA CON LA BARRA EN NEGRO -----------
+       ChatGPT esta sirviendo por sesion un frontend reescrito (visto el
+       24-09-2026: chunks con nombre numerico, `324770.1ecaad2211.js`, en vez de
+       `8b34dbc2-oz862wcamnpza3ku.js`). Ahi no existen #stage-slideover-sidebar
+       ni ninguno de los tokens de arriba: usa el sistema de diseno que comparte
+       con Codex, con clases `bg-surface-secondary`, `bg-composer-primary`,
+       `from-surface`. Con esa build el area principal salia de cristal —la
+       vacian 00-base y 10-wrappers— y la barra, el compositor y el degradado
+       de abajo salian negros, que es exactamente la captura del fallo.
+
+       Estos nombres salen del JS de esa build, contados uso por uso (83
+       `bg-surface-secondary`, 101 `bg-surface`, 5 `bg-composer-primary`); su
+       CSS no quedo en la cache y el servidor ya no la sirve a una sesion
+       limpia, asi que los valores se eligen por analogia con los de arriba y
+       NO estan medidos sobre la build viva. Las `--color-surface-elevated*`
+       no se tocan a proposito: son menus y dialogos, y ahi el fondo solido es
+       lo que los hace legibles. */
+    --color-surface: transparent !important;
+    --color-surface-canvas: transparent !important;
+    --color-surface-secondary: transparent !important;
+    --color-surface-tertiary: rgb(255 255 255 / 0.07) !important;
+    --color-surface-card: rgb(255 255 255 / 0.05) !important;
+    --color-composer-primary: rgb(255 255 255 / 0.07) !important;
+    --color-user-message: rgb(255 255 255 / 0.09) !important;
+  }
+
+  /* Y lo mismo por clase, por si esa build compila las utilidades con el valor
+     dentro (`@theme inline` de Tailwind 4 lo hace) y el token de arriba no
+     llega a leerse. Con barra de opacidad (`bg-surface-secondary/92`) la clase
+     no es una palabra suelta, de ahi el `*=` con la barra incluida: sin ella
+     tambien casaria `hover:bg-surface-secondary`, que es un estado y se deja. */
+  :where(html:not([zen-sin-cristal])) [class~='bg-surface'],
+  :where(html:not([zen-sin-cristal])) [class~='bg-surface-canvas'],
+  :where(html:not([zen-sin-cristal])) [class~='bg-surface-secondary'],
+  :where(html:not([zen-sin-cristal])) [class^='bg-surface/'],
+  :where(html:not([zen-sin-cristal])) [class*=' bg-surface/'],
+  :where(html:not([zen-sin-cristal])) [class^='bg-surface-secondary/'],
+  :where(html:not([zen-sin-cristal])) [class*=' bg-surface-secondary/'] {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) [class~='bg-composer-primary'] {
+    background-color: rgb(255 255 255 / 0.07) !important;
+  }
+
+  /* Los desvanecidos de esa build van contra `surface`: sobre cristal son la
+     franja negra de abajo. Son decoracion de scroll, no fondo, asi que fuera. */
+  :where(html:not([zen-sin-cristal])) [class*='from-surface'],
+  :where(html:not([zen-sin-cristal])) [class*='via-surface'],
+  :where(html:not([zen-sin-cristal])) [class*='to-surface'] {
+    background-image: none !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .bg-token-sidebar-surface-primary,
+  :where(html:not([zen-sin-cristal])) .bg-token-main-surface-primary,
+  :where(html:not([zen-sin-cristal])) #stage-slideover-sidebar {
+    background-color: transparent !important;
+  }
+
+  /* --- LA FRANJA NEGRA DE ABAJO ----------------------------------------
+     Era `backdrop-filter`. Otra vez, y aqui esta el caso de libro que
+     describe 00-base.css: dentro de una pagina que hemos vuelto
+     transparente no hay backdrop que muestrear, asi que Gecko fotografia
+     el vacio y lo compone en NEGRO.
+
+     ChatGPT lo usa en `.translucent-surface`, que es su clase de cristal
+     flotante: la barra de "Edit / compartir" que sale sobre las imagenes,
+     el aviso de "ChatGPT can make mistakes" y los menus. Todos salian como
+     rectangulos negros.
+
+     Y encima esa clase se pinta con
+       color-mix(in oklab, var(--main-surface-primary) 60%, transparent)
+     que en oscuro da 60% de NEGRO. Doble motivo para el mismo rectangulo.
+
+     Se desactiva el filtro en TODO el dominio, que es justo el remedio que
+     documenta 00-base.css. Aqui no se pierde nada: en una pagina
+     transparente ningun backdrop-filter puede funcionar, solo ensuciar.
+
+     Medido en circuito cerrado sobre chatgpt.com con estas reglas puestas:
+     3 capas opacas antes, 0 despues; 0 elementos con backdrop-filter.
+
+     Los pseudoelementos van aparte a proposito: `*` NO los caza, y aqui
+     precisamente el desvanecido del pie es un `::after`. */
+  :where(html:not([zen-sin-cristal])) *,
+  :where(html:not([zen-sin-cristal])) *::before,
+  :where(html:not([zen-sin-cristal])) *::after {
+    backdrop-filter: none !important;
+  }
+
+  /* Y la caja del aviso "ChatGPT can make mistakes" se va del todo.
+     `.translucent-surface` es la clase de cristal flotante de ChatGPT: existe
+     para separar un elemento del fondo. Sobre el acrilico ese trabajo ya esta
+     hecho, asi que la caja sobra y solo ensucia. */
+  :where(html:not([zen-sin-cristal])) .translucent-surface {
+    background-color: transparent !important;
+  }
+
+  /* Cinturon y tirantes para el compositor: la clase utilitaria, ademas del
+     token. Es semantica, no un hash de build. */
+  :where(html:not([zen-sin-cristal])) [class~='bg-(--composer-surface-primary)'] {
+    background-color: rgb(255 255 255 / 0.07) !important;
+  }
+
+  /* --- LOS MENUS, QUE SE QUEDABAN SIN FONDO ------------------------ MEDIDO -
+     Sus menus son `.popover.bg-token-main-surface-primary`, y el token y la
+     clase son justo lo que este bloque vacia, asi que salian transparentes:
+     "Pin chat", "Archive", "Delete" flotando encima del texto de la
+     conversacion. Hasta el 24-09-2026 no se notaba porque Zen Internet les
+     ponia su propio fondo al 93%; desde que su hoja se apaga en este dominio
+     (SIN_EXTENSION en mods/appearance/glass-toggle/nativo/proceso.js) el fondo es cosa nuestra.
+
+     En el frontend nuevo pasa lo mismo con otro nombre: sus menus son
+     `bg-surface-elevated-secondary/90` montados con Radix
+     (`data-radix-menu-content`), y el menu del perfil salia igual de vacio,
+     con la lista de chats leyendose a traves (captura del usuario, 24-09-2026).
+     Por eso la lista no nombra clases de una build sino lo que es comun a las
+     dos: el contenido de Radix y los roles ARIA de emergente. En este dominio
+     `[role=menu]` no aparece fuera de un emergente, que es lo que en
+     45-emergentes.css impide usarlo a cualquier profundidad.
+
+     La receta es la de 45-emergentes.css, que no los alcanza porque Radix los
+     monta dentro de un envoltorio y no como hijos directos del body: velo
+     pintado como imagen y el blur de vuelta. El blur SI vale aqui aunque este
+     bloque lo apague en todo lo demas: detras de un menu hay texto pintado, y
+     eso es lo que tiene que difuminar. Especificidad de una clase contra la del
+     `*` de arriba, asi que gana sin mas. */
+  :where(html:not([zen-sin-cristal])) .popover,
+  :where(html:not([zen-sin-cristal])) [data-radix-popper-content-wrapper] > *,
+  :where(html:not([zen-sin-cristal])) [data-radix-menu-content],
+  :where(html:not([zen-sin-cristal])) [data-radix-menubar-content],
+  :where(html:not([zen-sin-cristal])) [role='menu'],
+  :where(html:not([zen-sin-cristal])) [role='listbox'],
+  :where(html:not([zen-sin-cristal])) [role='dialog'],
+  :where(html:not([zen-sin-cristal])) [role='alertdialog'],
+  :where(html:not([zen-sin-cristal])) [role='tooltip'] {
+    background-image: linear-gradient(rgb(16 16 19 / 0.78), rgb(16 16 19 / 0.78)) !important;
+    backdrop-filter: blur(26px) saturate(140%) !important;
+  }
+
+  /* Con los emergentes apagados en Ajustes > Zen Mods no pueden volver a quedar
+     transparentes: recuperan el gris solido que ChatGPT les da en oscuro
+     (`dark:bg-[#353535]`), que es lo que se veria sin el cristal. */
+  @media (not -moz-pref('acrylic-zen.web-popups')) {
+    :where(html:not([zen-sin-cristal])) .popover,
+    :where(html:not([zen-sin-cristal])) [data-radix-popper-content-wrapper] > *,
+    :where(html:not([zen-sin-cristal])) [data-radix-menu-content],
+    :where(html:not([zen-sin-cristal])) [data-radix-menubar-content],
+    :where(html:not([zen-sin-cristal])) [role='menu'],
+    :where(html:not([zen-sin-cristal])) [role='listbox'],
+    :where(html:not([zen-sin-cristal])) [role='dialog'],
+    :where(html:not([zen-sin-cristal])) [role='alertdialog'],
+    :where(html:not([zen-sin-cristal])) [role='tooltip'] {
+      background-image: none !important;
+      backdrop-filter: none !important;
+      background-color: #353535 !important;
+    }
+  }
+}
+
+/* --- opencode.ai (la consola) ------------------------------------- MEDIDO -
+   103 visitas en el historial y el 100% del viewport tapado. Medido el
+   24-09-2026 en el espacio de trabajo, tres capas de dos sistemas a la vez:
+
+     --v2-background-bg-deep       el fondo exterior        #080808
+     --color-background            el panel principal       #161616 (.bg-background)
+     --v2-background-bg-layer-01   las tarjetas y secciones #242424
+
+   Los `--v2-background-*` se atacan por token: el nombre ya dice que son solo
+   fondo. `--color-background` NO, aunque hoy nadie lo use como texto (medido:
+   cero elementos): en Tailwind ese token suele ser tambien el `text-background`
+   de los botones invertidos, y vaciarlo dejaria alguno sin letra en otra
+   pagina. Va por su clase. Las tarjetas pasan a velo.
+
+   Solo con `html[data-color-scheme=dark]`, que es como marca el oscuro. */
+@-moz-document domain(opencode.ai) {
+  html[data-color-scheme='dark']:not(:where([zen-sin-cristal])) {
+    --v2-background-bg-deep: transparent !important;
+    --v2-background-bg-layer-01: rgb(255 255 255 / 0.05) !important;
+  }
+
+  html[data-color-scheme='dark']:not(:where([zen-sin-cristal])) [class~='bg-background'] {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Stack Overflow / Stack Exchange ------------------------------------- */
+@-moz-document domain(stackoverflow.com), domain(stackexchange.com) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body {
+    --theme-content-background-color: transparent !important;
+    --black-025: rgb(255 255 255 / 0.05) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) #content {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Discord (web) ------------------------------------------------- MEDIDO -
+   Los tres tokens de siempre seguian aplicandose y aun asi la pagina estaba
+   opaca de punta a punta. Medido el 12-09-2026 con la sesion abierta en
+   discord.com/channels/@me: `--background-primary` valia `transparent` en el
+   documento, o sea que nuestra regla llegaba, y el area util seguia pintada en
+   `oklab(0.183089 0.00111321 -0.00388373)`, 2584x1369, la ventana entera.
+
+   Discord se cambio de escala. Los `--background-primary/-secondary/-tertiary`
+   son los nombres viejos; el fondo real lo pone ahora otra familia. De las 5172
+   propiedades personalizadas que declara, probadas en magenta una a una las 29
+   que empiezan por `--background-`, solo UNA pinta algo grande:
+
+     --background-base-lowest    la ventana entera (2584x1369)
+     --background-base-lower     el area de contenido (2209x1287)
+     --background-base-low       los paneles: lista de miembros, area de usuario
+     --background-surface-high/-higher/-highest   nada de lo que se ve, y se
+                                 quedan como estan: son los dialogos, y un
+                                 dialogo tiene que seguir tapando
+
+   La escala se mapea por elevacion, como en TikTok: el nivel del lienzo
+   desaparece, el del contenido tambien —es pagina, no panel— y el de los
+   paneles sube como velo en lugar de aplanarse contra el resto.
+
+   Los nombres viejos se quedan: no estorban, y si Discord sirve la interfaz
+   antigua a alguien, siguen haciendo su trabajo. Es la regla 3 de MANTENIMIENTO:
+   al renombrar se suma, no se sustituye.
+
+   Y HAY QUE PONERLO TAMBIEN EN `.theme-dark`, QUE ES LO QUE COSTO VERLO.
+   Escrito solo en `html`, el token cambiaba `#app-mount` y `div[class^=app__]`
+   pero NO el elemento que de verdad pinta. La razon es que Discord declara la
+   escala en su propio nodo de tema —`div.bg__960e4.theme-dark.theme-darker`— y
+   la declaracion de un elemento gana sobre lo que herede de su padre. Da igual
+   el origen de la hoja: la herencia no llega donde hay una declaracion propia.
+   Por eso la regla nombra las dos clases de tema oscuro.
+
+   `.theme-light` NO esta, a proposito: ahi el texto es negro, y vaciar el fondo
+   lo dejaria sobre el cristal oscuro. Es el mismo criterio condicional de
+   Modrinth y de los wikis.
+
+   Antes / despues: 3 capas opacas de ventana completa antes, 0 despues. */
+@-moz-document domain(discord.com) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body,
+  :where(html:not([zen-sin-cristal])) .theme-dark,
+  :where(html:not([zen-sin-cristal])) .theme-darker {
+    --background-base-lowest: transparent !important;
+    --background-base-lower: transparent !important;
+    --background-base-low: rgb(255 255 255 / 0.03) !important;
+    --background-primary: transparent !important;
+    --background-secondary: rgb(255 255 255 / 0.04) !important;
+    --background-tertiary: rgb(255 255 255 / 0.02) !important;
+  }
+}
+
+/* --- TikTok -------------------------------------------------------- MEDIDO -
+   El caso limpio del archivo: dos capas tapaban la pagina entera y las dos
+   salian del mismo token. Medido en la home con sesion cerrada:
+
+     div.css-2kk9ks-...--BaseBodyContainer   #000  var(--ui-page-flat-1)
+     div#column-list-container               #000  var(--ui-page-flat-1)
+
+   Las clases de TikTok son hashes de build (`css-2kk9ks-7937d88b--...`), o sea
+   exactamente lo que este archivo no targetea: duran una semana. Pero no hace
+   falta, porque el token si tiene nombre.
+
+   La paleta de superficie son seis tokens y nada mas —de 878 propiedades
+   personalizadas—, en dos familias identicas: `flat` para pantallas planas y
+   `grouped` para las agrupadas. El numero es el nivel de elevacion:
+
+     -1  #000      la pagina
+     -2  #1e1e1e   panel elevado
+     -3  #2c2c2c   panel sobre panel
+
+   Asi que el mapeo es directo: el nivel 1 desaparece y los otros dos suben como
+   velo, manteniendo la jerarquia de elevacion en lugar de aplanarla.
+
+   Circuito cerrado: 2 capas opacas antes, 0 despues. */
+@-moz-document domain(tiktok.com) {
+  html:not(:where([zen-sin-cristal])),
+  :where(html:not([zen-sin-cristal])) body {
+    --ui-page-flat-1: transparent !important;
+    --ui-page-flat-2: rgb(255 255 255 / 0.05) !important;
+    --ui-page-flat-3: rgb(255 255 255 / 0.09) !important;
+    --ui-page-grouped-1: transparent !important;
+    --ui-page-grouped-2: rgb(255 255 255 / 0.05) !important;
+    --ui-page-grouped-3: rgb(255 255 255 / 0.09) !important;
+  }
+}
+
+/* --- Refrag ------------------------------------------------------- MEDIDO -
+   Tailwind sin tokens: los colores van literales dentro de la utilidad, con la
+   forma `rgb(15 20 26 / var(--tw-bg-opacity, 1))`. Medido en la portada.
+
+   HAY UN ATAJO Y ES UNA TRAMPA. Poniendo `--tw-bg-opacity: 0` se vuelve
+   transparente TODO fondo de Tailwind de golpe, incluidos los botones y los
+   acentos de color. No se usa: se pierde la interfaz entera para ahorrar tres
+   reglas.
+
+   Lo que si vale es la utilidad, que es el metodo 3 de la cabecera, porque
+   Refrag no usa los nombres de Tailwind sino los de SU propia paleta:
+
+     bg-stealthBlue    #0F141A   la pagina (17.578k px2, el documento entero)
+     bg-lighterBlue    #19202A   secciones
+     bg-innerBoxBlue   #1D2530   tarjetas y cajas
+
+   Son nombres escritos por alguien, no hashes de build, asi que aguantan un
+   rediseño de layout. Ojo con "lighter": es mas OSCURO que innerBox, medido; el
+   mapeo va por luminancia y no por el nombre.
+
+   `[class*=...]` en lugar del punto, y no por gusto: Tailwind genera las
+   variantes de opacidad como `bg-stealthBlue/50`, que es otra clase distinta.
+   Con el contenedor se cogen las dos y no hay que ir listandolas.
+
+   OJO CON ESE `*=`, QUE TIENE UN FILO. Casa por subcadena, asi que tambien
+   cogeria un `hover:bg-stealthBlue`, y entonces un elemento que solo debe
+   pintarse al pasar el raton se quedaria con el velo puesto SIEMPRE. Aqui se
+   puede usar porque se comprobo que no existe: las unicas variantes de esos tres
+   colores en la portada son `bg-stealthBlue/50` y los planos. En la app de abajo
+   si existen `hover:`, y ahi se usa `~=`, que casa la clase entera.
+
+   Los degradados se quitan aparte: `background-color: transparent` no toca un
+   `linear-gradient`, y aqui hay dos que tapan —el barrido de la barra superior y
+   el difuminado de los bordes del carrusel de logos—.
+
+   Circuito cerrado: 16 capas opacas antes, 3 despues, y las 3 son botones —dos
+   CTA azulados y el rojo de "Get started"—. Se dejan a proposito: ahi el color
+   es la jerarquia de la pagina. */
+@-moz-document domain(refrag.gg) {
+  :where(html:not([zen-sin-cristal])) [class*='bg-stealthBlue'] {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) [class*='bg-lighterBlue'] {
+    background-color: rgb(255 255 255 / 0.04) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) [class*='bg-innerBoxBlue'] {
+    background-color: rgb(255 255 255 / 0.06) !important;
+  }
+
+  /* La barra superior pinta un 90% opaco encima con degradado. Se cambia por
+     velo en vez de quitarlo del todo: es barra fija sobre contenido que scrolea
+     por debajo, y sin nada de fondo el texto se cruza con lo que pasa. */
+  :where(html:not([zen-sin-cristal])) nav.nav-gradient {
+    background-image: none !important;
+    background-color: rgb(255 255 255 / 0.05) !important;
+  }
+
+  /* El difuminado de los bordes del carrusel esta pintado con el color de la
+     pagina, que ya no existe: sin esto queda una mancha oscura a los lados. */
+  :where(html:not([zen-sin-cristal])) .marquee-container {
+    background-image: none !important;
+  }
+
+  /* Estas dos NO son utilidades de Tailwind: son clases propias con el rgba
+     escrito dentro, y por eso la regla del contenedor no las cogia. Medido:
+       .video-box-bg   rgba(25, 32, 42, 0.5)
+       .language-box   rgba(25, 32, 42, 0.5)
+     Nombres puestos a mano, no hashes, asi que se pueden targetear. */
+  :where(html:not([zen-sin-cristal])) .video-box-bg,
+  :where(html:not([zen-sin-cristal])) .language-box {
+    background-color: rgb(255 255 255 / 0.05) !important;
+  }
+
+  /* Los botones se quedan con su color: el azul del CTA y el rojo de "Get
+     started" son la jerarquia de la pagina, no decoracion. */
+
+  /* --- play.refrag.gg, la aplicacion ---------------------------- MEDIDO -
+     `domain(refrag.gg)` ya cubre los subdominios, asi que esto va en el mismo
+     bloque. Pero la app no comparte NADA de paleta con la portada: alli son
+     nombres propios (stealthBlue), aqui es la escala gris de Tailwind. Medido en
+     el dashboard con sesion abierta:
+
+       bg-gray-950   rgb(8, 10, 13)    el armazon: `main`, 2910k, la app entera
+       bg-gray-900   rgb(15, 20, 26)   tarjetas y paneles
+       bg-gray-800   rgb(30, 39, 51)   tarjeta elevada y botones secundarios
+       border-gray-700                 el borde de las tarjetas, que se conserva
+
+     `~=` Y NO `*=`, AL CONTRARIO QUE ARRIBA. Aqui si existen `hover:bg-gray-800`
+     y `hover:bg-gray-700`, comprobado listando las variantes del documento. Con
+     subcadena, un boton cuyo unico vinculo con gray-800 es su estado hover se
+     quedaria con el velo puesto en reposo, y el hover dejaria de notarse. `~=`
+     casa la clase entera, asi que `bg-gray-800` no coge `hover:bg-gray-800`.
+
+     Los estados hover van aparte y SUBIENDO: sobre cristal un hover mas oscuro
+     que el fondo no se ve. Ganan por especificidad sin pelear, porque llevan una
+     pseudo-clase mas.
+
+     Se dejan con su color `bg-primary-500/600` (el indigo de accion),
+     `bg-danger-700`, `bg-red-500`, `bg-secondary-500` y `bg-orange-gradient`:
+     ahi el color es estado y jerarquia, no fondo.
+
+     Circuito cerrado en el dashboard: 11 capas opacas antes, 0 despues.
+     Comprobado ademas pieza por pieza, que el cero solo no bastaba (ver la nota
+     de la raiz): armazon y raiz transparentes, tarjetas con UN velo —0.045 y
+     0.075—, y el boton primario intacto en rgb(78, 84, 200).
+
+     Los `:hover` no se pueden comprobar asi, porque hacen falta un raton y un
+     puntero encima; quedan verificados por especificidad y sin medir. */
+  :where(html:not([zen-sin-cristal])) [class~='bg-gray-950'] {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) [class~='bg-gray-900'] {
+    background-color: rgb(255 255 255 / 0.045) !important;
+  }
+
+  /* LA RAIZ NO, Y ESTO SE VE SOLO MIDIENDO. La app lleva
+     `<html class="h-full bg-gray-900">`: pone el color de PANEL en el documento
+     entero. Con la regla de arriba a secas, la pagina se llevaba un velo de
+     0.045 y cada tarjeta sumaba el suyo encima, o sea 0.09 donde hay tarjeta y
+     0.045 donde no deberia haber nada. El barrido de capas salia en cero
+     igualmente, porque un velo translucido no cuenta como capa opaca: el numero
+     estaba bien y el resultado no.
+
+     Gana por especificidad (0,1,1 contra 0,1,0), sin necesidad de mas. */
+  html[class~='bg-gray-900']:not(:where([zen-sin-cristal])) {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) [class~='bg-gray-800'] {
+    background-color: rgb(255 255 255 / 0.075) !important;
+  }
+
+  /* Sin escapar los dos puntos: esto es una CADENA entre comillas, no un
+     identificador. `.hover\:bg-gray-800` necesitaria la barra; `[class~='...']`
+     no. */
+  :where(html:not([zen-sin-cristal])) [class~='hover:bg-gray-800']:hover {
+    background-color: rgb(255 255 255 / 0.11) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) [class~='hover:bg-gray-700']:hover {
+    background-color: rgb(255 255 255 / 0.14) !important;
+  }
+}
+
+/* --- Instagram ---------------------------------------------------- MEDIDO -
+   Instagram si tiene sistema de tokens, y con una particularidad que hay que
+   respetar: casi todos guardan un TRIPLETE de componentes, no un color.
+
+     --ig-primary-background: 12, 16, 20
+     y se usa como  rgb(var(--ig-primary-background))
+
+   Poner ahi `transparent` produce `rgb(transparent)`, que no es un color y tira
+   la declaracion. Lo que si funciona es darle el triplete con alfa en sintaxis
+   moderna:
+
+     --ig-primary-background: 255 255 255 / 0.05   ->   rgb(255 255 255 / 0.05)
+
+   Y si algun sitio lo envuelve en `rgba(var(--x), .5)`, el resultado es invalido
+   y la declaracion se cae — pero al caerse, `background-color` vuelve a su valor
+   inicial, que es `transparent`. O sea que el modo de fallo tambien deja cristal.
+
+   `--surface-background` es la excepcion: ese guarda un color completo y se usa
+   como `var(--surface-background)` directo, asi que ahi si va `transparent`.
+
+   QUE NO SE TOCA. De los 90 tokens con "background" en el nombre se tocan 9.
+   Fuera quedan los botones (el azul de "Seguir" es informacion), los
+   interruptores, los separadores y las burbujas de mensaje, que sobre cristal
+   perderian el hilo de quien dice que.
+
+   LIMITE DE ESTA MEDIDA, dicho claro: se midio la PORTADA, porque en este perfil
+   no hay sesion de Instagram abierta (comprobado: ni formulario de acceso ni
+   marcas de sesion). La paleta `--ig-*` si es global y se carga igual, y de ahi
+   sale el mapeo; lo que no se ha podido comprobar en circuito cerrado es el feed
+   ni los mensajes directos. Si algo se ve raro ahi, se mide y se ajusta.
+
+   Circuito cerrado sobre la portada: 4 capas opacas antes, 2 despues — el boton
+   azul principal y un degradado de texto, los dos correctos. */
+@-moz-document domain(instagram.com) {
+  /* `*` Y NO `html, body`, POR LO MISMO QUE EN REDDIT Y CHATGPT.
+     Medido: con `html, body`, `--surface-background` llegaba como `transparent`
+     desde la raiz y siete niveles hacia abajo, y ahi un contenedor intermedio lo
+     volvia a declarar como #1F1F22. El div que pinta lleva la clase `.x2bj2ny`,
+     que es CSS atomico de Meta —un hash— y por tanto justo lo que este archivo
+     no targetea. Con `*` la redeclaracion pierde y no hay que nombrar la clase.
+
+     El truco del triplete si se propagaba bien desde la raiz, comprobado en los
+     16 niveles de la cadena; se pone en `*` igual, que no cuesta nada. */
+  :where(html:not([zen-sin-cristal])) * {
+    /* Color completo */
+    --surface-background: transparent !important;
+
+    /* Tripletes con alfa: la pagina fuera, los paneles como velo */
+    --ig-primary-background: 255 255 255 / 0 !important;
+    --ig-secondary-background: 255 255 255 / 0.05 !important;
+    --ig-elevated-background: 255 255 255 / 0.07 !important;
+    --ig-secondary-elevated-background: 255 255 255 / 0.09 !important;
+    --ig-highlight-background: 255 255 255 / 0.06 !important;
+    --ig-banner-background: 255 255 255 / 0.06 !important;
+    --ig-dropdown-background: 255 255 255 / 0.08 !important;
+    --ig-menu-background-color: 255 255 255 / 0.08 !important;
+  }
+}
+
+/* --- Wikipedia ------------------------------------------------- CONDICIONAL -
+   Ya no hace falta descomentar nada ni sacarla de la lista de rescate: la regla
+   se activa sola cuando la pagina dice que esta en oscuro.
+
+   POR QUE VA CONDICIONADA Y NO SUELTA
+   Medido con la configuracion de fabrica: `skin-theme-clientpref-day`, texto del
+   articulo en rgb(32, 33, 34) —luminancia 33, casi negro— sobre blanco. Vaciarle
+   el fondo ahi no deja una Wikipedia de cristal, deja una Wikipedia en blanco.
+   Y el problema no se arregla forzandole los colores de texto: tiene 163 tokens
+   de color con nombre estable y se podria repintar entera, pero los diagramas y
+   las formulas son SVG de trazo negro sobre transparente, y eso el modo oscuro
+   propio de Wikipedia lo resuelve con filtros de imagen, no con tokens. Hacerlo
+   a mano deja los esquemas invisibles, que en una enciclopedia es peor que un
+   fondo feo.
+
+   Asi que manda su ajuste, y las dos mitades leen la misma marca: aqui se pide
+   oscuro y en 90-exclusions.css el rescate se aplica cuando no lo hay. Cambiar
+   de una a otra es un clic en la pagina, panel Apariencia > Color, sin volver a
+   ejecutar el instalador.
+
+   `-os` cuenta como oscuro porque este repo fuerza
+   `layout.css.prefers-color-scheme.content-override = 0`: si la pagina sigue al
+   navegador, el navegador ya dice oscuro.
+
+   SIN MEDIR EN OSCURO TODAVIA. La paleta nocturna de MediaWiki no se puede
+   inspeccionar desde el modo claro —ResourceLoader no manda ese CSS si no toca—,
+   asi que los nombres de token de aqui salen de la version diurna, donde SI
+   estan declarados, y las clases `-night` y `-os` de la convencion que confirma
+   el `-day` que trae puesto. Un selector que no encaje con nada no cuesta nada,
+   asi que el riesgo de este bloque es quedarse corto, no romper. */
+@-moz-document domain(wikipedia.org),
+  domain(wiktionary.org),
+  domain(wikimedia.org),
+  domain(wikisource.org),
+  domain(wikibooks.org) {
+  html.skin-theme-clientpref-night:not(:where([zen-sin-cristal])),
+  html.skin-theme-clientpref-os:not(:where([zen-sin-cristal])) {
+    --background-color-base: transparent !important;
+    --background-color-neutral-subtle: rgb(255 255 255 / 0.05) !important;
+    --background-color-neutral: rgb(255 255 255 / 0.07) !important;
+    --background-color-interactive-subtle: rgb(255 255 255 / 0.04) !important;
+    --background-color-interactive: rgb(255 255 255 / 0.08) !important;
+    background-color: transparent !important;
+  }
+
+  /* El armazon de Vector 2022. La cabecera va con velo y no vacia: es barra
+     pegada arriba con el articulo pasando por debajo. */
+  html.skin-theme-clientpref-night:not(:where([zen-sin-cristal])) body,
+  html.skin-theme-clientpref-os:not(:where([zen-sin-cristal])) body,
+  html.skin-theme-clientpref-night:not(:where([zen-sin-cristal])) .mw-page-container,
+  html.skin-theme-clientpref-os:not(:where([zen-sin-cristal])) .mw-page-container,
+  html.skin-theme-clientpref-night:not(:where([zen-sin-cristal])) .mw-body,
+  html.skin-theme-clientpref-os:not(:where([zen-sin-cristal])) .mw-body,
+  html.skin-theme-clientpref-night:not(:where([zen-sin-cristal])) .vector-body,
+  html.skin-theme-clientpref-os:not(:where([zen-sin-cristal])) .vector-body {
+    background-color: transparent !important;
+  }
+
+  html.skin-theme-clientpref-night:not(:where([zen-sin-cristal])) .vector-header,
+  html.skin-theme-clientpref-os:not(:where([zen-sin-cristal])) .vector-header {
+    background-color: rgb(255 255 255 / 0.05) !important;
+  }
+}
+
+/* --- Supabase ------------------------------------------------------ MEDIDO -
+   Tailwind v4 con la escala de superficies propia de Supabase, y aqui SI se
+   pueden nombrar las clases: `bg-default`, `bg-alternative`, `bg-surface-75` son
+   nombres de su sistema de diseno, no hashes de build. El tema lo marca
+   `<html data-theme="dark">` y viene oscuro de fabrica, sin cuenta.
+
+   Medido el 17-09-2026 en la portada, con `html` y `body` ya transparentes por
+   00-base.css. Las capas que quedaban tapando, por area:
+
+     .bg-surface-75    3771k   oklch(0.215 0.0025 159)   paneles y tarjetas
+     .bg-alternative   3110k   oklch(0.19 0.0025 159)    el pie, de lado a lado
+     .bg-default        701k   oklch(0.19 0.0025 159)    bloques de seccion
+     .bg-background     234k   oklch(0.19 0.0025 159)    la cabecera pegajosa
+
+   Los dos valores son los dos peldanos de su escala: 0.19 es el lienzo y 0.215
+   la superficie elevada. Por eso el lienzo se vacia y la superficie pasa a velo,
+   que es la convencion de este archivo.
+
+   LA CABECERA PEGAJOSA SE QUEDA COMO PANEL, no se vacia: `bg-background/90` es
+   translucida a proposito en el sitio y al vaciarla los enlaces del menu pasan
+   a leerse encima del contenido que se desplaza por debajo.
+
+   `.bg-[#0b0e0d]` ES UN COLOR ARBITRARIO DE TAILWIND y hay que escaparlo; se
+   nombra porque son 159k de una seccion de portada y su gemelo claro
+   `.bg-[#f8f3ef]` resuelve al MISMO color en oscuro, o sea que los dos son la
+   misma capa vista por dos utilidades distintas. */
+@-moz-document domain(supabase.com) {
+  :where(html:not([zen-sin-cristal])) .bg-default,
+  :where(html:not([zen-sin-cristal])) .bg-alternative,
+  :where(html:not([zen-sin-cristal])) .bg-\[\#0b0e0d\],
+  :where(html:not([zen-sin-cristal])) .bg-\[\#f8f3ef\] {
+    background-color: transparent !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .bg-surface-75 {
+    background-color: rgb(255 255 255 / 0.05) !important;
+  }
+
+  :where(html:not([zen-sin-cristal])) .bg-surface-100,
+  :where(html:not([zen-sin-cristal])) .bg-surface-200 {
+    background-color: rgb(255 255 255 / 0.07) !important;
+  }
+
+  /* La cabecera: velo, no vaciado. Ver la nota de arriba. */
+  :where(html:not([zen-sin-cristal])) .bg-background,
+  :where(html:not([zen-sin-cristal])) .bg-background\/90 {
+    background-color: rgb(255 255 255 / 0.06) !important;
+  }
+}
+
+/* --- LOS SITIOS DE TEMA CLARO: LAMINA EN VEZ DE LOSA --------------- MEDIDO -
+   Hasta el 17-09-2026 un sitio que se pinta en claro solo tenia dos destinos:
+   cristal —y entonces su texto casi negro quedaba sobre el acrilico oscuro y no
+   se leia— o la lista de rescate de 90-exclusions.css, que le devuelve el fondo
+   SOLIDO. Lo segundo funciona y se lee, pero deja una losa blanca de lado a lado
+   flotando sobre el cristal, que es justo lo que se nota feo.
+
+   Hay un tercer camino, y es el mismo que ya se le dio al rescate del buscador
+   de Google: en vez de devolverle el blanco OPACO, se le da al sitio una LAMINA
+   clara. El texto oscuro se sigue leyendo de sobra —blanco al 72% sobre el
+   acrilico da un lienzo de luminancia ~195, que contra un texto de luminancia 33
+   son mas de 7:1— y por detras se ve el cristal.
+
+   LA REGLA DE ORO DE ESTOS DOS BLOQUES, que es lo que los hace posibles: el
+   LIENZO se vacia y las SUPERFICIES pasan a lamina. Si se laminaran los dos se
+   apilarian —una tarjeta al 72% sobre un lienzo al 72% es un 92%— y volveria a
+   ser una losa, solo que mas cara de calcular.
+
+   Y `color-scheme` VUELVE A `normal`. Es la mitad que no es de fondo y la que
+   mas se notaba: 00-base.css fuerza `dark`, y eso le pone al navegador barras de
+   desplazamiento y controles de formulario oscuros dentro de una interfaz clara.
+   Aqui manda el sitio, porque el sitio es claro de verdad.
+
+   Los dos llevan la guarda de SUFIJO, pegada a la clase del tema y no de
+   prefijo: esa clase vive en el propio `<html>` y html no es descendiente de si
+   mismo. Es la leccion que costo Spotify el 12-09-2026. */
+
+/* --- Shopify (el panel de la tienda) ------------------------------- MEDIDO -
+   Tokens de Polaris, su sistema de diseno, con nombre estable. Medido el
+   17-09-2026 en admin.shopify.com con la sesion abierta:
+
+     <html class="p-theme-light">
+     --p-color-bg                   #f1f1f1   el lienzo de la pagina
+     --p-color-bg-surface           #fff      las tarjetas
+     --p-color-bg-fill              #fff      los rellenos neutros
+     --p-color-bg-fill-secondary    #f1f1f1
+     --p-color-bg-fill-tertiary     #e3e3e3
+     --admin-next-content-surface   #fbfbfb   el area de contenido
+
+   NO SE TOCA NADA SEMANTICO: caution, critical, warning, info, success, ai,
+   avatar y badge son color de CONTENIDO —el amarillo de un aviso significa algo—
+   y laminarlos seria borrar informacion.
+
+   Los estados conservan su direccion: en tema claro el hover y el activo van
+   HACIA ABAJO en luminosidad, asi que aqui van hacia abajo en opacidad. Menos
+   blanco es mas oscuro sobre el acrilico, que es lo que el sitio queria decir.
+
+   Sale de la lista de rescate de 90-exclusions.css, donde estaba desde que se
+   midio que Polaris ignora `prefers-color-scheme`. Eso sigue siendo verdad: no
+   se le enciende ningun modo oscuro, se le lamina el claro. */
+@-moz-document domain(shopify.com) {
+  html.p-theme-light:not(:where([zen-sin-cristal])):not(:where([zen-modo-oscuro])) {
+    color-scheme: normal !important;
+
+    /* El lienzo, vacio */
+    --p-color-bg: transparent !important;
+    --admin-next-content-surface: transparent !important;
+
+    /* Las superficies, lamina */
+    --p-color-bg-surface: color-mix(in srgb, #fff 72%, transparent) !important;
+    --p-color-bg-surface-hover: color-mix(in srgb, #fff 66%, transparent) !important;
+    --p-color-bg-surface-active: color-mix(in srgb, #fff 60%, transparent) !important;
+    --p-color-bg-fill: color-mix(in srgb, #fff 72%, transparent) !important;
+    --p-color-bg-fill-hover: color-mix(in srgb, #fff 66%, transparent) !important;
+    --p-color-bg-fill-active: color-mix(in srgb, #fff 60%, transparent) !important;
+    --p-color-bg-fill-secondary: color-mix(in srgb, #fff 58%, transparent) !important;
+    --p-color-bg-fill-tertiary: color-mix(in srgb, #fff 46%, transparent) !important;
+  }
+
+  html.p-theme-light:not(:where([zen-sin-cristal])) body {
+    background-color: transparent !important;
+  }
+}
+
+/* --- Meta: Business Suite, anuncios y Facebook --------------------- MEDIDO -
+   Medido el 17-09-2026 en business.facebook.com con la sesion abierta y SIN el
+   canal de agente, que en esta familia es la diferencia entre medir la pagina y
+   medir otra cosa. Sus CLASES no se pueden nombrar —`x1ja2u2z`, `xeuugli` son
+   CSS atomico generado, hashes de propiedad y valor que cambian con cada
+   despliegue— pero sus TOKENS si:
+
+     <html class="_9dls __fb-light-mode">
+     --card-background                #FFFFFF   las tarjetas, 2377k de viewport
+     --card-background-flat           #F7F8FA
+     --comment-background             #F0F2F5
+     --background-deemphasized        #F0F2F5
+     --attachment-footer-background   #F0F2F5
+
+   BUSINESS SUITE Y EL ADMINISTRADOR DE ANUNCIOS NO TIENEN MODO OSCURO. No es que
+   venga apagado: no existe, y su `<html>` trae `__fb-light-mode` escrito de
+   fabrica. Por eso este bloque es PARA el tema claro y no al reves, que es lo
+   contrario de casi todo el archivo.
+
+   Y por eso la condicion es `:not(.__fb-dark-mode)` y no `.__fb-light-mode`:
+   escrita en negativo cubre tambien facebook.com, que SI tiene modo oscuro, sin
+   dejar de cubrir a los otros dos. El dia que se encienda el oscuro en la red
+   social, este bloque deja de casar solo y habra que escribirle el suyo.
+
+   `--always-white` NO entra: se llama asi porque el sitio lo usa donde el blanco
+   tiene que ser blanco pase lo que pase, como el texto sobre un boton azul. */
+@-moz-document domain(facebook.com) {
+  html:not(.__fb-dark-mode):not(:where([zen-sin-cristal])):not(:where([zen-modo-oscuro])) {
+    color-scheme: normal !important;
+
+    --card-background: color-mix(in srgb, #fff 72%, transparent) !important;
+    --card-background-flat: color-mix(in srgb, #f7f8fa 66%, transparent) !important;
+    --comment-background: color-mix(in srgb, #f0f2f5 58%, transparent) !important;
+    --background-deemphasized: transparent !important;
+    --attachment-footer-background: color-mix(in srgb, #f0f2f5 58%, transparent) !important;
+  }
+
+  html:not(.__fb-dark-mode):not(:where([zen-sin-cristal])) body {
+    background-color: transparent !important;
+  }
+}

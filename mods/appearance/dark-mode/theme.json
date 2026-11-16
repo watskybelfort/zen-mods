@@ -1,0 +1,16 @@
+{
+  "id": "zen-modo-oscuro",
+  "name": "Zen Modo Oscuro",
+  "description": "Un modo oscuro de verdad para cualquier pagina, que se activa con el clic derecho: 'Activar modo oscuro'. Usa Dark Reader como motor —recalcula los colores de cada regla, de las variables CSS y de las imagenes, en vez de invertir la pagina— y se aparta de las laminas claras de Acrylic Zen (Shopify, Meta...) para que el cristal se siga viendo. Necesita la pieza nativa: node scripts/instalar-modo-oscuro.mjs",
+  "author": "local",
+  "version": "1.0.0",
+  "preferences": true,
+  "enabled": true,
+  "tags": [
+    "dark-mode",
+    "modo-oscuro",
+    "dark-reader",
+    "context-menu",
+    "acrylic"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "acrylic-zen-native-win",
+  "name": "Acrylic Zen",
+  "description": "Cristal nativo en Zen Browser: acrilico de DWM en Windows 11 sin Mica For Everyone, y vibrancy de Cocoa en macOS. Retira las capas opacas que Zen pinta sobre la ventana para que se vea el cristal del sistema, con intensidad y tintes configurables.",
+  "author": "local",
+  "version": "1.10.1",
+  "preferences": true,
+  "enabled": true,
+  "tags": ["windows", "macos", "acrylic", "vibrancy", "transparency", "glass"]
+}

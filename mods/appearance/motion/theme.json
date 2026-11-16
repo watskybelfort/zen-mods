@@ -1,0 +1,10 @@
+{
+  "id": "zen-motion-local",
+  "name": "Zen Motion",
+  "description": "Movimiento y tipografia para Zen: buscador animado con resultados en cascada, apertura de pestanas, micro-interacciones y tipografia Montserrat. Companero de Acrylic Zen, instalable por separado.",
+  "author": "local",
+  "version": "1.0.2",
+  "preferences": true,
+  "enabled": true,
+  "tags": ["animations", "motion", "typography", "urlbar"]
+}

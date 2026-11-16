@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#141416">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Remoto">
+<meta name="format-detection" content="telephone=no">
+<title>Remoto</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icono.png">
+<link rel="icon" href="/icono.png">
+<link rel="preload" href="/geist.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/estilo.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+
+<!-- Se ve mientras arranca app.js. Si app.js no llega, esto queda a la vista en
+     vez de una pantalla negra, y el enlace recarga sin necesitar JavaScript. -->
+<main id="vista-cargando" class="cargando">
+  <p>Conectando con el PC…</p>
+  <p class="suave">Si no avanza, comprueba que el móvil está en la misma wifi y que Zen está abierto.</p>
+  <a class="boton" href="/">Reintentar</a>
+</main>
+
+<!-- Emparejar -->
+<main id="vista-emparejar" class="vista" hidden>
+  <div class="emparejar">
+    <h1>Controla la música del PC</h1>
+    <p class="suave">En el PC, en YouTube Music, pulsa el botón del móvil de la barra del reproductor y escanea el código. O escribe aquí el número que sale debajo.</p>
+    <form id="form-codigo" autocomplete="off">
+      <label for="codigo">Código del PC</label>
+      <input id="codigo" inputmode="numeric" pattern="[0-9 ]*" maxlength="7" placeholder="000 000" aria-describedby="codigo-error">
+      <p id="codigo-error" class="error" role="alert"></p>
+      <button type="submit" class="boton primario">Emparejar</button>
+    </form>
+  </div>
+</main>
+
+<!-- La app -->
+<div id="app" hidden>
+  <header class="cabecera" id="cabecera">
+    <button class="icono-boton" id="atras" type="button" aria-label="Atrás" hidden><svg><use href="/iconos.svg#atras"/></svg></button>
+    <h1 id="titulo-vista">Inicio</h1>
+  </header>
+
+  <main class="contenido" id="contenido">
+    <!-- Inicio: la portada de YouTube Music (sugeridos, escuchado hace poco...) -->
+    <section id="vista-inicio" class="vista" aria-label="Inicio">
+      <div id="sin-pestana" class="vacio" hidden>
+        <svg class="vacio-icono"><use href="/iconos.svg#notas"/></svg>
+        <h2>YouTube Music no está abierto en el PC</h2>
+        <p class="suave">Ábrelo en Zen y aparecerá aquí.</p>
+        <button class="boton primario" id="abrir-ytm" type="button">Abrir en el PC</button>
+      </div>
+      <div id="inicio"></div>
+    </section>
+
+    <!-- Sonando: hoja a pantalla completa que sube desde la mini barra y se
+         baja deslizando hacia abajo, como en la app de YouTube Music. -->
+    <section id="vista-ahora" class="sonando" aria-label="Sonando" aria-hidden="true">
+      <div id="fondo" aria-hidden="true"></div>
+      <div class="agarradera" aria-hidden="true"></div>
+      <div class="sonando-cabeza">
+        <button class="icono-boton bajar" id="cerrar-sonando" type="button" aria-label="Bajar"><svg><use href="/iconos.svg#atras"/></svg></button>
+        <h2>Sonando</h2>
+        <button class="icono-boton" id="b-letra" type="button" aria-label="Ver la letra"><svg><use href="/iconos.svg#letra"/></svg></button>
+      </div>
+      <div id="reproductor">
+        <div class="portada-grande"><img id="ahora-img" alt="" decoding="async"></div>
+        <div class="ahora-texto">
+          <div class="ahora-titulos">
+            <h2 id="ahora-titulo" class="cargando-texto">&nbsp;</h2>
+            <p id="ahora-artista" class="suave">&nbsp;</p>
+          </div>
+          <div class="ahora-votos">
+            <button class="icono-boton" id="b-nomegusta" type="button" aria-label="No me gusta" aria-pressed="false"><svg><use href="/iconos.svg#nomegusta"/></svg></button>
+            <button class="icono-boton" id="b-megusta" type="button" aria-label="Me gusta" aria-pressed="false"><svg><use href="/iconos.svg#megusta"/></svg></button>
+          </div>
+        </div>
+        <p id="ahora-anuncio" class="aviso" hidden>Anuncio en el PC</p>
+        <div class="progreso">
+          <input type="range" id="progreso" min="0" max="1000" value="0" step="1" aria-label="Posición">
+          <div class="tiempos"><span id="t-pos">0:00</span><span id="t-dur">0:00</span></div>
+        </div>
+        <div class="controles">
+          <button class="icono-boton" id="b-aleatorio" type="button" aria-label="Aleatorio" aria-pressed="false"><svg><use href="/iconos.svg#aleatorio"/></svg></button>
+          <button class="icono-boton grande" id="b-anterior" type="button" aria-label="Anterior"><svg><use href="/iconos.svg#anterior"/></svg></button>
+          <button class="tocar" id="b-tocar" type="button" aria-label="Reproducir"><svg><use id="i-tocar" href="/iconos.svg#play"/></svg></button>
+          <button class="icono-boton grande" id="b-siguiente" type="button" aria-label="Siguiente"><svg><use href="/iconos.svg#siguiente"/></svg></button>
+          <button class="icono-boton" id="b-repetir" type="button" aria-label="Repetir" aria-pressed="false"><svg><use id="i-repetir" href="/iconos.svg#repetir"/></svg></button>
+        </div>
+        <div class="volumen">
+          <button class="icono-boton" id="b-silencio" type="button" aria-label="Silenciar" aria-pressed="false"><svg><use id="i-volumen" href="/iconos.svg#volumen"/></svg></button>
+          <input type="range" id="volumen" min="0" max="100" value="0" step="1" aria-label="Volumen del PC">
+          <span id="t-vol" class="suave cifra">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Buscar -->
+    <section id="vista-buscar" class="vista" aria-label="Buscar" hidden>
+      <form id="form-buscar" class="buscador" role="search" autocomplete="off">
+        <svg class="buscador-icono" aria-hidden="true"><use href="/iconos.svg#buscar"/></svg>
+        <input id="q" type="search" enterkeyhint="search" placeholder="Canciones, artistas, álbumes" aria-label="Buscar en YouTube Music">
+        <button class="icono-boton" id="q-borrar" type="button" aria-label="Borrar" hidden><svg><use href="/iconos.svg#cerrar"/></svg></button>
+      </form>
+      <div id="filtros" class="chips" hidden></div>
+      <div id="sugerencias" class="sugerencias" hidden></div>
+      <div id="resultados"></div>
+    </section>
+
+    <!-- Biblioteca -->
+    <section id="vista-biblioteca" class="vista" aria-label="Biblioteca" hidden>
+      <div id="biblio-chips" class="chips"></div>
+      <div id="biblio"></div>
+    </section>
+
+    <!-- Cola -->
+    <section id="vista-cola" class="vista" aria-label="Cola" hidden>
+      <div id="cola"></div>
+    </section>
+
+    <!-- Letra en tiempo real, de Zen Letra Viva -->
+    <section id="vista-letra" class="vista" aria-label="Letra" hidden>
+      <div id="letra" class="letra" aria-live="off"></div>
+    </section>
+
+    <!-- Pagina de album, artista o playlist -->
+    <section id="vista-pagina" class="vista" aria-label="Detalle" hidden>
+      <div id="pagina"></div>
+    </section>
+  </main>
+
+  <div class="mini" id="mini" hidden>
+    <button class="mini-cuerpo" id="mini-abrir" type="button" aria-label="Ver lo que suena">
+      <img id="mini-img" alt="">
+      <span class="mini-texto"><strong id="mini-titulo"></strong><span id="mini-artista" class="suave"></span></span>
+    </button>
+    <button class="icono-boton" id="mini-tocar" type="button" aria-label="Reproducir"><svg><use id="i-mini" href="/iconos.svg#play"/></svg></button>
+    <button class="icono-boton" id="mini-siguiente" type="button" aria-label="Siguiente"><svg><use href="/iconos.svg#siguiente"/></svg></button>
+    <div class="mini-barra"><div id="mini-progreso"></div></div>
+  </div>
+
+  <nav class="pestanas" aria-label="Secciones">
+    <button type="button" data-vista="inicio" aria-current="page"><svg><use href="/iconos.svg#inicio"/></svg><span>Inicio</span></button>
+    <button type="button" data-vista="buscar"><svg><use href="/iconos.svg#buscar"/></svg><span>Buscar</span></button>
+    <button type="button" data-vista="biblioteca"><svg><use href="/iconos.svg#biblioteca"/></svg><span>Biblioteca</span></button>
+    <button type="button" data-vista="cola"><svg><use href="/iconos.svg#cola"/></svg><span>Cola</span></button>
+  </nav>
+</div>
+
+<!-- Menu de un elemento -->
+<div class="hoja-fondo" id="hoja-fondo" hidden></div>
+<div class="hoja" id="hoja" role="dialog" aria-modal="true" aria-labelledby="hoja-titulo" hidden>
+  <div class="hoja-cabeza">
+    <img id="hoja-img" alt="">
+    <div><strong id="hoja-titulo"></strong><span id="hoja-sub" class="suave"></span></div>
+  </div>
+  <div id="hoja-acciones"></div>
+</div>
+
+<div class="aviso-flotante" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="estado-conexion" id="conexion" role="status" hidden>Sin conexión con el PC. Reintentando…</div>
+</body>
+</html>

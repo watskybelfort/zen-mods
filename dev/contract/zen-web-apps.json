@@ -1,0 +1,251 @@
+{
+  "mod": "zen-web-apps",
+  "name": "Zen Web Apps",
+  "plataformas": [
+    "windows"
+  ],
+  "verificado_en": "Zen 1.22.2b / Gecko 156.0 / BuildID 20260915091052",
+  "nota_vivo": "Este mod no declara ninguna variable, asi que no hay testigo que mirar. Se mide en dos sitios: `vivo` corre en la ventana normal que tiene Marionette delante y comprueba que la guarda protege; `vivo_app` corre dentro de una ventana de aplicacion web de verdad, que es el unico sitio donde este mod hace algo. Lo segundo existe desde 1.22.2b, y existe justamente porque sin ello el mod se quedo sin efecto con los 124 enganches del contrato estatico en verde.",
+  "vivo_app": [
+    {
+      "que": "la ventana de app NO monta la barra unica, o sea que la pieza nativa hizo su trabajo",
+      "js": "return String(document.documentElement.hasAttribute('zen-single-toolbar'));",
+      "espera": "false",
+      "severity": "critico",
+      "nota": "si sale true, Zen monto la barra unica aqui y la guarda del CSS se va a apartar: la barra lateral se vera. Es el fallo exacto de 1.22.2b. Comprobar que la pieza nativa esta instalada (node installer/instalar-web-apps.mjs) y que zen-web-apps.restore-top-bar esta en true",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "que": "la URL esta FUERA del toolbox, que es lo que permite ocultarlo",
+      "js": "return String(!document.querySelector('#navigator-toolbox #urlbar-container'));",
+      "espera": "true",
+      "severity": "critico",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "que": "hay botones de ventana visibles y NO estan dentro de la barra lateral oculta",
+      "js": "const cajas = Array.from(document.querySelectorAll('.titlebar-buttonbox-container')); const visible = cajas.find(c => { const r = c.getBoundingClientRect(); return r.width > 0 && r.height > 0; }); const toolbox = document.getElementById('navigator-toolbox'); return String(!!visible && !!toolbox && !toolbox.contains(visible));",
+      "espera": "true",
+      "severity": "critico",
+      "nota": "LA COMPROBACION QUE IMPIDE EL PEOR FALLO DEL REPO: una ventana de app que no se puede cerrar. No basta con que los botones existan en el DOM —hay varias .titlebar-buttonbox-container y casi todas estan vacias—, tiene que haber una con caja y quedar fuera de lo que el mod oculta",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "que": "la barra lateral esta retirada de verdad",
+      "js": "return getComputedStyle(document.getElementById('navigator-toolbox')).visibility;",
+      "espera": "collapse",
+      "severity": "critico",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "que": "la pieza nativa esta cargada en esta ventana",
+      "js": "return String(!!(window.__zenWebApps && window.__zenWebApps.puesto));",
+      "espera": "true",
+      "severity": "degrada",
+      "nota": "si sale false pero las de arriba salen bien, es que Zen dejo de montar la barra unica aqui por su cuenta y la pieza nativa ya no hace falta. Si sale false y las de arriba fallan, el cargador no la engancho: mirar la consola del navegador por '[zen-web-apps]'",
+      "plataformas": [
+        "windows"
+      ]
+    }
+  ],
+  "vivo": [
+    {
+      "que": "LA GUARDA PROTEGE: en una ventana normal los botones de ventana o el urlbar estan dentro del toolbox, asi que la regla se aparta",
+      "js": "return String(!!document.querySelector('#navigator-toolbox:has(.titlebar-buttonbox-container, #urlbar-container)'));",
+      "espera": "true",
+      "severity": "critico",
+      "nota": "si esto sale false en una ventana normal, la guarda ya no esta parando nada y el mod podria ocultar la barra lateral del navegador de verdad, dejando una ventana sin boton de cerrar. Es la peor consecuencia posible del repo, y esta es la comprobacion que la vigila",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "que": "esta ventana NO es de app web, o sea que la medida de arriba es la que toca",
+      "js": "return String(document.documentElement.hasAttribute('taskbartab'));",
+      "espera": "false",
+      "severity": "cosmetico",
+      "plataformas": [
+        "windows"
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "token": ":root[taskbartab]",
+      "buscar": "taskbartab",
+      "kind": "attr",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "modules/taskbartabs/TaskbarTabs.sys.mjs",
+      "para": "lo unico que distingue una ventana de app web de una normal. Zen no lo menciona ni una vez en su CSS",
+      "si_falta": "el mod no aplica en ninguna ventana, o peor: si el atributo cambia de nombre y la regla casara en ventanas normales, se ocultaria la barra lateral del navegador de verdad. La guarda :not(:has(...)) protege de eso",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "#navigator-toolbox",
+      "buscar": "navigator-toolbox",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la barra lateral que se retira en estas ventanas",
+      "si_falta": "el mod no hace nada",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "gZenVerticalTabsManager",
+      "buscar": "window.gZenVerticalTabsManager =",
+      "kind": "api",
+      "owner": "zen",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/ZenUIManager.mjs",
+      "para": "el objeto por ventana que decide la disposicion. La pieza nativa (mods/utilities/web-apps/nativo/ventana.js) no hace nada mas que tocarle una propiedad",
+      "si_falta": "la pieza nativa se rinde sola tras 3 segundos y lo deja escrito en la consola del navegador; la ventana de app se queda como la deja Zen",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "hidesTabsToolbar",
+      "buscar": "hidesTabsToolbar",
+      "kind": "api",
+      "owner": "zen",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/ZenUIManager.mjs",
+      "para": "EL ENGANCHE DE TODO EL ARREGLO. Es lo unico que la pieza nativa toca: un getter perezoso por ventana que se lee en un unico sitio del arbol, dentro de isSingleToolbar. Redefinido a true, la ventana de app vuelve a montarse con #nav-bar fuera del toolbox",
+      "si_falta": "la pieza nativa no tiene donde agarrarse y la ventana de app se queda con la barra lateral puesta. Buscar como decide Zen la barra unica en _updateEvent() y enganchar ahi",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "popup-window",
+      "buscar": "popup-window",
+      "kind": "attr",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser-init.js",
+      "para": "no se usa desde aqui: es lo UNICO que mira hidesTabsToolbar desde Zen 1.22.2b, y como una ventana de app no lo lleva, es la causa exacta de que el mod se quedara sin efecto. Queda escrito para que la proxima vez se lea en un minuto",
+      "si_falta": "si Zen vuelve a contar las ventanas de app como ventanas sin barra de pestanas, la pieza nativa deja de hacer falta (no molesta: redefine a true algo que ya era true)",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "zen-single-toolbar",
+      "buscar": "zen-single-toolbar",
+      "kind": "attr",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/ZenUIManager.mjs",
+      "para": "la marca que Zen pone en la raiz cuando monta la barra unica. Es el testigo de que la pieza nativa funciono: en una ventana de app NO tiene que estar",
+      "si_falta": "se pierde la forma de comprobar el arreglo desde fuera, aunque el arreglo siga funcionando",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "#zen-appcontent-navbar-container",
+      "buscar": "zen-appcontent-navbar-container",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la franja de arriba, fuera del toolbox, a la que vuelve #nav-bar cuando la ventana no usa barra unica. Es lo que hace que ocultar la barra lateral no te deje sin URL ni sin botones de ventana",
+      "si_falta": "no hay donde devolver la barra: el mod tendria que dejar de ocultar el toolbox, y la guarda ya lo hace sola",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": ".titlebar-buttonbox-container",
+      "buscar": "titlebar-buttonbox-container",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "mitad de la GUARDA: si los botones de ventana estuviesen dentro del toolbox, ocultarlo dejaria la ventana sin poder cerrarse. El :not(:has()) lo comprueba antes",
+      "si_falta": "LA GUARDA DEJA DE PROTEGER. Si este selector no casa nunca, el :not(:has()) siempre da verdadero y la barra se oculta aunque los botones esten dentro. Es el hook cuyo fallo tiene la peor consecuencia del repo: una ventana que no se puede cerrar",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "#urlbar-container",
+      "buscar": "urlbar-container",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la otra mitad de la guarda: que el urlbar no este dentro del toolbox",
+      "si_falta": "igual que arriba",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "#zen-sidebar-splitter",
+      "buscar": "zen-sidebar-splitter",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-ui.css",
+      "para": "el tirador de redimension, que sin barra lateral no redimensiona nada",
+      "si_falta": "queda un cursor de redimensionar en un borde inutil",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "#zen-sidebar-top-buttons",
+      "buscar": "zen-sidebar-top-buttons",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "modules/ZenCustomizableUI.sys.mjs",
+      "para": "el area con el interruptor de modo compacto, que en las apps no tiene nada que alternar. Extra apagado por defecto",
+      "si_falta": "la opcion deja de hacer efecto; el mod principal intacto",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "zen.view.use-single-toolbar",
+      "buscar": "zen.view.use-single-toolbar",
+      "kind": "pref",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "defaults/preferences/firefox.js",
+      "para": "no se lee desde el CSS: es la razon por la que la guarda existe. En ventanas normales esta pref mete la URL y los botones DENTRO del toolbox; en las de app Zen no la activa",
+      "si_falta": "si Zen empieza a activarla tambien en las ventanas de app, la guarda es lo que evita el desastre. Verificar que sigue funcionando",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "sin <div id='theme-...'> en ventanas de app",
+      "buscar": "sanitizeModName",
+      "kind": "api",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/zen-components/ZenMods.mjs",
+      "para": "medido: en las ventanas de app Zen no inyecta el div de preferencias, asi que aqui NO sirve :root:has(#theme-X[attr]). Todo lo configurable de este mod pasa por @media -moz-pref()",
+      "si_falta": "si algun dia Zen si lo inyecta, se podrian usar desplegables aqui tambien. Mientras no, no anadir opciones tipo dropdown a este mod",
+      "plataformas": [
+        "windows"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,358 @@
+/* ==========================================================================
+   Acrylic Web — exclusiones (siempre se incluye, y va la ultima)
+   --------------------------------------------------------------------------
+   Va al final a proposito: entre reglas de la misma hoja y misma especificidad
+   gana la ultima, asi que lo que hay aqui devuelve el fondo solido pase lo que
+   pase antes.
+
+   `Canvas` es el color de lienzo del sistema: sigue el modo claro/oscuro del
+   navegador en vez de fijar un color a mano.
+
+   Para excluir un sitio que se te rompa, copia un bloque y cambia el dominio.
+   ========================================================================== */
+
+/* --- LISTA DE RESCATE: sitios sin modo oscuro ----------------------------
+   Son los que se pintan siempre en claro y con el texto en negro. Al quitarles
+   el fondo, ese texto queda sobre el acrilico oscuro y no se lee. Aqui se les
+   devuelve el lienzo solido y su esquema de color normal.
+
+   Si alguna web se te ve "vacia", con solo los enlaces visibles, es esto:
+   copia un dominio a esta lista y vuelve a ejecutar el instalador.
+   Al reves tambien vale: si activas el modo oscuro de tu cuenta en alguno de
+   estos, sacalo de aqui y volvera a ser de cristal.
+   ------------------------------------------------------------------------- */
+/* MERCADO LIBRE, MEDIDO, y es el caso mas claro de toda esta lista:
+
+     main#root-app          rgb(235, 235, 235)   6277k px2, la pagina entera
+     .wrapper, los carruseles y las fichas   rgb(255, 255, 255)
+
+   y el texto, con el navegador pidiendo oscuro y `color-scheme: dark` puesto,
+   sale con luminancia MEDIANA 0 sobre 58 muestras. Cero. No es que sea oscuro:
+   es negro puro, y no cambia porque no hay modo oscuro que activar. Vaciar esos
+   blancos deja una tienda sin texto.
+
+   Ademas es una tienda, o sea de la misma familia que `paypal` y `stripe` mas
+   abajo: mirando precios y fotos de producto no quieres el escritorio detras.
+
+   Van los dos dominios porque `domain()` no cruza sufijos: `mercadolibre.com`
+   NO cubre `mercadolibre.com.co`, que es el que sale en el historial.
+
+   SHOPIFY YA NO ESTA EN ESTA LISTA: paso a 50-sites.css con lamina clara, que
+   es el trato que reciben los sitios de tema claro desde el 17-09-2026. Lo que
+   sigue se conserva porque explica POR QUE no se le puede vaciar el fondo sin
+   mas, que es la mitad del razonamiento de aquel bloque.
+
+   Medido en su pantalla de acceso, que es hasta donde se llega sin
+   cuenta. Es el caso de "no tiene modo oscuro que activar", y se ve en los
+   propios tokens de Polaris, su sistema de diseño: PIDIENDOLE OSCURO al
+   navegador, `--p-color-bg-surface-hover` sale `#F7F7F7`,
+   `--p-color-bg-fill-secondary` `#F1F1F1`, `--p-color-bg-surface-active`
+   `#F3F3F3`. Toda la paleta en claros. Shopify ignora `prefers-color-scheme`.
+   La tarjeta de acceso es `rgb(255, 255, 255)` con el texto a luminancia 80.
+
+   Entra el dominio entero, que cubre `admin.shopify.com` —30 visitas, el panel
+   de la tienda— y `accounts.shopify.com`. Se paga un precio y conviene saberlo:
+   la pantalla de acceso, que HOY se ve bien (tarjeta blanca flotando sobre el
+   cristal), pasa a fondo solido. Se acepta a sabiendas, porque el panel de
+   administracion es una herramienta de trabajo entera en claro y ahi el fallo
+   no es feo, es ilegible.
+
+   NO SE PUDO MEDIR el panel en si: pide sesion. Si algun dia Shopify saca modo
+   oscuro de verdad, este dominio sale de aqui y se le escribe su bloque de
+   cristal. Ojo, `shopify.dev` (la documentacion) es OTRO dominio y NO entra
+   aqui: ese si viene oscuro de fabrica, con `html.Mode-Dark` y el texto a 215. */
+/* LOS DEL BARRIDO DEL HISTORIAL, 24-09-2026, todos con la misma firma: el texto
+   del sitio medido directamente encima del cristal. Los dos primeros, en azul
+   marino:
+
+     coordinadora.com       21% del texto visible sobre cristal, titulares en
+                            rgb(0, 60, 130), tarjetas blancas flotando. Cubre
+                            rastreo., suitelogistica. y relacion-envios.
+     sinintermediarios.co   la cabecera vaciada con el menu en azul marino, y el
+                            resto de la tienda en secciones blancas propias.
+
+   Tiendas y logistica, la misma familia que Mercado Libre: ninguno tiene modo
+   oscuro que encender.
+
+   Y del mismo barrido, con la misma firma y sin modo oscuro que activar:
+   meta.com (la tienda, 31% del texto sobre cristal), amazon.com (tarjetas
+   blancas con huecos de cristal entre medias; el bloque de Prime Video ya
+   explicaba que Amazon se pinta en claro), monsgeek.com (59%), y2mate.gs (93%)
+   y old.reddit.com (40%, que cae dentro de domain(reddit.com) pero no se
+   parece en nada al Reddit nuevo), y support.discord.com (47%: el centro de
+   ayuda es un Zendesk en claro, nada que ver con la aplicacion). */
+@-moz-document domain(workspace.google.com),
+  domain(gov.co),
+  domain(who.int),
+  domain(mercadolibre.com.co),
+  domain(mercadolibre.com),
+  domain(coordinadora.com),
+  domain(sinintermediarios.co),
+  domain(meta.com),
+  domain(amazon.com),
+  domain(monsgeek.com),
+  domain(y2mate.gs),
+  domain(old.reddit.com),
+  domain(support.discord.com) {
+  html:not(:where([zen-modo-oscuro])) {
+    color-scheme: normal !important;
+  }
+
+  html:not(:where([zen-modo-oscuro])),
+  :where(html:not([zen-modo-oscuro])) body {
+    background-color: Canvas !important;
+  }
+}
+
+/* STACK OVERFLOW, CON CONDICION ------------------------------------ MEDIDO -
+   Sin sesion sirve el tema claro: medido el 24-09-2026 en /questions, el 63%
+   del texto visible directamente sobre el cristal, en negro. Pero a diferencia
+   de los de arriba SI tiene tema oscuro, en los ajustes de la cuenta, y lo marca
+   con una clase en el <body>: `theme-dark`, o `theme-system` cuando sigue al
+   sistema (que en Zen pide oscuro). Un rescate a ciegas le pondria lienzo
+   blanco a una pagina con el texto claro. Asi que solo entra sin ninguna de las
+   dos, y con ellas vuelve el bloque de cristal de 50-sites.css. */
+@-moz-document domain(stackoverflow.com), domain(stackexchange.com) {
+  html:not(:where([zen-modo-oscuro])):has(> body:not(.theme-dark, .theme-system)) {
+    color-scheme: normal !important;
+  }
+
+  html:not(:where([zen-modo-oscuro])):has(> body:not(.theme-dark, .theme-system)),
+  html:not(:where([zen-modo-oscuro])):has(> body:not(.theme-dark, .theme-system)) > body {
+    background-color: Canvas !important;
+  }
+}
+
+/* --- EL BUSCADOR DE GOOGLE: RESCATE CONDICIONAL --------------------- MEDIDO -
+   Google ignora `prefers-color-scheme`. No es que no lo reciba: medido en la
+   pagina, `matchMedia('(prefers-color-scheme: dark)').matches` da `true` —o sea
+   que `layout.css.prefers-color-scheme.content-override` esta llegando— y aun
+   asi sirve el tema que diga el ajuste de la cuenta. Asi que hay que decidir por
+   lo que pinta Google, no por lo que pide el navegador.
+
+   CON GOOGLE EN CLARO y el fondo vaciado por 50-sites.css:
+
+     body                 color rgb(31, 31, 31)     casi negro
+     h3 del resultado     color rgb(26, 13, 171)    el azul de enlace en claro
+     ancestros con fondo  NINGUNO                   el texto cae sobre el cristal
+
+   Titulos que se adivinan y snippets que desaparecen. Es el limite de contraste
+   del README, en el sitio donde mas se nota porque es el que mas se usa.
+
+   CON GOOGLE EN OSCURO no hay nada que rescatar, y rescatarlo es peor:
+
+     body   color rgb(232, 232, 232)   h3  rgb(153, 195, 255)
+
+   texto claro que sobre el cristal se lee de sobra. Aplicarle `Canvas` aqui no
+   lo devuelve a blanco —con la pref de contenido en oscuro, `Canvas` resuelve a
+   `rgb(28, 27, 34)`, el lienzo oscuro de Firefox— sino que le pone un fondo
+   OPACO. La pagina se lee, pero se ve plana: se pierde el cristal sin ganar
+   nada.
+
+   LA MARCA. Google no deja atributo `dark` en `<html>`, ni clase en el body
+   (`class="srp"` en los dos), ni nada en el id. Lo unico que cambia entre los
+   dos temas, medido sobre la misma URL:
+
+     tema claro    <meta name="color-scheme">  no existe
+     tema oscuro   <meta name="color-scheme" content="dark light">
+
+   Un `<meta>` no se pinta, pero esta en el DOM y `:has()` lo alcanza igual. Los
+   dos selectores comprobados en la pagina real, con el meta puesto y quitandolo
+   a mano para simular el otro tema:
+
+     con meta (oscuro)   no casan   -> sin rescate, cristal
+     sin meta (claro)    casan      -> rescate, fondo solido
+
+   EL FALLO VA EN LA DIRECCION CORRECTA. Si Google deja de emitir ese meta, el
+   `:not()` deja de excluir y el buscador vuelve al fondo solido: se ve algo
+   peor, pero se sigue leyendo. Al reves —quedarse sin rescate con el tema
+   claro— seria una pagina ilegible.
+
+   SE ACOTA CON `body#gsr`, NO SOLO CON EL DOMINIO. `domain(google.com)` alcanza
+   tambien a mail.google.com, y ahi hay un bloque de cristal trabajado en
+   50-sites.css que este rescate desharia. `gsr` es el id del body del buscador
+   —Google Search Results— y no existe en Gmail, Docs ni Drive.
+
+   EL RESCATE NO ES OPACO, ES UNA LAMINA AL 82% --------------------- MEDIDO -
+   Aqui ponia `Canvas` a secas, o sea blanco solido, y donde mas se ve eso es en
+   una ventana privada: sin cuenta Google sirve SIEMPRE su tema claro —medido el
+   17-09-2026: sin `<meta name=color-scheme>` aunque `prefers-color-scheme: dark`
+   llegue— asi que el rescate entra siempre y la pagina sale como una losa
+   blanca de lado a lado, plana, sin nada del cristal. Legible pero fea, y es la
+   pantalla que uno abre cien veces al dia.
+
+   El texto de Google en claro sale en rgb(0, 0, 0) y rgb(31, 31, 31). Blanco al
+   82% sobre el acrilico oscuro da un lienzo de luminancia ~209, que contra negro
+   son 16:1 de contraste: cuatro veces lo que pide AAA. O sea que el 18% que se
+   regala no le quita legibilidad a nada, y a cambio la pagina deja de ser una
+   losa y se convierte en una lamina. Es el mismo trato que las paginas internas
+   del navegador reciben mas abajo, y por el mismo motivo.
+
+   Si algun dia se ve poco contraste, ese 82 es el numero que se sube.
+
+   Si usas otro dominio de Google (google.es, google.com.co...), anadelo a la
+   lista: `domain()` no cubre los ccTLD, son dominios distintos.
+   ------------------------------------------------------------------------- */
+@-moz-document domain(google.com) {
+  html:not(:where([zen-modo-oscuro])):has(> body#gsr):not(:has(meta[name='color-scheme'][content~='dark'])) {
+    color-scheme: normal !important;
+    background-color: color-mix(in srgb, Canvas 82%, transparent) !important;
+  }
+
+  /* El velo lo lleva `html` SOLO, y el body se queda vacio. Si lo llevaran los
+     dos se apilarian —1 - 0.18^2 = 96.8%— y volveria a ser una losa. Con una
+     sola lamina, el fondo del navegador se sigue intuyendo por debajo. */
+  html:not(:has(meta[name='color-scheme'][content~='dark'])) > body#gsr {
+    background-color: transparent !important;
+  }
+}
+
+/* --- LOS WIKIS: RESCATE CONDICIONAL --------------------------------------
+   Estos no van en la lista de arriba porque SI tienen modo oscuro, solo que de
+   fabrica viene apagado. Ponerlos en la lista fija los condena al fondo solido
+   para siempre, incluso el dia que lo actives; sacarlos sin mas los rompe
+   mientras siga en claro. Asi que se decide por lo que dice la propia pagina.
+
+   MediaWiki marca el modo elegido con una clase en la raiz, y es una convencion
+   con nombre estable, no un hash:
+
+     skin-theme-clientpref-day     claro   (lo que viene de fabrica)
+     skin-theme-clientpref-night   oscuro
+     skin-theme-clientpref-os      sigue al navegador
+
+   El rescate se aplica cuando NO hay ninguna de las dos oscuras. Escrito en
+   negativo a proposito, para que cubra tres casos con una regla: el modo claro,
+   una pagina donde la clase no exista todavia, y la version movil, que usa la
+   piel Minerva con sus propios nombres. Si un dia MediaWiki renombra esas
+   clases, el `:not()` deja de excluir y estos sitios vuelven al fondo solido:
+   se ven algo peor, pero se siguen leyendo. Es el fallo en la direccion
+   correcta.
+
+   Para pasarlos a cristal no hay que tocar este archivo: en la pagina, panel
+   Apariencia > Color > Oscuro (o Automatico). El bloque de cristal de
+   50-sites.css se activa solo, porque mira esas mismas clases.
+   ------------------------------------------------------------------------- */
+@-moz-document domain(wikipedia.org),
+  domain(wiktionary.org),
+  domain(wikimedia.org),
+  domain(wikisource.org),
+  domain(wikibooks.org) {
+  html:not(.skin-theme-clientpref-night):not(.skin-theme-clientpref-os):not(:where([zen-modo-oscuro])) {
+    color-scheme: normal !important;
+  }
+
+  html:not(.skin-theme-clientpref-night):not(.skin-theme-clientpref-os):not(:where([zen-modo-oscuro])),
+  html:not(.skin-theme-clientpref-night):not(.skin-theme-clientpref-os):not(:where([zen-modo-oscuro])) body {
+    background-color: Canvas !important;
+  }
+}
+
+/* workspace.google.com (la portada de Gmail y del resto de Workspace) es el
+   ejemplo de libro de este problema, medido con el navegador pidiendo modo
+   oscuro:
+
+     titulares (h1, h2, h3)  rgb(32, 33, 36)   luminancia  33  <- casi negro
+     parrafos                rgb(95, 99, 104)  luminancia  98
+
+   Con prefers-color-scheme: dark confirmado activo, la pagina sirve su paleta
+   clara igual: no soporta modo oscuro. Los parrafos se salvan de casualidad
+   porque son gris medio; los titulares son casi negros y desaparecen sobre el
+   cristal. De ahi el efecto raro de ver los textos pero no los titulos.
+
+   Ojo, `mail.google.com` (el Gmail de verdad) NO esta en la lista: esa app
+   pinta sus fondos en contenedores propios, no en el body, asi que no se
+   vuelve transparente y no le pasa esto. Si algun dia usas Gmail en tema claro
+   y lo ves raro, anade su dominio arriba. */
+
+/* --- PAGINAS INTERNAS DEL NAVEGADOR --------------------------------------
+   about:preferences, about:addons y compania no son webs: son interfaz. Con
+   transparencia total dejan ver el escritorio difuminado, y como ese
+   escritorio tiene manchas de color, sobre una pagina densa de ajustes se lee
+   como suciedad en vez de como cristal: aparecen halos morados y verdosos
+   moviendose bajo el texto.
+
+   Se les da una lamina UNIFORME en vez de transparencia. `Canvas` es el color
+   de lienzo del sistema, asi que sigue el modo claro/oscuro del navegador solo.
+   Al 72% las manchas del fondo se apagan pero la pagina sigue teniendo algo de
+   profundidad; si la quieres mas o menos translucida, ese es el numero.
+
+   Ojo: about:newtab y about:blank NO entran aqui a proposito. Ahi la
+   transparencia total es justo lo que se busca.
+   ------------------------------------------------------------------------- */
+@-moz-document url-prefix(about:preferences),
+  url-prefix(about:addons),
+  url-prefix(about:config),
+  url-prefix(about:support),
+  url-prefix(about:logins),
+  url-prefix(about:protections),
+  url-prefix(about:processes),
+  url-prefix(about:debugging),
+  url-prefix(about:profiling),
+  url-prefix(about:memory),
+  url-prefix(about:crashes) {
+  html,
+  body {
+    background-color: color-mix(in srgb, Canvas 72%, transparent) !important;
+  }
+}
+
+/* Donde la transparencia estorba de verdad: dinero, tramites y trabajo en el
+   que necesitas ver los colores reales.
+
+   `drive.google.com` SALIO de esta lista: esta tokenizado entero y con su tema
+   oscuro puesto se vacia limpiamente, asi que tiene su bloque de cristal en
+   50-sites.css. Si algun dia pones Drive en tema Claro, devuelve su dominio a
+   esta lista o el texto se te ira a negro sobre el cristal.
+
+   LOS EDITORES DE GOOGLE YA NO ENTRAN POR DOMINIO, SINO POR RUTA -- MEDIDO -
+   Aqui ponia `domain(docs.google.com)`, y ese dominio son tres programas
+   distintos: Docs, Sheets y Slides. Medidos por separado el 17-09-2026, no se
+   parecen en lo que importa:
+
+     Docs     el folio mide 794x1123 y el resto del ancho es margen vacio
+     Sheets   la rejilla mide 2870k, o sea el viewport entero menos las barras
+
+   En Docs hay un alrededor que ensenar y en Sheets no hay alrededor ninguno: la
+   hoja de calculo ES la pantalla. Asi que Docs se fue a 50-sites.css con su
+   bloque —solo el margen, la barra y el folio intactos— y aqui se quedan los
+   demas, nombrados por ruta uno a uno en vez de por dominio.
+
+   Ninguno de los tres tiene modo oscuro en la web, asi que esto NO es una
+   preferencia: es el limite de contraste. El texto de su interfaz sale en
+   rgb(31, 31, 31) con el navegador pidiendo oscuro.
+
+   Lo que queda fuera de la enumeracion —la raiz de docs.google.com— redirige a
+   Drive nada mas abrirse, que si tiene cristal. Si aparece alguna pantalla mas
+   de Google en claro, se anade su ruta a esta misma lista. */
+@-moz-document domain(paypal.com),
+  domain(stripe.com),
+  domain(figma.com),
+  url-prefix(https://docs.google.com/spreadsheets/),
+  url-prefix(https://docs.google.com/presentation/),
+  url-prefix(https://docs.google.com/forms/),
+  url-prefix(https://docs.google.com/drawings/),
+  domain(sheets.google.com) {
+  html:not(:where([zen-modo-oscuro])),
+  :where(html:not([zen-modo-oscuro])) body {
+    background-color: Canvas !important;
+  }
+}
+
+/* Visor de PDF y lectores integrados: pintan sobre su propio lienzo y con
+   fondo transparente el documento se vuelve ilegible. */
+@-moz-document url-prefix(resource://pdf.js/),
+  url-prefix(about:reader) {
+  html,
+  body {
+    background-color: Canvas !important;
+  }
+}
+
+/* Documentos que el navegador renderiza sin hoja de estilos propia (JSON, XML,
+   texto plano, imagenes sueltas): sin fondo no se leen. */
+@-moz-document url-prefix(view-source:) {
+  html,
+  body {
+    background-color: Canvas !important;
+  }
+}

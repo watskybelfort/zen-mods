@@ -1,0 +1,171 @@
+/* ==========================================================================
+   Zen Web Apps — v1.1.0
+   Las ventanas de aplicacion web sin la barra lateral de Zen.
+   --------------------------------------------------------------------------
+   ESTE ARCHIVO ES LA MITAD DEL MOD. La otra es nativo/ventana.js, y hace
+   falta desde Zen 1.22.2b. El por que esta abajo, en DE QUE DEPENDE ESTO; el
+   resumen es que sin ella la regla principal se aparta sola y aqui no queda
+   nada que aplicar. Se instala con:
+
+       node installer/instalar-web-apps.mjs
+
+   --------------------------------------------------------------------------
+   QUE ES UNA VENTANA DE APP WEB
+   Firefox 143 trajo las Taskbar Tabs (`browser.taskbarTabs.enabled`): al pulsar
+   "Anadir a la barra de tareas" se abre una ventana de navegador normal —el
+   mismo browser.xhtml— marcada en la raiz con el atributo `taskbartab`:
+
+       <html id="taskbartab-<uuid>" taskbartab="<uuid>" ...>
+
+   Ese id es lo primero que conviene saber: en estas ventanas la raiz NO se
+   llama `main-window` (lo renombra browser-init.js), asi que cualquier regla
+   escrita contra `#main-window` no llega aqui.
+
+   Zen las hereda tal cual y no las trata distinto: su CSS no menciona
+   `taskbartab` ni una sola vez. La ventana se monta con la barra lateral
+   entera —toolbox, splitter, essentials, tira de pestanas— solo que ahi dentro
+   esa barra no tiene nada que enseñar. Medido sobre una ventana de app real en
+   Zen 1.21.9b (Gecko 153):
+
+     #TabsToolbar / #tabbrowser-tabs   visibility: collapse
+                                       (los colapsa TaskbarTabsChrome.init
+                                       llamando a TabBarVisibility.update)
+     .zen-essentials-container         visibility: collapse
+     espacios de trabajo               no se montan: ZenSpaceManager se salta
+                                       las ventanas con `taskbartab`
+     #titlebar                         visibility: hidden en modo compacto
+
+   Un panel vacio, en resumen. Y en modo compacto encima es un panel vacio que
+   vuelve a asomar cada vez que el raton roza el borde de la pantalla. Eso es
+   lo que quita este mod.
+   --------------------------------------------------------------------------
+   DE QUE DEPENDE ESTO, Y QUE PASO EN 1.22.2b
+   En una ventana normal de Zen con "una sola barra" (`zen.view.use-single-toolbar`,
+   activada de fabrica) la URL y los botones de ventana se mudan DENTRO del
+   toolbox, y esconderlo dejaria la ventana sin cerrar ni minimizar.
+
+   Hasta 1.22.1b en las ventanas de app no pasaba: Zen no activaba ahi el modo
+   de barra unica. En 1.22.2b si, y sin renombrar nada:
+
+       ZenUIManager.mjs:992   hidesTabsToolbar = raiz.hasAttribute('popup-window')
+       browser-init.js:116    'popup-window' solo si !window.toolbar.visible
+
+   Una ventana de app no es un popup, asi que dejo de contar como ventana "sin
+   barra de pestanas", `isSingleToolbar` (:1323) paso a salir verdadero tambien
+   ahi, y Zen movio `#nav-bar` dentro del toolbox. La regla de abajo dejo de
+   casar —por la guarda, a proposito— y la barra lateral volvio a verse. Ningun
+   verificador de nombres pudo avisar: los 124 enganches seguian en su sitio.
+
+   La salida NO fue tocar la guarda, que es lo unico que impide una ventana sin
+   boton de cerrar. Fue `nativo/ventana.js`, que le dice a Zen que esa ventana
+   no usa barra unica —redefiniendo `hidesTabsToolbar`, que es un getter
+   perezoso por ventana y se lee en un unico sitio del arbol—. Con eso Zen
+   recoloca solo, por su propia rama de vuelta atras, y aqui vuelve a haber algo
+   que ocultar. Medido en una ventana de app real con la pieza puesta:
+
+       raiz                        sin zen-single-toolbar
+       #nav-bar                    [8, 1, 1416, 38] en #zen-appcontent-navbar-container
+       #urlbar-container           [153, 3, 906, 34]
+       .titlebar-buttonbox-container  [1364, 1, 60, 38], FUERA del toolbox
+       #navigator-toolbox          visibility: collapse
+
+   LA GUARDA SE QUEDA COMO ESTA. El `:not(:has(...))` comprueba que ni el urlbar
+   ni los botones de ventana esten dentro del toolbox antes de ocultarlo. Si la
+   pieza nativa no esta instalada, o Zen vuelve a cambiar de idea, la regla deja
+   de casar y el mod se aparta solo en vez de dejarte una ventana que no se
+   puede cerrar. Ya paso una vez, y por eso lo que se perdio fue el efecto y no
+   el boton de cerrar.
+   --------------------------------------------------------------------------
+   DEGRADACION SEGURA
+   La regla base = barra oculta, y no depende de ninguna media feature
+   privilegiada. El unico `@media -moz-pref` que hay es para un extra opcional
+   apagado por defecto: si esa feature no estuviese disponible en la hoja de
+   mods, la regla se descarta y queda el mod completo, nunca una ventana rota.
+
+   Y AQUI NO HAY NINGUNA REGLA PARA LA DISPOSICION NUEVA, a proposito. La
+   tentacion, con `#nav-bar` dentro del toolbox, es recolocar la franja a mano
+   con `position: fixed` y esconder las piezas vacias de la barra lateral. Se
+   descarto: el CSS no reparenta, fijar una barra contra un grid que no es
+   nuestro es la clase de cirugia que se rompe en la siguiente build, y ninguna
+   de las dos cosas devuelve la URL a su sitio. Lo unico que falla en esa
+   disposicion es una decision de Zen, y se corrige donde se tomo.
+
+   OJO al configurar: en las ventanas de app Zen NO inyecta el
+   `<div id="theme-...">` de las preferencias del mod (comprobado: el documento
+   no tiene ningun `[id^="theme-"]`). Aqui no sirve el truco de
+   `:root:has(#theme-X[atributo])` que usan los otros mods del repo para sus
+   desplegables. Lo configurable pasa por `@media -moz-pref()`, que lee la pref
+   directamente y si funciona en estas ventanas — o por la pieza nativa, que al
+   ser codigo privilegiado puede leer cualquier pref: asi funciona su
+   interruptor `zen-web-apps.restore-top-bar`.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. La barra lateral
+   Las tres propiedades hacen falta, cada una tapa un agujero distinto:
+
+   `visibility: collapse` es exactamente lo que usa Zen para las ventanas sin
+   chrome (`:root:is([inDOMFullscreen="true"], [chromehidden~="location"],
+   [chromehidden~="toolbar"]) { #navigator-toolbox, #zen-sidebar-splitter }`),
+   y en flex saca la caja del reparto en vez de dejar el hueco.
+
+   `opacity: 0` esta a proposito. La visibilidad la puede revertir un
+   descendiente —y el modo compacto hace justo eso: al detectar hover le pone
+   `visibility: visible` a `#titlebar`, que es hijo del toolbox—. La opacidad
+   no se puede deshacer desde dentro: se aplica al subarbol entero.
+
+   `pointer-events: none` cierra el paso que queda. El revelado de compacto se
+   engancha con `mouseover`/`mouseleave` sobre el propio toolbox
+   (ZenCompactMode.mjs), y sin eventos no hay revelado que valga. Queda todavia
+   la via geometrica —el manejador de `mouseleave` de la raiz que mira que borde
+   de pantalla cruzo el raton—, pero ese solo pone el atributo y mueve el panel:
+   con opacidad 0 no se ve nada moverse.
+   -------------------------------------------------------------------------- */
+:root[taskbartab]
+  #navigator-toolbox:not(:has(.titlebar-buttonbox-container, #urlbar-container)) {
+  visibility: collapse !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* El tirador de redimension. En modo compacto Zen ya lo pone a `display: none`,
+   pero fuera de compacto sigue ahi, y sin barra lateral es un cursor de
+   redimensionar sobre un borde que no redimensiona nada. */
+:root[taskbartab] #zen-sidebar-splitter {
+  visibility: collapse !important;
+  pointer-events: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. Extras (Ajustes > Zen Mods > Zen Web Apps)
+   -------------------------------------------------------------------------- */
+
+/* 2.1 El boton de modo compacto de la barra de arriba.
+   `#zen-sidebar-top-buttons` es un area personalizable que en las ventanas de
+   app acaba dentro de `#nav-bar`. De fabrica lleva el interruptor de modo
+   compacto, que sin barra lateral no tiene nada que alternar. Se oculta el area
+   entera, asi que si le has anadido otros botones desde "Personalizar barra de
+   herramientas" tambien desapareceran de las apps (en el navegador normal
+   siguen igual). Por eso viene apagado. */
+@media -moz-pref('zen-web-apps.hide-compact-toggle') {
+  :root[taskbartab] #zen-sidebar-top-buttons {
+    display: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. HOOKS DE COMPATIBILIDAD
+   Este mod no pinta nada: solo retira la barra lateral. No compite con Acrylic
+   Zen ni con Zen Traffic Lights, que tocan fondos y botones de ventana.
+
+   Si escribes otro mod pensado para estas ventanas, recuerda las tres trampas
+   de arriba, que no son evidentes hasta que se miden:
+     - la raiz es `#taskbartab-<uuid>`, no `#main-window`
+     - no hay `<div id="theme-...">`, asi que las preferencias tipo desplegable
+       no llegan: usa `@media -moz-pref()`
+     - y Zen no promete tratar estas ventanas de ninguna manera concreta: en
+       1.22.2b cambio de idea sin renombrar nada. Escribe la regla con guarda y
+       comprueba el efecto DENTRO de una ventana de app, con
+       `node dev/tools/probar-vivo.mjs` y una abierta: es el unico sitio donde se
+       ve, y por eso es el unico sitio donde se detecta.
+   -------------------------------------------------------------------------- */

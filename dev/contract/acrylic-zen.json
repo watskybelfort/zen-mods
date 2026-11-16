@@ -1,0 +1,496 @@
+{
+  "mod": "acrylic-zen",
+  "name": "Acrylic Zen",
+  "verificado_en": "Zen 1.22.2b / Gecko 156.0 / BuildID 20260915091052",
+  "testigo": "--az-tint-e",
+  "vivo": [
+    {
+      "que": "la raiz no pinta fondo: es lo que deja ver el backdrop de DWM",
+      "js": "return getComputedStyle(document.getElementById('main-window')).backgroundColor;",
+      "espera": "rgba(0, 0, 0, 0)",
+      "severity": "critico"
+    },
+    {
+      "que": "el wrapper tampoco",
+      "js": "return getComputedStyle(document.getElementById('zen-main-app-wrapper')).backgroundColor;",
+      "espera": "rgba(0, 0, 0, 0)",
+      "severity": "critico"
+    },
+    {
+      "que": "la capa de fondo de Zen es un velo translucido, no un color opaco",
+      "js": "const e = document.querySelector('.zen-browser-generic-background'); return e ? getComputedStyle(e).backgroundColor : 'sin-elemento';",
+      "espera": "regex:^(rgba|color)\\(",
+      "severity": "critico"
+    },
+    {
+      "que": "el area de contenido lleva velo, no el rgb(32,32,32) opaco de fabrica",
+      "js": "const b = document.querySelector('#tabbrowser-tabpanels browser[type=\"content\"]'); return b ? getComputedStyle(b).backgroundColor : 'sin-browser';",
+      "espera": "regex:^(rgba|color)\\(",
+      "severity": "critico"
+    },
+    {
+      "que": "la barra de direcciones, cuando esta desplegada, es un popover: de ahi cuelga el ::backdrop que difumina la pagina al buscar",
+      "js": "const u = document.getElementById('urlbar'); if (!u) return 'sin-urlbar'; return (u.hasAttribute('popover') || !u.hasAttribute('breakout-extend')) ? 'manual' : 'sin-popover';",
+      "espera": "manual",
+      "severity": "degrada",
+      "nota": "desde Zen 1.23b el atributo popover ya no esta siempre puesto: UrlbarInputBase lo pone en startLayoutExtend() y lo quita al cerrar, asi que en reposo no hay popover y no es un fallo. Solo es fallo si esta desplegada (breakout-extend) y no lo tiene"
+    },
+    {
+      "que": "la vibrancy sigue montada: #zen-browser-background conserva su appearance nativa",
+      "js": "return getComputedStyle(document.getElementById('zen-browser-background')).appearance;",
+      "espera": "auto",
+      "severity": "critico",
+      "plataformas": [
+        "macos"
+      ],
+      "nota": "si sale 'none' el mod ha apagado la NSVisualEffectView y no hay cristal, solo capas quitadas sobre nada"
+    },
+    {
+      "que": "y el velo del marco se pinta con la sombra interior, no con background-color (medido: el color de autor no llega a la pantalla en un frame themed)",
+      "js": "return getComputedStyle(document.getElementById('zen-browser-background')).boxShadow;",
+      "espera": "regex:inset",
+      "severity": "critico",
+      "plataformas": [
+        "macos"
+      ]
+    },
+    {
+      "que": "el fondo de ese elemento se deja transparente a proposito, para que el velo no se sume dos veces si Gecko cambiara de criterio",
+      "js": "return getComputedStyle(document.getElementById('zen-browser-background')).backgroundColor;",
+      "espera": "rgba(0, 0, 0, 0)",
+      "severity": "degrada",
+      "plataformas": [
+        "macos"
+      ]
+    },
+    {
+      "que": "la vibrancy muestrea lo que hay DETRAS de la ventana, no su propio contenido",
+      "js": "return String(Services.prefs.getBoolPref('widget.macos.sidebar-blend-mode.behind-window', false));",
+      "espera": "true",
+      "severity": "critico",
+      "plataformas": [
+        "macos"
+      ]
+    },
+    {
+      "que": "el material del cristal es el que pide mods/appearance/acrylic-glass/prefs/macos.user.js",
+      "js": "return String(Services.prefs.getIntPref('zen.widget.macos.window-material', -1));",
+      "espera": "regex:^[1-7]$",
+      "severity": "degrada",
+      "plataformas": [
+        "macos"
+      ]
+    }
+  ],
+  "vivo_app": [
+    {
+      "que": "la raiz de la ventana de app es transparente y lleva la capa de brillo, o sea que la regla de raiz la alcanza",
+      "js": "return getComputedStyle(document.documentElement).backgroundImage.startsWith('radial-gradient') ? 'brillo' : getComputedStyle(document.documentElement).backgroundImage;",
+      "espera": "brillo",
+      "severity": "degrada",
+      "nota": "si sale none, la regla de raiz volvio a escribirse solo contra #main-window: la raiz de estas ventanas es taskbartab-<uuid>. Ver la seccion 2 de mods/appearance/acrylic-glass/chrome.css",
+      "plataformas": [
+        "windows"
+      ]
+    }
+  ],
+  "hooks": [
+    {
+      "token": ".zen-browser-generic-background",
+      "buscar": "zen-browser-generic-background",
+      "kind": "class",
+      "owner": "zen",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la capa que pinta el fondo opaco del navegador y del gradiente de espacio; el mod la convierte en velo translucido",
+      "si_falta": "el acrilico deja de verse entero. Buscar el nuevo contenedor de fondo en browser.xhtml (grep 'generic-background' o 'browser-background') y anadirlo a la lista de la seccion 3"
+    },
+    {
+      "token": "#zen-main-app-wrapper",
+      "buscar": "zen-main-app-wrapper",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el wrapper que Zen pinta con --zen-themed-toolbar-bg-transparent",
+      "si_falta": "el marco de la ventana vuelve opaco aunque el resto del mod siga aplicando"
+    },
+    {
+      "token": "--zen-themed-toolbar-bg-transparent",
+      "buscar": "--zen-themed-toolbar-bg-transparent",
+      "kind": "var",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-ui.css",
+      "para": "no se consume: es el valor que el mod SUSTITUYE en el wrapper. Se vigila porque si Zen cambia como pinta ese fondo, la regla que lo neutraliza puede quedarse corta",
+      "si_falta": "revisar con que pinta ahora Zen el fondo de #zen-main-app-wrapper"
+    },
+    {
+      "token": "#main-window",
+      "buscar": "main-window",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la raiz: fondo transparente y unica capa donde se pinta el brillo especular",
+      "si_falta": "no llega el brillo ni la transparencia de raiz. Nota: en las ventanas de app web la raiz ya NO es esta (es #taskbartab-<uuid>), por eso alli el cristal llega a medias"
+    },
+    {
+      "token": "browser[type='content'][transparent='true']",
+      "buscar": "browser.tabs.allow_transparent_browser",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "defaults/preferences/firefox.js",
+      "para": "browser.tabs.allow_transparent_browser es lo que hace que Gecko ponga transparent='true' en el browser de contenido",
+      "si_falta": "el area de la pagina queda opaca; el velo de contenido no se ve"
+    },
+    {
+      "token": "--zen-background-opacity",
+      "buscar": "--zen-background-opacity",
+      "kind": "var",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-theme.css",
+      "para": "respetar el crossfade de Zen al cambiar de espacio de trabajo",
+      "si_falta": "el gradiente de espacio deja de hacer crossfade; el var() cae a 1 y se ve un salto seco al cambiar de espacio"
+    },
+    {
+      "token": "--zen-grainy-background-opacity",
+      "buscar": "--zen-grainy-background-opacity",
+      "kind": "var",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-gradient-generator.css",
+      "para": "atenuar la textura de grano, que sobre cristal se ve sucia",
+      "si_falta": "el grano vuelve a su opacidad completa sobre el acrilico"
+    },
+    {
+      "token": ".zen-browser-grain",
+      "buscar": "zen-browser-grain",
+      "kind": "class",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el elemento del grano",
+      "si_falta": "igual que arriba: el grano no se atenua"
+    },
+    {
+      "token": "[zen-show-grainy-background]",
+      "buscar": "zen-show-grainy-background",
+      "kind": "attr",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-ui.css",
+      "para": "saber si el grano esta activado",
+      "si_falta": "la regla del grano no casa"
+    },
+    {
+      "token": ".zen-toolbar-background",
+      "buscar": "zen-toolbar-background",
+      "kind": "class",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la barra flotante del modo compacto, tratada como panel de cristal propio",
+      "si_falta": "en modo compacto la barra pierde el blur y el hairline"
+    },
+    {
+      "token": "#tabbrowser-tabpanels",
+      "buscar": "tabbrowser-tabpanels",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "raiz del area de contenido: acota el velo al browser de la pestana",
+      "si_falta": "el velo de contenido no aplica"
+    },
+    {
+      "token": ".browserSidebarContainer",
+      "buscar": "browserSidebarContainer",
+      "kind": "class",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-container.css",
+      "para": "suavizar la sombra dura del contenedor sobre cristal",
+      "si_falta": "vuelve la sombra original; nada mas"
+    },
+    {
+      "token": ".zen-glance-overlay",
+      "buscar": "zen-glance-overlay",
+      "transitorio": true,
+      "motivo_transitorio": "Glance solo existe con una vista rapida abierta",
+      "kind": "class",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-glance.css",
+      "para": "excluir el overlay de Glance del ajuste de sombra, y devolverle un velo denso al browser de la pagina que se abre encima (seccion 6.bis)",
+      "si_falta": "Glance recibe la sombra suavizada, y el velo de la vista rapida vuelve al del contenido normal: se leerian las dos paginas a la vez"
+    },
+    {
+      "token": ".zen-glance-background",
+      "buscar": "zen-glance-background",
+      "transitorio": true,
+      "motivo_transitorio": "Glance solo existe con una vista rapida abierta: la clase se le pone al contenedor de la pestana de detras mientras dura",
+      "kind": "class",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-glance.css",
+      "para": "difuminar la pagina de detras con un filter mientras hay una vista rapida abierta. Es la mitad que hace legible la de delante: el velo solo no basta y el backdrop-filter no alcanza al texto de una web sin fondo",
+      "si_falta": "la pagina de detras deja de difuminarse y vuelven a leerse los dos textos superpuestos. Se busca la clase nueva en el contenedor de la pestana de fondo con una vista rapida abierta, y se cambia en la seccion 6.bis de mods/appearance/acrylic-glass/chrome.css",
+      "nota_ancla": "la pone ZenGlanceManager.mjs:1273; el archivo que la declara en CSS es el que esta aqui"
+    },
+    {
+      "token": "[zen-no-padding]",
+      "buscar": "zen-no-padding",
+      "kind": "attr",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-single-components.css",
+      "para": "no tocar la sombra cuando el contenido va a sangre",
+      "si_falta": "la sombra se aplica tambien sin padding"
+    },
+    {
+      "token": "::part(content)",
+      "buscar": "-moz-windows-mica-popups",
+      "kind": "media",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/toolkit/skin/classic/global/menu.css",
+      "para": "decidir si los popups ya son ventanas con backdrop propio de DWM o hay que emularlo con backdrop-filter",
+      "si_falta": "el bloque @media se descarta. Ojo: se descartan LAS DOS ramas, asi que los popups quedan sin tinte de cristal"
+    },
+    {
+      "token": "-moz-windows-accent-color-in-titlebar",
+      "buscar": "-moz-windows-accent-color-in-titlebar",
+      "kind": "media",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/skin/classic/browser/browser.css",
+      "para": "neutralizar el ActiveCaption opaco cuando el usuario tiene el acento en las barras de titulo",
+      "si_falta": "con esa opcion de Windows activada el wrapper vuelve opaco",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "zen.view.grey-out-inactive-windows",
+      "buscar": "zen.view.grey-out-inactive-windows",
+      "kind": "pref",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-ui.css",
+      "para": "no se lee desde el CSS: es la pref cuyo efecto revierte la regla :-moz-window-inactive",
+      "si_falta": "revisar como apaga Zen la transparencia al perder el foco"
+    },
+    {
+      "token": "widget.windows.mica.toplevel-backdrop",
+      "buscar": "widget.windows.mica.toplevel-backdrop",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "defaults/preferences/firefox.js",
+      "para": "el indice interno de Gecko que se traduce al backdrop de DWM. 2 = acrilico (DWMSBT_TRANSIENTWINDOW)",
+      "si_falta": "no hay acrilico en absoluto. Es la pieza que no depende del CSS: comprobar con dev/powershell/Get-ZenBackdrop.ps1",
+      "plataformas": [
+        "windows"
+      ]
+    },
+    {
+      "token": "zen.theme.acrylic-elements",
+      "buscar": "zen.theme.acrylic-elements",
+      "kind": "pref",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-container.css",
+      "para": "el truco de capas (translate/backface) que el modo rendimiento del mod deshace",
+      "si_falta": "el modo rendimiento deja de tener nada que deshacer; inofensivo"
+    },
+    {
+      "token": "#zen-sidebar-bottom-buttons",
+      "buscar": "zen-sidebar-bottom-buttons",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "opcional": true,
+      "motivo": "nombre historico, anterior a #zen-sidebar-foot-buttons. Se conserva para que el mismo CSS valga en versiones viejas de Zen",
+      "declarado_en": "-",
+      "para": "compatibilidad hacia atras",
+      "si_falta": "nada: es lo esperado en Zen 1.21.9b y posteriores"
+    },
+    {
+      "token": "#zen-sidebar-foot-buttons",
+      "buscar": "zen-sidebar-foot-buttons",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la fila de botones de abajo de la barra lateral, transparente",
+      "si_falta": "esa fila podria pintar su propio fondo sobre el cristal"
+    },
+    {
+      "token": "#zen-appcontent-wrapper",
+      "buscar": "zen-appcontent-wrapper",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "una de las capas intermedias que hay que dejar transparentes",
+      "si_falta": "capa opaca entre el marco y el contenido"
+    },
+    {
+      "token": "#zen-tabbox-wrapper",
+      "buscar": "zen-tabbox-wrapper",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "idem",
+      "si_falta": "idem"
+    },
+    {
+      "token": "#zen-appcontent-navbar-container",
+      "buscar": "zen-appcontent-navbar-container",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "la barra de arriba del contenido, transparente",
+      "si_falta": "esa barra puede quedar opaca"
+    },
+    {
+      "token": "#zen-sidebar-splitter",
+      "buscar": "zen-sidebar-splitter",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-ui.css",
+      "para": "el tirador de la barra lateral, transparente",
+      "si_falta": "linea visible sobre el cristal"
+    },
+    {
+      "token": "#navigator-toolbox",
+      "buscar": "navigator-toolbox",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el toolbox, transparente",
+      "si_falta": "la barra lateral vuelve opaca"
+    },
+    {
+      "token": "#titlebar / #TabsToolbar / #nav-bar / #browser / #tabbrowser-tabbox",
+      "buscar": "TabsToolbar",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "el resto de contenedores de Firefox que pintan fondo",
+      "si_falta": "aparecen bandas opacas. Son ids de Firefox: cambian mucho menos que los de Zen"
+    },
+    {
+      "token": "#urlbar .urlbar-background",
+      "buscar": "urlbar-background",
+      "kind": "class",
+      "owner": "firefox",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-omnibox.css",
+      "para": "quitarle el backdrop-filter en modo rendimiento",
+      "si_falta": "el modo rendimiento no llega a la barra de direcciones"
+    },
+    {
+      "token": "#urlbar[popover]",
+      "buscar": "setAttribute(\"popover\", \"manual\")",
+      "kind": "attr",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/urlbar/UrlbarInputBase.mjs",
+      "para": "la barra de direcciones se muestra como popover, o sea que al desplegarse entra en el top layer y trae su ::backdrop: ahi es donde se pinta el velo que difumina la pagina al buscar",
+      "si_falta": "el buscador flotante deja de difuminar la pagina, sin mas aviso. Si Zen deja de usar popover, el velo hay que colgarlo de un ::after con `position: fixed` e `inset: -100vh -100vw` (no `inset: 0`: la barra flotante lleva `translate`, que la convierte en bloque contenedor de sus descendientes fixed)"
+    },
+    {
+      "token": "#urlbar[zen-floating-urlbar]",
+      "buscar": "zen-floating-urlbar",
+      "transitorio": true,
+      "motivo_transitorio": "solo existe mientras el buscador esta abierto en el centro de la ventana",
+      "kind": "attr",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/urlbar/UrlbarInputBase.mjs",
+      "para": "distinguir el buscador que salta al centro (Ctrl+T, Ctrl+L) del despliegue normal de la barra: es la condicion que enciende el velo",
+      "si_falta": "o no se difumina nunca, o se difuminaria tambien al pulsar la barra con el raton. Buscar el atributo nuevo en startLayoutExtend() de UrlbarInputBase.mjs"
+    },
+    {
+      "token": "#urlbar[breakout-extend]",
+      "buscar": "breakout-extend",
+      "transitorio": true,
+      "motivo_transitorio": "solo existe mientras la barra esta desplegada",
+      "kind": "attr",
+      "owner": "zen",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-omnibox.css",
+      "para": "el estado desplegado de la barra; acompana a zen-floating-urlbar para no encender el velo con la barra plegada",
+      "si_falta": "el velo podria quedarse encendido en estados en los que no hay paleta abierta"
+    },
+    {
+      "token": "#feature-callout",
+      "buscar": "feature-callout",
+      "transitorio": true,
+      "motivo_transitorio": "los avisos de novedades solo existen mientras se muestran",
+      "kind": "id",
+      "owner": "zen",
+      "severity": "cosmetico",
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-panel-ui.css",
+      "para": "excluir los avisos de novedades del tinte de panel",
+      "si_falta": "esos avisos reciben el velo; inofensivo"
+    },
+    {
+      "token": "zen.widget.macos.window-material",
+      "buscar": "zen.widget.macos.window-material",
+      "kind": "pref",
+      "owner": "zen",
+      "severity": "critico",
+      "plataformas": [
+        "macos"
+      ],
+      "declarado_en": "defaults/preferences/firefox.js",
+      "si_falta": "es el interruptor del material de la NSVisualEffectView; sin el, el cristal se queda en el que traiga Zen de fabrica y mods/appearance/acrylic-glass/prefs/macos.user.js escribe una pref muerta"
+    },
+    {
+      "token": "widget.macos.sidebar-blend-mode.behind-window",
+      "buscar": "widget.macos.sidebar-blend-mode.behind-window",
+      "kind": "pref",
+      "owner": "gecko",
+      "severity": "critico",
+      "plataformas": [
+        "macos"
+      ],
+      "declarado_en": "defaults/preferences/firefox.js",
+      "si_falta": "sin blending detras de la ventana la vibrancy muestrea el contenido propio: se ve efecto pero no deja ver lo que hay detras, que es justo lo que se busca"
+    },
+    {
+      "token": "-moz-default-appearance: -moz-sidebar",
+      "buscar": "-moz-default-appearance: -moz-sidebar",
+      "kind": "attr",
+      "owner": "gecko",
+      "severity": "critico",
+      "plataformas": [
+        "macos"
+      ],
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-ui.css",
+      "si_falta": "es el -moz-default-appearance con el que Zen monta la vibrancy en #zen-browser-background. Si Zen deja de ponerlo, en macOS no hay cristal en absoluto y el mod solo quita capas opacas sobre nada"
+    },
+    {
+      "token": "-moz-platform: macos",
+      "buscar": "-moz-platform",
+      "kind": "media",
+      "owner": "gecko",
+      "severity": "critico",
+      "plataformas": [
+        "macos"
+      ],
+      "declarado_en": "chrome/browser/content/browser/zen-styles/zen-browser-ui.css",
+      "si_falta": "es la media feature con la que el mod separa las dos ramas del cristal; sin ella se aplicarian las reglas de los dos motores a la vez"
+    }
+  ]
+}

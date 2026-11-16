@@ -1,0 +1,12 @@
+# Capturas y logs que deja el navegador de auditoria al medir sitios
+.playwright-mcp/
+
+# Basura del Finder de macOS
+.DS_Store
+
+# Archivos de sistema de Windows
+desktop.ini
+Thumbs.db
+
+# Reglas de la capa web solo de este equipo (sitios de la red local, etc.)
+99-local.css

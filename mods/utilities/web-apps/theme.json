@@ -1,0 +1,19 @@
+{
+  "id": "zen-web-apps",
+  "name": "Zen Web Apps",
+  "description": "Quita la barra lateral de Zen en las ventanas de aplicacion web (las que se instalan con 'Anadir a la barra de tareas'). Ahi esa barra siempre esta vacia —sin pestanas, sin essentials, sin espacios— y en modo compacto vuelve a asomar cada vez que el raton roza el borde.",
+  "author": "local",
+  "version": "1.1.0",
+  "preferences": true,
+  "enabled": true,
+  "tags": [
+    "taskbar-tabs",
+    "pwa",
+    "web-apps",
+    "sidebar",
+    "compact-mode"
+  ],
+  "plataformas": [
+    "windows"
+  ]
+}

@@ -1,0 +1,23 @@
+/* ==========================================================================
+   Zen Modo Oscuro — v1.0.0
+   --------------------------------------------------------------------------
+   ESTE MOD NO PINTA NADA EN EL CHROME. El modo oscuro vive dentro de las
+   paginas, y lo hace la pieza nativa de nativo/ (el inyector que arranca Dark
+   Reader en cada documento y la entrada del clic derecho). Este archivo existe
+   por lo que si es de la hoja de mods:
+
+     - registra el mod en Ajustes > Zen Mods, que es de donde salen los dos
+       interruptores de preferences.json (los dos son booleanos que lee
+       nativo/proceso.js con getBoolPref, no un @media);
+     - y declara el testigo de abajo, la unica variable que solo escribe este
+       mod, para que dev/tools/probar-vivo.mjs pueda afirmar que su hoja esta
+       aplicada.
+
+   Va con `:root` y no con `#main-window` a proposito: es el selector mas
+   estable de la ventana, y aqui no hay nada que pueda ganar o perder contra
+   otra regla.
+   ========================================================================== */
+
+:root {
+  --zmo-testigo: 1;
+}

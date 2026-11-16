@@ -1,0 +1,19 @@
+{
+  "id": "zen-traffic-lights-local",
+  "name": "Zen Traffic Lights",
+  "description": "Minimizar, maximizar y cerrar como en macOS: tres circulos de color con el simbolo dentro solo al pasar el raton, dibujados sin tipografia de iconos. Tamano, colores y orden configurables. Companero de Acrylic Zen, instalable por separado.",
+  "author": "local",
+  "version": "1.1.0",
+  "preferences": true,
+  "enabled": true,
+  "tags": [
+    "windows",
+    "linux",
+    "titlebar",
+    "window-controls"
+  ],
+  "plataformas": [
+    "windows",
+    "linux"
+  ]
+}

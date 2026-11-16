@@ -1,0 +1,176 @@
+{
+  "mod": "zen-sin-cristal",
+  "name": "Zen Sin Cristal",
+  "verificado_en": "Zen 1.22.2b / Gecko 156.0 / BuildID 20260915091052",
+  "nota": "Es el unico mod del repo que engancha en el CHROME por codigo, no por CSS: pone una entrada en el menu del clic derecho. Por eso casi todo su contrato es de Firefox y no de Zen, que es la mejor noticia posible: son nombres que llevan decadas donde estan. Lo que NO esta aqui es la frontera de dentro de casa, el atributo `zen-sin-cristal`, que se lo inventa este repo y tiene que coincidir a mano entre mods/appearance/glass-toggle/nativo/proceso.js y las guardas de mods/appearance/acrylic-glass/web/00-base.css, mods/appearance/acrylic-glass/web/10-wrappers.css, mods/appearance/acrylic-glass/web/20-aggressive.css y mods/appearance/acrylic-glass/web/50-sites.css. De eso no puede avisar ninguna build: lo comprueba dev/tools/probar-css.mjs por su cuenta, selector por selector. La otra que tampoco cabe aqui como enganche comprobable es la hoja de la extension Zen Internet, que si esta abajo pero marcada `comprobable: false` porque vive en un .xpi del perfil y no en la build. Desde el 17-09-2026 el mod ademas ESCRIBE un archivo en la raiz del perfil, zen-cristal-pendientes.json, con las paginas que el usuario guarda para revisar.",
+  "hooks": [
+    {
+      "token": "#contentAreaContextMenu",
+      "buscar": "contentAreaContextMenu",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "donde se cuelga el submenu 'Zen Cristal', y dentro de el la entrada 'Ver <dominio> sin cristal'. Se eligio esto y no un boton en la barra justo por su estabilidad: la barra es de Zen y cambia entre versiones",
+      "si_falta": "no hay interruptor. El script de ventana lo dice en la consola del navegador con 'no hay #contentAreaContextMenu en esta ventana'. Buscar el id nuevo del popup del area de contenido y cambiarlo en mods/appearance/glass-toggle/nativo/ventana.js",
+      "nota_ancla": "lo escribe browser-context.inc, que se inlinea en browser.xhtml al construir: la ruta que existe en el omni.ja es la del xhtml"
+    },
+    {
+      "token": "windowtype=\"navigator:browser\"",
+      "buscar": "navigator:browser",
+      "kind": "attr",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "distinguir una ventana de navegador de un dialogo cuando salta domwindowopened. Ahi la ventana esta todavia en about:blank, asi que su url no sirve para decidir",
+      "si_falta": "el script de ventana no se carga en ninguna parte, en silencio. Es el mismo dato por el que Services.wm sabe enumerar ventanas de navegador, asi que si cambia se rompe medio Firefox con el",
+      "nota_ancla": "en el elemento raiz de la ventana"
+    },
+    {
+      "token": "#context-savepage",
+      "buscar": "context-savepage",
+      "kind": "id",
+      "owner": "firefox",
+      "severity": "cosmetico",
+      "opcional": true,
+      "motivo": "es solo el vecino ANTES del cual se inserta la entrada. Si no esta, se prueban context-take-screenshot, context-viewsource y context-selectall, y si tampoco, la entrada se anade al final del menu. Se ve peor colocada y funciona igual",
+      "declarado_en": "chrome/browser/content/browser/browser.xhtml",
+      "para": "colocar la entrada en el grupo de acciones sobre 'esta pagina' en vez de suelta al final",
+      "si_falta": "la entrada aparece al final del menu. Cambiar la lista VECINOS de mods/appearance/glass-toggle/nativo/ventana.js"
+    },
+    {
+      "token": "document-element-inserted",
+      "buscar": "document-element-inserted",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "-",
+      "para": "el momento en que se marca el documento: ya hay <html> y todavia no ha corrido ningun script de la pagina, asi que la marca esta puesta antes del primer pintado y no hay parpadeo",
+      "si_falta": "ningun documento se marca y el interruptor no apaga nada. Es el mismo enganche que usa Zen Sintonia: si se rompe, se rompen los dos",
+      "nota_ancla": "la emite Gecko al crear el elemento raiz de un documento: no vive en ningun archivo del omni.ja, asi que no hay ancla que comprobar"
+    },
+    {
+      "token": "domwindowopened",
+      "buscar": "domwindowopened",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "-",
+      "para": "engancharse a las ventanas que nazcan despues del arranque, que son todas menos la primera",
+      "si_falta": "el interruptor solo aparece en las ventanas que ya estaban abiertas al cargar el mod, o sea en ninguna. Vive en core/config.js, compartido",
+      "nota_ancla": "la emite Gecko al abrir una ventana XUL: no vive en ningun archivo del omni.ja, asi que no hay ancla que comprobar"
+    },
+    {
+      "token": "loadSubScript",
+      "buscar": "loadSubScript",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (mozIJSSubScriptLoader)",
+      "para": "cargar ventana.js en el ambito de la ventana. OJO: solo acepta esquemas de confianza, y file:// NO lo es; por eso el cargador registra una sustitucion resource:// y carga por ahi",
+      "si_falta": "la entrada del menu no aparece en ninguna ventana. Si el error es \"Trying to load untrusted URI\", el problema no es este nombre sino el esquema de la url",
+      "nota_ancla": "expuesto como Services.scriptloader"
+    },
+    {
+      "token": "setSubstitution",
+      "buscar": "nsIResProtocolHandler",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (nsIResProtocolHandler.idl)",
+      "para": "registrar resource://zen-nativo/ apuntando a <perfil>/chrome, que es la unica forma de que loadSubScript acepte cargar el script de ventana: desde file:// lo rechaza con \"Trying to load untrusted URI\"",
+      "si_falta": "el script de ventana no carga y la entrada del clic derecho no existe, aunque el inyector de contenido si arranque. El cargador lo dice en la consola con \"no pude registrar resource://zen-nativo/\"",
+      "nota_ancla": "es el mismo mecanismo que usa fx-autoconfig para lo mismo"
+    },
+    {
+      "token": "getBaseDomainFromHost",
+      "buscar": "getBaseDomainFromHost",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "xul.dll (nsIEffectiveTLDService)",
+      "para": "sacar el dominio base del host, que es lo que se apunta en la lista. Es el que sabe de sufijos publicos: acierta con ejemplo.com.co y con ejemplo.co.uk, donde recortar por puntos se equivocaria",
+      "si_falta": "se cae al host entero. El interruptor sigue funcionando, pero apagarlo en www.ejemplo.com ya no apaga ejemplo.com y hay que pulsarlo en cada subdominio",
+      "nota_ancla": "expuesto como Services.eTLD"
+    },
+    {
+      "token": "createXULElement",
+      "buscar": "createXULElement",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (Document.webidl)",
+      "para": "crear el <menuitem>. Con createElement saldria un elemento HTML dentro de un popup XUL, que no se pinta ni responde",
+      "si_falta": "la entrada no aparece o aparece muerta",
+      "nota_ancla": "solo responde con principal de sistema"
+    },
+    {
+      "token": "general.config.filename",
+      "buscar": "general.config.filename",
+      "kind": "pref",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "modules/TelemetryEnvironment.sys.mjs",
+      "para": "que Zen ejecute core/config.js al arrancar. Sin esto no se carga ni el inyector ni el script de ventana",
+      "si_falta": "no arranca ninguno de los tres mods nativos. Comprobar en about:config que sigue diciendo config.js",
+      "nota_ancla": "la pref la declara el mecanismo de autoconfig; el archivo es el unico del omni.ja que la nombra, y es el mismo ancla que usa zen-sintonia.json"
+    },
+    {
+      "token": "#zeninternet-styles",
+      "buscar": "zeninternet-styles",
+      "kind": "id",
+      "owner": "zen-internet",
+      "severity": "degrada",
+      "opcional": true,
+      "comprobable": false,
+      "motivo_no_comprobable": "no vive en ningun omni.ja: es el id del <style> que inyecta la extension Zen Internet ({91aa3897-2634-4a8a-9092-279db23a7689}), y esa extension vive en un .xpi dentro del perfil. El verificador estatico solo lee la build de Zen, asi que aqui no puede decir nada. Se mira a mano en el inspector con un sitio apagado: el <style> tiene que llevar media=\"not all\"",
+      "declarado_en": "content-script.js de Zen Internet v3.2.0",
+      "para": "la otra mitad del interruptor. La extension vacia los fondos por su cuenta, asi que apagar solo nuestras reglas dejaba la pagina igual de transparente. mods/appearance/glass-toggle/nativo/proceso.js le pone media=\"not all\" a ese <style> mientras el sitio este en la lista. No disabled: la extension reescribe textContent al activar la pestana, eso monta una hoja nueva y disabled se pierde con la vieja",
+      "si_falta": "si la extension no esta instalada, no pasa nada y el mod ni la busca. Si esta y renombran el id, el interruptor apaga nuestro cristal y deja el suyo, que es el sintoma de 'el menu no hace nada'. El id nuevo va a HOJA_EXTENSION en mods/appearance/glass-toggle/nativo/proceso.js"
+    },
+    {
+      "token": "nsIFilePicker",
+      "buscar": "nsIFilePicker",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "xul.dll (nsIFilePicker.idl); sus usuarios, en chrome/browser/content/browser/places/places.js",
+      "para": "el dialogo de exportar e importar la lista de paginas pendientes. Se eligio el selector y no una ruta fija porque el propio Zen hace exactamente esto para sus boosts, o sea que es un camino con dueno conocido",
+      "si_falta": "exportar e importar dejan de funcionar y lo dicen en la consola del navegador con \"no pude abrir el selector de archivos\". El resto del mod sigue igual, y el archivo espejo del perfil se puede copiar a mano",
+      "nota_ancla": "la interfaz esta compilada; en los omni.ja solo aparecen sus usuarios"
+    },
+    {
+      "token": "fp.init(browsingContext, titulo, modo)",
+      "buscar": "fp.init(window.browsingContext",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "degrada",
+      "declarado_en": "chrome/browser/content/browser/places/places.js",
+      "para": "es la FIRMA y no el nombre. Gecko cambio el primer argumento de nsIFilePicker.init de la ventana al browsingContext, y el nombre no cambio con el. Esta entrada existe para que ese cambio se vea antes de que lo vea el usuario",
+      "si_falta": "muy probablemente han vuelto a cambiar la firma. El sintoma es un boton de menu que no hace absolutamente nada. Buscar en el omni.ja como llama Mozilla hoy a fp.init y copiar esa forma en mods/appearance/glass-toggle/nativo/ventana.js",
+      "nota_ancla": "medido el 17-09-2026 en Gecko 156.0: cero coincidencias de \"fp.init(window,\" en los dos omni.ja y veintitantas de esta. Es el unico enganche del repo cuyo buscar es un trozo de llamada y no un nombre, y es a proposito: es el mismo tipo de fallo que el de loadSubScript con file://, donde el nombre sobrevivio y la llamada dejo de valer"
+    },
+    {
+      "token": "IOUtils.writeJSON",
+      "buscar": "IOUtils.writeJSON",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (IOUtils.webidl); sus usuarios, en modules/backup/BackupService.sys.mjs",
+      "para": "escribir <perfil>/zen-cristal-pendientes.json. Se usa el asincrono a proposito, al reves que en core/config.js: alli el orden importaba porque el inyector no podia nacer antes que el motor, y aqui no espera nadie",
+      "si_falta": "la lista de pendientes no se guarda. El submenu aparece y guardar no hace nada, con una linea en la consola del navegador",
+      "nota_ancla": "expuesto como global en todo contexto con principal de sistema; en ambito de ventana lo usan ZenMods.mjs y ZenKeyboardShortcuts.mjs"
+    },
+    {
+      "token": "PathUtils.profileDir",
+      "buscar": "PathUtils.profileDir",
+      "kind": "api",
+      "owner": "firefox",
+      "severity": "critico",
+      "declarado_en": "xul.dll (PathUtils.webidl); sus usuarios, en chrome/browser/content/browser/zen-components/ZenMods.mjs",
+      "para": "saber donde esta el perfil para poner ahi el archivo de pendientes. Mismo sitio y misma forma que zen-themes.json y zen-keyboard-shortcuts.json, que es lo que hace que un agente lo encuentre sin preguntar",
+      "si_falta": "el mod no sabe donde escribir la lista y guardar deja de funcionar. El respaldo seria Services.dirsvc.get(\"ProfD\", Ci.nsIFile).path, que es lo que usa core/config.js",
+      "nota_ancla": "expuesto como global en todo contexto con principal de sistema"
+    }
+  ]
+}

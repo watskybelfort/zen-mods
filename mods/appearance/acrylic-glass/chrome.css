@@ -1,0 +1,780 @@
+/* ==========================================================================
+   Acrylic Zen — v1.10.1
+   Cristal nativo dentro de Zen Browser. Acrilico de Windows 11 sin Mica For
+   Everyone, y vibrancy de macOS sin tocar el sistema.
+   --------------------------------------------------------------------------
+   COMO FUNCIONA
+   El cristal real NO lo dibuja este CSS: lo dibuja el compositor del sistema.
+   Son dos motores distintos y conviene tenerlos separados en la cabeza, porque
+   fallan de forma distinta.
+
+   WINDOWS — lo dibuja DWM sobre la ventana, con las prefs de
+   `mods/appearance/acrylic-glass/prefs/windows.user.js`:
+
+       widget.windows.mica                   = true
+       widget.windows.mica.toplevel-backdrop = 2   // indice de Gecko, no el enum
+                                                   // de DWM: 2 -> acrilico
+                                                   // (DWMSBT_TRANSIENTWINDOW = 3)
+
+   macOS — lo dibuja una `NSVisualEffectView` que Gecko monta al encontrar
+   `-moz-default-appearance: -moz-sidebar`. Zen ya se lo pone a
+   `#zen-browser-background` (zen-browser-ui.css), y el material se elige con
+   `zen.widget.macos.window-material` desde `mods/appearance/acrylic-glass/prefs/macos.user.js`.
+
+   LO QUE TIENEN EN COMUN, que es lo que hace que este archivo sea casi todo
+   compartido: en los dos casos Zen ya declara la ventana transparente —el mismo
+   bloque de zen-theme.css cubre `(-moz-windows-mica) or (-moz-platform: macos)`—
+   pero encima sigue pintando las mismas capas OPACAS:
+
+       #zen-browser-background::after   -> --zen-main-browser-background  (#1b1b1b)
+       #zen-toolbar-background::after   -> idem, en modo compacto
+       #zen-main-app-wrapper            -> --zen-themed-toolbar-bg-transparent
+       browser[type="content"]          -> light-dark(#fff, rgb(32,32,32))
+
+   Este mod retira/atenua exactamente esas capas para que el cristal del sistema
+   se vea, y deja todo el tinte parametrizado desde Ajustes > Zen Mods.
+   --------------------------------------------------------------------------
+   LAS DOS TRAMPAS DE macOS
+   Estan resueltas en la seccion 3.5 y en la 5, pero se anuncian aqui porque
+   cualquiera de las dos se manifiesta como "el mod no funciona":
+
+   1. `#zen-browser-background` ES la vista de vibrancy. Ponerle
+      `appearance: none` apaga el cristal de toda la ventana. Y su
+      `background-color` de autor NO se pinta: cuando un frame esta themed,
+      Gecko emite `nsDisplayThemedBackground` y descarta el color del autor.
+   2. Los popups de macOS ya son ventanas con vibrancy nativa, como con
+      `widget.windows.mica.popups` en Windows. Emularlos con `backdrop-filter`
+      encima ensucia el resultado en vez de mejorarlo.
+   --------------------------------------------------------------------------
+   DEGRADACION SEGURA
+   Las reglas base = modo "glass". Los @media solo REDUCEN el efecto. Si una
+   media feature privilegiada (-moz-pref) no estuviese disponible en el sheet
+   de mods, esas reglas se descartan y el resultado sigue siendo el modo glass,
+   nunca una ventana rota. Las media features de plataforma (`-moz-windows-*`,
+   `-moz-platform`) siguen la misma regla: la que no case, no aplica.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   `--az-*`             valores internos (presets de intensidad)
+   `--acrylic-zen-*`    los escribe Zen Mods desde las preferencias del mod.
+                        No se declaran aqui a proposito: si el campo esta
+                        vacio la propiedad no existe y gana el fallback.
+   `--az-*-e`           valor efectivo = preferencia del usuario, o preset.
+   -------------------------------------------------------------------------- */
+:root {
+  /* Preset por defecto: glass (maxima transparencia) */
+  --az-tint: 0.06;
+  --az-tint-color: light-dark(#ffffff, #0d0d11);
+  --az-gradient: 0.1;
+  --az-panel: 0.38;
+  --az-scrim: 0.32;
+  /* El velo de la pagina que se abre en vista rapida (Glance). No es el del
+     contenido y no puede serlo: el del contenido tiene detras el acrilico de la
+     ventana y nada mas, mientras que este tiene detras OTRA PAGINA, con su
+     propio color y su propio brillo. Con 0.06 —el velo normal— el texto de
+     abajo se seguia leyendo a traves del de arriba, que es el fallo que esto
+     viene a arreglar. Ver la seccion 6.bis. */
+  --az-glance: 0.52;
+  --az-blur: 40px;
+  /* Radio con el que se difumina LA PAGINA al buscar. No sale de la opcion de
+     blur del mod a proposito: ver la seccion 6. */
+  --az-page-blur: 14px;
+  /* Brillo especular. APAGADO POR DEFECTO (0).
+     Aporta luminosidad sin depender de lo que haya detras de la ventana, util
+     con un escritorio oscuro. Pero cubre la ventana entera, y a poco que se
+     suba se nota como un lavado diagonal: medido sobre una captura real, a
+     0.05 aplicado dos veces la esquina superior izquierda quedaba en
+     luminancia 51 contra 30 en la inferior derecha, un 70% de diferencia que
+     se lee como una mancha, no como cristal.
+     Subelo con cuidado: 0.02-0.04 es un brillo creible, de 0.06 en adelante
+     empieza a ensuciar. */
+  --az-sheen: 0;
+
+  /* Valores efectivos */
+  --az-tint-e: var(--acrylic-zen-tint, var(--az-tint));
+  --az-tint-color-e: var(--acrylic-zen-tint-color, var(--az-tint-color));
+  --az-gradient-e: var(--acrylic-zen-gradient, var(--az-gradient));
+  --az-blur-e: var(--acrylic-zen-blur, var(--az-blur));
+  --az-sheen-e: var(--acrylic-zen-sheen, var(--az-sheen));
+
+  /* UNA SOLA LAMINA DE CRISTAL.
+     El velo del contenido hereda el del marco, asi que la barra lateral y el
+     area de la pagina quedan exactamente del mismo tono. Tenerlos separados
+     partia la ventana en dos: el centro se veia mas oscuro que los bordes.
+     Solo se despega si escribes un valor en la opcion "opacidad del tinte del
+     contenido", para cuando necesites mas contraste en una web concreta. */
+  --az-content-e: var(--acrylic-zen-content, var(--az-tint-e));
+
+  /* Velos derivados */
+  --az-veil: color-mix(
+    in srgb,
+    var(--az-tint-color-e) calc(var(--az-tint-e) * 100%),
+    transparent
+  );
+  --az-content-veil: color-mix(
+    in srgb,
+    var(--az-tint-color-e) calc(var(--az-content-e) * 100%),
+    transparent
+  );
+  --az-panel-veil: color-mix(
+    in srgb,
+    light-dark(#ffffff, #0a0a0d) calc(var(--az-panel) * 100%),
+    transparent
+  );
+  --az-glance-veil: color-mix(
+    in srgb,
+    var(--az-tint-color-e) calc(var(--az-glance) * 100%),
+    transparent
+  );
+
+  /* El velo del buscador flotante no es el de los paneles, aunque se parezcan.
+     El de los paneles va debajo de un panel pequeno y solo tiene que separarlo
+     de lo que hay detras; este cubre la ventana entera y su trabajo es apagar
+     la pagina para que lo unico que se lea sea lo que estas escribiendo. Por
+     eso pesa mas y va sobre un negro mas frio. */
+  --az-scrim-veil: color-mix(
+    in srgb,
+    light-dark(#ffffff, #05060a) calc(var(--az-scrim) * 100%),
+    transparent
+  );
+
+  /* Radial desde la esquina, no un barrido diagonal de lado a lado: se apaga
+     dentro de la propia esquina en vez de tenir toda la ventana.
+     Se pinta UNA SOLA VEZ, en #main-window (ver mas abajo). El intento
+     anterior lo repetia en el marco y en el contenido con
+     `background-attachment: fixed`, pero las capas de fondo de Zen llevan
+     `contain: content`, que las convierte en el bloque contenedor de los
+     fondos fijos: cada capa anclaba el degradado en SU propia esquina y se
+     sumaban. De ahi los recuadros. */
+  --az-sheen-layer: radial-gradient(
+    130vh 130vh at 0% 0%,
+    rgb(255 255 255 / var(--az-sheen-e)) 0%,
+    transparent 62%
+  );
+
+  /* Hairline que devuelve definicion a los bordes sobre cristal */
+  --az-hairline: light-dark(rgb(0 0 0 / 0.14), rgb(255 255 255 / 0.1));
+}
+
+/* Presets seleccionables desde el dropdown "Intensidad".
+   Zen Mods inyecta <div id="theme-Acrylic-Zen" acrylic-zen-intensity="..."> */
+:root:has(#theme-Acrylic-Zen[acrylic-zen-intensity='glass']) {
+  --az-tint: 0.06;
+  --az-gradient: 0.1;
+  --az-panel: 0.38;
+  --az-scrim: 0.32;
+  --az-glance: 0.52;
+}
+
+:root:has(#theme-Acrylic-Zen[acrylic-zen-intensity='balanced']) {
+  --az-tint: 0.16;
+  --az-gradient: 0.32;
+  --az-panel: 0.55;
+  --az-scrim: 0.46;
+  --az-glance: 0.64;
+}
+
+:root:has(#theme-Acrylic-Zen[acrylic-zen-intensity='subtle']) {
+  --az-tint: 0.34;
+  --az-gradient: 0.62;
+  --az-panel: 0.78;
+  --az-scrim: 0.6;
+  --az-glance: 0.78;
+}
+
+/* --------------------------------------------------------------------------
+   2. Ventana: quitar todo lo que tape el cristal del sistema
+   (el backdrop de DWM en Windows, la NSVisualEffectView en macOS)
+
+   `#zen-browser-background` NO esta en esta lista, y en macOS es importante que
+   siga sin estarlo: es el elemento que hospeda la vibrancy. Su tinte se pone en
+   la seccion 3.
+   -------------------------------------------------------------------------- */
+#zen-main-app-wrapper,
+#zen-appcontent-wrapper,
+#zen-tabbox-wrapper,
+#browser,
+#navigator-toolbox,
+#tabbrowser-tabbox,
+#tabbrowser-tabpanels,
+/* `#zen-sidebar-foot-buttons` es el nombre actual (browser.xhtml);
+   `#zen-sidebar-bottom-buttons` es como se llamaba en versiones anteriores de
+   Zen y se conserva para que el mismo CSS valga en las dos. */
+#zen-sidebar-foot-buttons,
+#zen-sidebar-bottom-buttons,
+#titlebar,
+#TabsToolbar,
+#nav-bar {
+  background: transparent !important;
+}
+
+/* El unico sitio donde se pinta el brillo: la raiz del documento, que abarca
+   toda la ventana y no esta contenida por nada. Una capa, un origen, sin
+   costuras entre marco y contenido.
+
+   La raiz se nombra de las dos formas que tiene: `#main-window` en la ventana
+   normal y `[taskbartab]` en las de aplicacion web, cuya raiz browser-init.js
+   renombra a `taskbartab-<uuid>`. Con solo el id, esas ventanas se quedaban sin
+   brillo y sin la regla de la ventana sin foco (medido el 24-09-2026 en la de
+   ChatGPT: `background-image: none`). */
+:root:is(#main-window, [taskbartab]) {
+  background-color: transparent !important;
+  background-image: var(--az-sheen-layer) !important;
+}
+
+/* Zen apaga la transparencia y pinta InactiveCaption cuando la ventana pierde
+   el foco (zen.view.grey-out-inactive-windows). Mantener el cristal vivo. */
+#zen-main-app-wrapper:-moz-window-inactive,
+:root:is(#main-window, [taskbartab]):-moz-window-inactive {
+  background: transparent !important;
+}
+
+/* Si el usuario tiene activado "Mostrar color de acento en barras de titulo",
+   Zen pinta `background: ActiveCaption` opaco sobre el wrapper. Es una opcion de
+   Windows y la media feature solo existe alli; en macOS este bloque no casa
+   nunca y se descarta entero, que es lo correcto. */
+@media (-moz-windows-accent-color-in-titlebar) {
+  #zen-main-app-wrapper {
+    background: transparent !important;
+    color: inherit !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Las capas de fondo de Zen (#zen-browser-background / #zen-toolbar-background)
+   Se conserva el gradiente de espacio de trabajo, pero como TINTE sobre el
+   acrilico en lugar de como fondo opaco. Se respeta --zen-background-opacity
+   para no romper el crossfade al cambiar de espacio.
+   -------------------------------------------------------------------------- */
+.zen-browser-generic-background {
+  background-color: var(--az-veil) !important;
+}
+
+.zen-browser-generic-background::after {
+  opacity: calc(var(--zen-background-opacity, 1) * var(--az-gradient-e)) !important;
+}
+
+.zen-browser-generic-background::before {
+  opacity: calc((1 - var(--zen-background-opacity, 1)) * var(--az-gradient-e)) !important;
+}
+
+/* La textura de grano encima del cristal se ve sucia; se atenua. */
+.zen-browser-generic-background[zen-show-grainy-background='true'] .zen-browser-grain {
+  opacity: calc(var(--zen-grainy-background-opacity, 0) * 0.35) !important;
+}
+
+/* Modo compacto: la barra flotante es su propio panel de cristal. */
+.zen-toolbar-background {
+  backdrop-filter: blur(var(--az-blur-e)) saturate(120%) !important;
+  outline: 1px solid var(--az-hairline);
+  outline-offset: -1px;
+}
+
+/* --------------------------------------------------------------------------
+   3.5 macOS: el velo del marco, por encima de la vibrancy
+
+   La regla de arriba (`background-color: var(--az-veil)`) alcanza a
+   `#zen-toolbar-background` pero NO a `#zen-browser-background`, y no por
+   especificidad: en macOS ese elemento lleva `-moz-default-appearance:
+   -moz-sidebar; appearance: auto`, y un frame themed no pinta el fondo del
+   autor. El color se declara, sale en el inspector y no llega a la pantalla.
+
+   MEDIDO, no deducido. Tres capturas de la ventana por caso, con un magenta
+   OPACO para que la diferencia no se pueda confundir con el ruido del cristal
+   (el acrilico muestrea lo que hay detras, asi que dos capturas nunca son
+   identicas byte a byte; el tamano del PNG si es estable):
+
+       sin nada                              ~45.3 KB   <- control
+       background-color: #f0f OPACO          ~45.2 KB   <- no pinta
+       box-shadow: inset 0 0 0 100vmax #f0f  ~51.9 KB   <- si pinta
+
+   Sin esto el desplegable "Intensidad" se quedaba a medias en macOS: movia el
+   gradiente del espacio de trabajo y el velo del contenido, pero el tinte del
+   marco no se inmutaba, con lo que glass y sutil se veian casi igual.
+
+   La sombra interior si llega porque va despues de los items de fondo, themed o
+   no. `100vmax` de spread la extiende a toda la caja sea cual sea el tamano de
+   la ventana; `overflow: clip` del propio elemento la recorta.
+
+   Se pone `background-color: transparent` explicito por si una version futura
+   de Gecko empezara a pintar el fondo del autor sobre el tema nativo: en ese
+   caso el tinte se sumaria dos veces y el cristal se ensuciaria sin motivo
+   aparente.
+   -------------------------------------------------------------------------- */
+@media (-moz-platform: macos) {
+  #zen-browser-background {
+    background-color: transparent !important;
+    box-shadow: inset 0 0 0 100vmax var(--az-veil);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Contenido web
+   Requiere browser.tabs.allow_transparent_browser = true (lo pone el user.js).
+   Esto solo vuelve transparente el ELEMENTO browser: las paginas que pintan su
+   propio fondo siguen tapando. De quitarles el fondo se encarga la capa web
+   (chrome\userContent.css), que es una hoja de origen usuario y por tanto puede
+   ganarle al !important del sitio.
+
+   El velo de aqui va DETRAS de la pagina, asi que una vez la pagina es
+   transparente este es el unico colchon entre el texto y el acrilico.
+   -------------------------------------------------------------------------- */
+#tabbrowser-tabpanels browser[type='content'][transparent='true'] {
+  background-color: var(--az-content-veil) !important;
+}
+
+/* El contenedor conserva su radio; solo se suaviza la sombra dura sobre cristal */
+:root:not([zen-no-padding='true'])
+  #tabbrowser-tabpanels
+  .browserSidebarContainer:not(.zen-glance-overlay) {
+  box-shadow: 0 2px 12px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.22)) !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. Popups, paneles y menus
+
+   Un popup es una VENTANA aparte, asi que el compositor tiene que difuminarlo
+   por su cuenta. Cuando lo hace, aqui solo queda ajustar el tinte; cuando no,
+   hay que emularlo con `backdrop-filter`, que es un sucedaneo porque solo
+   difumina lo que hay dentro de la ventana, no lo que hay detras.
+
+   Quien lo hace de verdad:
+     Windows  con `widget.windows.mica.popups`   -> `-moz-windows-mica-popups`
+     macOS    siempre: los menus y popovers de Cocoa traen vibrancy nativa
+
+   De ahi que macOS entre por la rama del tinte y no por la de la emulacion.
+   Meterle `backdrop-filter` encima de un popover que ya es de cristal no suma:
+   difumina por segunda vez el contenido de la ventana de debajo y el resultado
+   se ve lechoso, con los bordes del panel marcados.
+   -------------------------------------------------------------------------- */
+@media (-moz-windows-mica-popups) or (-moz-platform: macos) {
+  menupopup,
+  panel[type='arrow']:not(#feature-callout) {
+    --panel-background-color: var(--az-panel-veil) !important;
+    --panel-border-color: var(--az-hairline) !important;
+  }
+}
+
+@media (not (-moz-windows-mica-popups)) and (not (-moz-platform: macos)) {
+  menupopup::part(content),
+  panel[type='arrow']:not(#feature-callout)::part(content) {
+    background-color: var(--az-panel-veil) !important;
+    backdrop-filter: blur(var(--az-blur-e)) saturate(140%) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6. El buscador flotante (Ctrl+T y Ctrl+L)
+   Al pulsar Ctrl+T Zen no abre una pestana nueva: deja la pagina donde esta,
+   despega la barra de direcciones y la planta en el centro de la ventana
+   (zen.urlbar.replace-newtab + zen.urlbar.behavior). Asi que detras del
+   buscador sigue estando la pagina entera, nitida y a todo color, compitiendo
+   con una barra que es de cristal. Aqui se apaga mientras buscas, que es lo
+   mismo que ya hacen los buscadores de YouTube y de YouTube Music desde la capa
+   web (mods\appearance\acrylic-glass\web\50-sites.css).
+
+   HACEN FALTA LOS DOS ATRIBUTOS. `[breakout-extend]` significa "la barra esta
+   desplegada", y eso pasa tambien al pulsarla con el raton en su sitio de
+   siempre; `[zen-floating-urlbar]` es "ademas se ha ido al centro", que es lo
+   que Zen pone al abrirla por teclado. Sin el segundo se apagaria la ventana
+   tambien con la barra en su esquina, que es cuando no hay ninguna paleta que
+   destacar.
+
+   EL VELO ES EL `::backdrop` DEL POPOVER, no un pseudo-elemento cualquiera.
+   `#urlbar` se declara `<html:moz-urlbar popover="manual">` y Zen le llama a
+   `showPopover()` en cuanto entra en modo breakout: mientras esta desplegada,
+   la barra vive en el top layer. Y ahi el `::backdrop` viene hecho de fabrica
+   —lo dicen las hojas UA de este binario, no la teoria—:
+
+     ua.css      ::backdrop        { -moz-top-layer: auto !important;
+                                     display: block; position: fixed; inset: 0 }
+     html.css    :popover-open::backdrop { pointer-events: none !important;
+                                           background-color: transparent }
+
+   O sea: una caja del tamano de la ventana, en el top layer (por encima de la
+   pagina y del marco), justo detras de la barra y que ya deja pasar los clics
+   —importante, porque la barra se cierra sola al irse el foco al contenido y un
+   velo que se comiera el clic dejaria Escape como unica salida—. Aqui solo hay
+   que ponerle color y cristal.
+
+   Un `::after` propio habria costado mas: la barra flotante lleva
+   `translate: -50% 0%`, y un `translate` convierte al elemento en bloque
+   contenedor de sus descendientes `fixed`, con lo que un `inset: 0` ahi dentro
+   cubre la barra y no la ventana.
+
+   HACEN FALTA DOS PIEZAS, Y ESO SI FUE UNA SORPRESA ---------------- MEDIDO -
+   El `backdrop-filter` del velo NO difumina la pagina. Difumina el MARCO
+   —barra lateral, pestanas, botones— y lo que en la pagina sea opaco, pero el
+   texto de una web le pasa por delante como si nada. Medido el 14-08-2026 en el
+   Zen del usuario, con captura de escritorio y tres paginas:
+
+     youtube.com    miniaturas borrosas, titulos y avatares NITIDOS
+     wikipedia      todo borroso (es de las pocas que conserva fondo propio)
+     control local  texto y degradado NITIDOS, solo el tinte por encima
+
+   Y el patron es exactamente el que ya esta escrito en la capa web: nuestras
+   propias reglas dejan las paginas SIN fondo para que se vea el acrilico, y
+   sobre lo transparente el backdrop no tiene nada que fotografiar. Por eso el
+   difuminado de la pagina se hace con `filter` sobre el `browser`, que no
+   muestrea nada: difumina sus propios pixeles y le da igual la transparencia.
+   Comprobado con captura tambien esto, y ahi si desaparecen los titulos de
+   YouTube.
+
+   O sea: el `::backdrop` apaga y difumina el marco, y el `filter` difumina la
+   pagina. Cada capa donde alcanza.
+
+   EL RADIO DE LA PAGINA NO ES `--az-blur-e`. Ese token son 40px pensados para
+   una lamina de cristal de unos centimetros; sobre la pagina entera la borra
+   hasta dejarla en un color plano. 14px es lo que usan los buscadores de
+   YouTube y de YouTube Music en la capa web, asi que las tres cosas se leen
+   igual.
+   -------------------------------------------------------------------------- */
+#urlbar[breakout-extend][zen-floating-urlbar='true']::backdrop {
+  background-color: var(--az-scrim-veil);
+  backdrop-filter: blur(var(--az-blur-e)) saturate(115%);
+  animation: az-scrim-in 0.16s ease-out both;
+}
+
+/* ESTILO INMERSIVO (16-11-2026). El del buscador de YouTube en Zen Internet
+   ("yt-Immersive search" del catalogo my-internet), a peticion del usuario y
+   en los tres buscadores flotantes (este, YouTube y YouTube Music): la pagina
+   se difumina 20px con un zoom de 1.05, con la curva con rebote de 0.5s, y la
+   barra pasa a casi negro (#000b) con un halo negro de 30px. */
+:root:has(#urlbar[breakout-extend][zen-floating-urlbar='true'])
+  #tabbrowser-tabpanels
+  browser[type='content'] {
+  filter: blur(20px) saturate(80%);
+  scale: 1.05;
+}
+
+/* La transicion va FUERA del `:has()` para que valga en los dos sentidos, al
+   abrir y al cerrar. Escrita dentro solo suavizaria la entrada, y la pagina
+   volveria a la nitidez de golpe. */
+#tabbrowser-tabpanels browser[type='content'] {
+  transition: filter 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35), scale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.35);
+}
+
+#urlbar[breakout-extend][zen-floating-urlbar='true'] .urlbar-background {
+  background-color: rgb(0 0 0 / 0.73) !important;
+  box-shadow: black 0 0 30px !important;
+  border-radius: 2em !important;
+}
+
+@media (prefers-color-scheme: light) {
+  #urlbar[breakout-extend][zen-floating-urlbar='true'] .urlbar-background {
+    background-color: rgb(255 255 255 / 0.73) !important;
+  }
+}
+
+@keyframes az-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #urlbar[breakout-extend][zen-floating-urlbar='true']::backdrop {
+    animation: none;
+  }
+
+  #tabbrowser-tabpanels browser[type='content'] {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6.bis Vista rapida (Glance): dos paginas a la vez ----------------- MEDIDO -
+
+   Glance abre un enlace en un recuadro por ENCIMA de la pestana actual, sin
+   cambiar de pestana. Zen marca las dos: `.zen-glance-overlay` al contenedor de
+   arriba y `.zen-glance-background` al de detras
+   (ZenGlanceManager.mjs:1273-1278). Las dos siguen pintadas a la vez, que es lo
+   que hace la ilusion de profundidad.
+
+   EL PROBLEMA ERA NUESTRO, NO DE ZEN. El propio zen-glance.css le pone al
+   browser del overlay un fondo solido —`light-dark(rgb(255,255,255),
+   rgb(17,17,17))`— precisamente para que no se transparente. Pero nuestra
+   regla de la seccion 4, `#tabbrowser-tabpanels browser[type='content']
+   [transparent='true']`, vale (1,2,1) contra el (0,3,1) de la suya: gana por el
+   id y le devuelve el velo. Con la capa web quitandole ademas el fondo a la
+   pagina, el resultado es el texto de las dos webs superpuesto, ilegible, que
+   es exactamente el sintoma que se reporto abriendo el panel de creador de Kick
+   sobre el canal.
+
+   LA MITAD DE ABAJO SE DIFUMINA CON `filter`, NO CON `backdrop-filter`. Es el
+   mismo hallazgo que la seccion 6 deja escrito para el buscador: sobre una
+   pagina a la que le hemos quitado el fondo no hay nada que fotografiar, asi
+   que un `backdrop-filter` en la capa de arriba difuminaria el marco y dejaria
+   el texto de la web de abajo intacto. `filter` sobre el `browser` difumina sus
+   propios pixeles y no depende de eso.
+
+   Y VA EN EL DE ATRAS, NO EN UN ANCESTRO COMUN. Difuminar el contenedor que los
+   tiene a los dos se llevaria por delante tambien la pagina que se quiere leer;
+   ademas un `filter` crea bloque contenedor para los descendientes `fixed`, y
+   el overlay de Glance se posiciona con `position: fixed` mientras dura la
+   animacion de apertura.
+
+   EL TINTE NO SOBRA AUNQUE HAYA BLUR, que es la misma leccion del bloque de
+   Kick en la capa web: difuminar no oscurece. Si por detras hay una pagina
+   clara, el blur devuelve un borron claro y el texto de delante sigue
+   compitiendo con el. Por eso el overlay recupera un velo mas denso que el del
+   contenido normal en vez de conformarse con el difuminado.
+   -------------------------------------------------------------------------- */
+#tabbrowser-tabpanels
+  .browserSidebarContainer.zen-glance-background
+  browser[type='content'] {
+  filter: blur(var(--az-page-blur)) saturate(80%);
+}
+
+#tabbrowser-tabpanels
+  .browserSidebarContainer.zen-glance-overlay
+  browser[type='content'][transparent='true'] {
+  background-color: var(--az-glance-veil) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. Legibilidad sobre cristal
+   Sobre acrilico los separadores de 1px desaparecen; se refuerzan levemente.
+   -------------------------------------------------------------------------- */
+#zen-sidebar-splitter,
+#zen-appcontent-navbar-container {
+  background: transparent !important;
+}
+
+:root {
+  --zen-colors-border-contrast: var(--az-hairline) !important;
+  --panel-separator-color: var(--az-hairline) !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. Interruptores del mod (Ajustes > Zen Mods > Acrylic Zen)
+   -------------------------------------------------------------------------- */
+
+/* 8.1 "Contenido web translucido" desactivado -> se devuelve el fondo solido.
+   El overlay de Glance va nombrado aparte y no por gusto: la regla de la seccion
+   6.bis vale (1,4,1) y esta (1,2,1), asi que sin repetir el selector completo el
+   velo de la vista rapida sobreviviria a un interruptor que dice justo lo
+   contrario. */
+@media (not -moz-pref('acrylic-zen.transparent-content')) {
+  #tabbrowser-tabpanels browser[type='content'],
+  #tabbrowser-tabpanels browser[type='content'][transparent='true'],
+  #tabbrowser-tabpanels
+    .browserSidebarContainer.zen-glance-overlay
+    browser[type='content'][transparent='true'] {
+    background: light-dark(rgb(255, 255, 255), rgb(32, 32, 32)) !important;
+  }
+}
+
+/* 8.2 "Difuminar popups" desactivado.
+   Hay que apagar los DOS caminos de la seccion 5, porque cual estuviese activo
+   depende de la plataforma: la emulacion con `backdrop-filter` sobre
+   `::part(content)`, y el tinte via `--panel-background-color` que usan los
+   popups con cristal propio (mica en Windows, vibrancy en macOS). Apagar solo
+   uno dejaba el interruptor sin efecto en la mitad de los sistemas. */
+@media (not -moz-pref('acrylic-zen.blur-popups')) {
+  menupopup,
+  panel[type='arrow']:not(#feature-callout) {
+    --panel-background-color: light-dark(rgb(244, 244, 244), rgb(31, 31, 31)) !important;
+  }
+
+  menupopup::part(content),
+  panel[type='arrow']:not(#feature-callout)::part(content) {
+    backdrop-filter: none !important;
+    background-color: light-dark(rgb(244, 244, 244), rgb(31, 31, 31)) !important;
+  }
+}
+
+/* 8.3 "Mantener el cristal sin foco" desactivado -> comportamiento nativo */
+@media (not -moz-pref('acrylic-zen.keep-glass-inactive')) {
+  #zen-main-app-wrapper:-moz-window-inactive {
+    background: InactiveCaption !important;
+  }
+}
+
+/* 8.4 "Difuminar la pagina al buscar" desactivado -> el buscador flotante
+   vuelve a abrirse sobre la pagina tal cual, sin velo ni difuminado. */
+@media (not -moz-pref('acrylic-zen.search-blur')) {
+  #urlbar[breakout-extend][zen-floating-urlbar='true']::backdrop {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+  }
+
+  :root:has(#urlbar[breakout-extend][zen-floating-urlbar='true'])
+    #tabbrowser-tabpanels
+    browser[type='content'] {
+    filter: none !important;
+    scale: none !important;
+  }
+}
+
+/* 8.4.bis "Difuminar la pagina de detras en la vista rapida" desactivado -> las
+   dos paginas vuelven a verse a la vez. Se apagan las dos mitades, no solo el
+   blur: dejar el velo denso sin difuminado no es un estado intermedio util, es
+   una pagina tapada por una lamina opaca. */
+@media (not -moz-pref('acrylic-zen.glance-blur')) {
+  #tabbrowser-tabpanels
+    .browserSidebarContainer.zen-glance-background
+    browser[type='content'] {
+    filter: none !important;
+    scale: none !important;
+  }
+
+  #tabbrowser-tabpanels
+    .browserSidebarContainer.zen-glance-overlay
+    browser[type='content'][transparent='true'] {
+    background-color: var(--az-content-veil) !important;
+  }
+}
+
+/* 8.5 "Modo rendimiento": quita el truco de capas que Zen aplica con
+   zen.theme.acrylic-elements (translate/backface en cada browser de contenido)
+   y todos los backdrop-filter, que son lo caro de repintar. */
+@media -moz-pref('acrylic-zen.performance-mode') {
+  #tabbrowser-tabpanels .browserSidebarContainer browser[type='content'] {
+    translate: none !important;
+    backface-visibility: visible !important;
+  }
+
+  .zen-toolbar-background,
+  menupopup::part(content),
+  panel[type='arrow']::part(content),
+  #urlbar .urlbar-background {
+    backdrop-filter: none !important;
+  }
+
+  /* En su propia regla y no en la lista de arriba: un pseudo-elemento que el
+     navegador no entienda tumbaria la regla entera, y con ella el resto de
+     backdrop-filter que si sabe apagar. El velo se queda —cuesta un pintado— y
+     lo que se va es el difuminado, que es lo caro. */
+  #urlbar[breakout-extend][zen-floating-urlbar='true']::backdrop {
+    backdrop-filter: none !important;
+  }
+
+  /* Y el de la pagina igual: un `filter` obliga a Gecko a pintar el browser en
+     una superficie aparte, que es justo lo que este modo evita. Al buscar se
+     queda el velo, sin difuminado. */
+  :root:has(#urlbar[breakout-extend][zen-floating-urlbar='true'])
+    #tabbrowser-tabpanels
+    browser[type='content'] {
+    filter: none !important;
+    scale: none !important;
+  }
+
+  /* El de la vista rapida se va por el mismo motivo, pero AQUI EL VELO NO SOLO
+     SE QUEDA: se queda y es lo unico que separa las dos paginas. Sin blur y con
+     el velo del contenido, volveria a leerse el texto de abajo. */
+  #tabbrowser-tabpanels
+    .browserSidebarContainer.zen-glance-background
+    browser[type='content'] {
+    filter: none !important;
+    scale: none !important;
+  }
+
+  .zen-toolbar-background {
+    background: color-mix(
+      in srgb,
+      var(--az-tint-color-e) 82%,
+      transparent
+    ) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. Accesibilidad
+   Cuando el sistema dice que no quiere transparencias, el compositor deja de
+   dibujar cristal y este mod se queda quitando capas opacas sin nada detras:
+   la ventana acabaria semitransparente sobre negro. Aqui se restaura el aspecto
+   original de Zen.
+
+   La misma media feature cubre los dos sistemas, que es la razon de que esta
+   seccion no se bifurque:
+     Windows  Configuracion > Personalizacion > Colores > Efectos de transparencia
+     macOS    Ajustes > Accesibilidad > Pantalla > Reducir transparencia
+
+   En macOS ademas es mas necesario que en Windows, porque "Reducir
+   transparencia" no desmonta la `NSVisualEffectView`: la deja montada y la
+   pinta opaca. Sin esta salvaguarda el resultado no seria una ventana sin
+   cristal, sino una ventana con una lamina gris encima.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-transparency: reduce) {
+  #zen-main-app-wrapper {
+    background: light-dark(rgb(235, 235, 235), #1b1b1b) !important;
+  }
+
+  /* El velo de la 3.5 se pinta sobre un material que ya no es transparente. */
+  @media (-moz-platform: macos) {
+    #zen-browser-background {
+      box-shadow: none !important;
+    }
+  }
+
+  .zen-browser-generic-background {
+    background: transparent !important;
+  }
+
+  .zen-browser-generic-background::after {
+    opacity: var(--zen-background-opacity, 1) !important;
+  }
+
+  .zen-browser-generic-background::before {
+    opacity: calc(1 - var(--zen-background-opacity, 1)) !important;
+  }
+
+  #tabbrowser-tabpanels browser[type='content'],
+  #tabbrowser-tabpanels browser[type='content'][transparent='true'],
+  #tabbrowser-tabpanels
+    .browserSidebarContainer.zen-glance-overlay
+    browser[type='content'][transparent='true'] {
+    background: light-dark(rgb(255, 255, 255), rgb(32, 32, 32)) !important;
+  }
+
+  /* Y sin difuminar la de detras: aqui el sistema ha pedido que no haya
+     transparencias, y una pagina borrosa detras de otra opaca es gasto sin
+     efecto. */
+  #tabbrowser-tabpanels
+    .browserSidebarContainer.zen-glance-background
+    browser[type='content'] {
+    filter: none !important;
+    scale: none !important;
+  }
+
+  .zen-toolbar-background,
+  menupopup::part(content),
+  panel[type='arrow']::part(content) {
+    backdrop-filter: none !important;
+  }
+
+  /* Del buscador flotante se va el cristal del marco, que es el efecto de
+     transparencia. El velo y el difuminado de la pagina se quedan: son un color
+     plano y un `filter`, ninguno de los dos depende de que haya transparencia,
+     y son justo lo que hace legible lo que estas escribiendo. */
+  #urlbar[breakout-extend][zen-floating-urlbar='true']::backdrop {
+    backdrop-filter: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   10. HOOKS DE COMPATIBILIDAD
+   Punto de enganche para otro mod/plugin que tambien toque fondos.
+   Reglas practicas al combinar:
+     - Si el otro mod pinta un fondo opaco, sobreescribelo con
+       `background: var(--az-veil) !important` en su selector.
+     - Reutiliza estos tokens en lugar de inventar colores nuevos, asi la
+       intensidad del dropdown sigue mandando sobre todo:
+         --az-veil          velo del marco
+         --az-content-veil  velo del area de contenido
+         --az-panel-veil    velo de popups
+         --az-scrim-veil    velo de ventana entera al buscar
+         --az-hairline      borde de 1px sobre cristal
+         --az-blur-e        radio de blur interno
+     - Los mods se concatenan en zen-themes.css por orden de instalacion;
+       si el otro mod se instala DESPUES y usa !important, gana el. En ese
+       caso reinstala este mod (o baja su prioridad quitando el !important
+       del selector que choque).
+   -------------------------------------------------------------------------- */

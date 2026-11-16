@@ -1,0 +1,253 @@
+/* ==========================================================================
+   Zen Motion — v1.0.2
+   Movimiento y tipografia para Zen Browser. Companero de Acrylic Zen.
+   --------------------------------------------------------------------------
+   POR QUE UN MOD APARTE
+   El cristal y el movimiento son cosas distintas: uno puede gustarte sin el
+   otro, y separados se pueden desactivar por separado desde Ajustes.
+
+   QUE NO SE TOCA, Y POR QUE
+   Zen desactiva a proposito las animaciones de menus y paneles cuando hay
+   backdrop de Windows (ver zen-panel-ui.css: `&::part(content) { animation:
+   none !important }` dentro de `@media (-moz-windows-mica-popups)`). El motivo
+   es que el backdrop lo dibuja DWM fuera de la ventana y no puede animarse con
+   ella: el fondo se queda quieto mientras el contenido se mueve, y el desfase
+   canta. Aqui se respeta esa decision. Se anima todo lo demas, que es lo que
+   si esta bajo nuestro control.
+
+   Lo mismo vale en macOS por el mismo motivo, y no hace falta escribir nada: la
+   vibrancy de un popover tampoco se anima con su contenido, y esos popups los
+   monta AppKit. La diferencia es que ahi ni siquiera hay una regla de Zen que
+   respetar, porque el sistema no deja llegar tan lejos.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* Duracion base. El preset "smooth" es el equilibrio: por debajo de 120ms el
+     ojo no llega a leer el movimiento y parece un salto; por encima de 350ms
+     la interfaz se siente lenta al usarla muchas veces al dia. */
+  --zm-dur: 0.2s;
+  --zm-dur-fast: 0.12s;
+
+  /* Curva de salida suave: arranca rapido y frena al final. Es la que se
+     percibe como "responde al instante" sin ser brusca. */
+  --zm-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --zm-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* La cara elegida es Montserrat; el resto de la pila es el respaldo, y por eso
+     lleva las tipografias de interfaz de los dos sistemas. Sin `SF Pro` y
+     `-apple-system`, un Mac sin Montserrat instalada se caia al `sans-serif`
+     generico —Helvetica— en vez de a la tipografia del sistema, y la interfaz
+     se veia de otra epoca. Al reves pasaba lo mismo: `Segoe UI` no existe en
+     macOS. Una sola pila con los dos respaldos deja que cada sistema coja el
+     suyo y ninguno se quede sin nada. */
+  --zm-font:
+    'Montserrat', 'SF Pro Text', -apple-system, 'Segoe UI Variable Text',
+    'Segoe UI', system-ui, sans-serif;
+
+  /* Valores efectivos: la preferencia del usuario gana al preset */
+  --zm-dur-e: var(--zen-motion-duration, var(--zm-dur));
+  --zm-font-e: var(--zen-motion-font, var(--zm-font));
+}
+
+/* Presets del desplegable de velocidad */
+:root:has(#theme-Zen-Motion[zen-motion-speed='snappy']) {
+  --zm-dur: 0.12s;
+  --zm-dur-fast: 0.08s;
+}
+
+:root:has(#theme-Zen-Motion[zen-motion-speed='smooth']) {
+  --zm-dur: 0.2s;
+  --zm-dur-fast: 0.12s;
+}
+
+:root:has(#theme-Zen-Motion[zen-motion-speed='cinematic']) {
+  --zm-dur: 0.34s;
+  --zm-dur-fast: 0.2s;
+}
+
+/* --------------------------------------------------------------------------
+   2. Tipografia
+   Montserrat instalada solo trae Regular, Bold e Italic. Sin Medium ni
+   SemiBold, cualquier peso 500/600 que pida la interfaz se falsificaria
+   engordando el trazo, que es justo lo que hace que una tipografia se vea
+   sucia. Con `font-synthesis: none` el motor coge el peso real mas cercano en
+   lugar de inventarselo.
+   -------------------------------------------------------------------------- */
+@media -moz-pref('zen-motion.font-enabled') {
+  :root:is(#main-window, [taskbartab]),
+  :root:is(#main-window, [taskbartab]) *,
+  menupopup,
+  menupopup *,
+  panel,
+  panel * {
+    font-family: var(--zm-font-e) !important;
+    font-synthesis: none;
+  }
+
+  /* Montserrat es geometrica y ancha: sin esto los textos de interfaz quedan
+     algo apretados entre si a tamano pequeno. */
+  #urlbar,
+  .tabbrowser-tab,
+  toolbarbutton,
+  menuitem {
+    letter-spacing: 0.006em;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. El buscador (Ctrl+T y Ctrl+L)
+   `[breakout-extend]` es el estado expandido y `[zen-floating-urlbar]` el de
+   paleta flotante: son los dos que se ven al pulsar Ctrl+T.
+   -------------------------------------------------------------------------- */
+@keyframes zm-urlbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media -moz-pref('zen-motion.urlbar') {
+  #urlbar[breakout-extend] .urlbar-background {
+    animation: zm-urlbar-in var(--zm-dur-e) var(--zm-ease-out) both;
+    border-radius: 16px !important;
+  }
+
+  /* El campo respira al abrirse en vez de aparecer de golpe */
+  #urlbar[breakout-extend] .urlbar-input-container {
+    transition: padding var(--zm-dur-e) var(--zm-ease);
+  }
+
+  /* Resultados en cascada. El escalonado se nota mucho mas que animarlos a la
+     vez: la mirada sigue la lista de arriba abajo en lugar de recibirla
+     entera. 18ms entre filas es suficiente para leerlo como secuencia sin
+     retrasar la ultima. */
+  @keyframes zm-row-in {
+    from {
+      opacity: 0;
+      transform: translateY(7px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  #urlbar[open] .urlbarView-row {
+    animation: zm-row-in calc(var(--zm-dur-e) * 0.9) var(--zm-ease-out) backwards;
+    border-radius: 10px;
+    margin-inline: 6px;
+    transition: background var(--zm-dur-fast) var(--zm-ease);
+  }
+
+  #urlbar[open] .urlbarView-row:nth-child(1) { animation-delay: 0ms; }
+  #urlbar[open] .urlbarView-row:nth-child(2) { animation-delay: 18ms; }
+  #urlbar[open] .urlbarView-row:nth-child(3) { animation-delay: 36ms; }
+  #urlbar[open] .urlbarView-row:nth-child(4) { animation-delay: 54ms; }
+  #urlbar[open] .urlbarView-row:nth-child(5) { animation-delay: 72ms; }
+  #urlbar[open] .urlbarView-row:nth-child(6) { animation-delay: 90ms; }
+  #urlbar[open] .urlbarView-row:nth-child(7) { animation-delay: 108ms; }
+  #urlbar[open] .urlbarView-row:nth-child(n + 8) { animation-delay: 126ms; }
+
+  #urlbar[open] .urlbarView-row[selected],
+  #urlbar[open] .urlbarView-row:hover {
+    background-color: color-mix(in srgb, currentColor 8%, transparent) !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Pestanas
+   -------------------------------------------------------------------------- */
+@keyframes zm-tab-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media -moz-pref('zen-motion.tabs') {
+  /* Firefox pone [fadein] en la pestana justo despues de insertarla: es el
+     unico enganche fiable para animar la apertura. */
+  .tabbrowser-tab[fadein]:not([pinned]) {
+    animation: zm-tab-in var(--zm-dur-e) var(--zm-ease-out) both;
+  }
+
+  .tabbrowser-tab .tab-content {
+    transition:
+      transform var(--zm-dur-fast) var(--zm-ease),
+      background-color var(--zm-dur-fast) var(--zm-ease);
+  }
+
+  .tabbrowser-tab:hover:not([selected]) .tab-content {
+    transform: translateX(2px);
+  }
+
+  /* El indicador de pestana activa se desliza en vez de saltar */
+  .tabbrowser-tab[selected] .tab-content {
+    transition:
+      transform var(--zm-dur-e) var(--zm-ease-out),
+      background-color var(--zm-dur-e) var(--zm-ease-out);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Micro-interacciones
+   Lo que separa una interfaz que "se siente bien" de una que no suele ser
+   esto, no las animaciones grandes: que cada cosa que pulsas responda.
+   -------------------------------------------------------------------------- */
+/* La fila de abajo de la barra lateral se llama `#zen-sidebar-foot-buttons`
+   (browser.xhtml). `#zen-sidebar-bottom-buttons` fue su nombre en versiones
+   anteriores de Zen y se conserva a proposito: un id que no encaja con nada no
+   cuesta nada, y asi el mismo CSS vale para las dos. Lo que NO se puede meter en
+   una lista asi es sintaxis nueva sin probar — un selector mal formado invalida
+   la regla entera, incluidos los que si valian. Ver dev/MAINTENANCE.md. */
+toolbarbutton,
+.toolbarbutton-1,
+#zen-sidebar-foot-buttons toolbarbutton,
+#zen-sidebar-bottom-buttons toolbarbutton {
+  transition:
+    transform var(--zm-dur-fast) var(--zm-ease),
+    background-color var(--zm-dur-fast) var(--zm-ease);
+}
+
+toolbarbutton:active,
+.toolbarbutton-1:active {
+  transform: scale(0.92);
+}
+
+/* Los botones de la barra lateral crecen un pelo al apuntarlos */
+#zen-sidebar-foot-buttons toolbarbutton:hover,
+#zen-sidebar-bottom-buttons toolbarbutton:hover,
+#zen-workspaces-button:hover {
+  transform: scale(1.06);
+}
+
+/* --------------------------------------------------------------------------
+   6. Accesibilidad
+   Si el sistema pide menos movimiento, se respeta. No se pone `animation:
+   none` porque algunas animaciones de Zen tienen `forwards` y dejarlas sin
+   ejecutar congelaria elementos en su estado inicial; con una duracion
+   minima se aplican igual, pero instantaneas.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root:is(#main-window, [taskbartab]) *,
+  :root:is(#main-window, [taskbartab]) *::before,
+  :root:is(#main-window, [taskbartab]) *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

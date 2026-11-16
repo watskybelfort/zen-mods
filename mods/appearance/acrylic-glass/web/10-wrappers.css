@@ -1,0 +1,46 @@
+/* ==========================================================================
+   Acrylic Web — contenedores raiz (nivel "full", el de por defecto)
+   --------------------------------------------------------------------------
+   Muchos frameworks no pintan el fondo en <body> sino en su nodo de montaje:
+   #root en React, #__next en Next.js, #app en Vue, #__nuxt en Nuxt. Con solo el
+   nivel base esos sitios siguen opacos.
+
+   Estos IDs son contenedores de pagina por definicion, nunca tarjetas ni
+   paneles, asi que vaciarlos es seguro: lo que va dentro conserva su fondo.
+
+   Todo lo de aqui va guardado por `:where(html:not([zen-sin-cristal]))`, el
+   interruptor por sitio del mod Zen Sin Cristal. Lo explica 00-base.css, que es
+   donde se define la guarda y por que se escribe asi y no de otra forma.
+   ========================================================================== */
+
+:where(html:not([zen-sin-cristal])) #root,
+:where(html:not([zen-sin-cristal])) #__next,
+:where(html:not([zen-sin-cristal])) #__nuxt,
+:where(html:not([zen-sin-cristal])) #___gatsby,
+:where(html:not([zen-sin-cristal])) #app,
+:where(html:not([zen-sin-cristal])) #App,
+:where(html:not([zen-sin-cristal])) #page,
+:where(html:not([zen-sin-cristal])) #wrapper,
+:where(html:not([zen-sin-cristal])) #page-wrapper,
+:where(html:not([zen-sin-cristal])) #main-wrapper,
+:where(html:not([zen-sin-cristal])) #content-wrapper,
+:where(html:not([zen-sin-cristal])) #__docusaurus,
+:where(html:not([zen-sin-cristal])) #svelte,
+:where(html:not([zen-sin-cristal])) #q-app {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* Degradados e imagenes a pantalla completa sobre el propio body: a diferencia
+   de una portada, estos son puro fondo de pagina y tapan el cristal entero. */
+:where(html:not([zen-sin-cristal])) body {
+  background-image: none !important;
+}
+
+/* Capas de overlay que algunos sitios dejan siempre presentes como fondo. */
+:where(html:not([zen-sin-cristal])) body > .background,
+:where(html:not([zen-sin-cristal])) body > .bg,
+:where(html:not([zen-sin-cristal])) body > .page-background {
+  background-color: transparent !important;
+  background-image: none !important;
+}

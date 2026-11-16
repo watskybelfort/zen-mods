@@ -1,0 +1,30 @@
+/* ==========================================================================
+   Acrylic Web — nivel agresivo (opt-in: -WebLevel aggressive)
+   --------------------------------------------------------------------------
+   Vacia el fondo de los primeros descendientes del body y de los landmarks
+   principales. Con esto casi cualquier sitio queda de cristal, pero es un
+   cheque en blanco: si un sitio pone su tarjeta de contenido directamente como
+   `body > div`, esa tarjeta tambien se vuelve transparente y el texto queda
+   flotando sobre el acrilico.
+
+   Usalo si quieres el maximo efecto y no te importa anadir excepciones en
+   90-exclusions.css para los sitios que se rompan. O apagarlos de uno en uno
+   desde el propio navegador: este nivel es el que mas se beneficia del
+   interruptor por sitio de Zen Sin Cristal, y por eso tambien va guardado por
+   `:where(html:not([zen-sin-cristal]))`. La guarda la explica 00-base.css.
+   ========================================================================== */
+
+:where(html:not([zen-sin-cristal])) body > div,
+:where(html:not([zen-sin-cristal])) body > main,
+:where(html:not([zen-sin-cristal])) body > section,
+:where(html:not([zen-sin-cristal])) body > article,
+:where(html:not([zen-sin-cristal])) main,
+:where(html:not([zen-sin-cristal])) [role='main'] {
+  background-color: transparent !important;
+}
+
+/* Segundo nivel: los layouts de dos capas (shell + contenido) muy comunes en
+   aplicaciones web. */
+:where(html:not([zen-sin-cristal])) body > div > div:first-child {
+  background-color: transparent !important;
+}
