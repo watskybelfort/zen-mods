@@ -26,6 +26,36 @@ From a terminal, without questions:
 node installer/menu.mjs --mods acrylic-glass,immersive-web,phone-remote
 ```
 
+## Windows: the acrylic comes from Windhawk
+
+On Windows, the glass you see behind Zen is drawn by the
+[**Translucent Windows**](https://windhawk.net/mods/translucent-windows) mod by
+**Undisputed00x**, running in [Windhawk](https://windhawk.net). All the credit for the
+effect itself goes to that mod: Acrylic Glass only removes the opaque layers Zen paints on
+top so the effect shows through. Without it, Zen's window stays solid.
+
+1. Install [Windhawk](https://windhawk.net).
+2. In Windhawk, search for **Translucent Windows** and install it.
+3. In its settings, these are the values used here:
+
+   | Setting | Value |
+   | --- | --- |
+   | Effect type (`type`) | **Acrylic blur** |
+   | Blur tint (`AccentBlurBehind`) | `8C000000` |
+   | Extend frame into the client area (`ExtendFrame`) | on |
+   | Immersive dark title bar (`ImmersiveDarkTitle`) | on |
+   | Background effects (`BackgroundEffects`) | Acrylic blur, `3A232323` |
+   | Menu/flyout effects (`FlyoutsEffects`) | on |
+
+macOS doesn't need anything extra: Zen's own vibrancy does the job.
+
+## Languages
+
+Every mod speaks English and Spanish. The YouTube Music mods follow the language of your
+YouTube Music account, the right-click menus follow Zen's language, the phone app follows the
+phone, and the installer asks. To force one everywhere, set `zen.mods.idioma` to `en` or `es`
+in `about:config` (`auto` by default).
+
 **After a Zen update** the native mods stop working, because the update replaces Zen's install
 folder and the loader with it. Run the installer again and pick any native mod.
 

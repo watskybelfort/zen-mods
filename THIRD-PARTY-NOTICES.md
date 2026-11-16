@@ -13,3 +13,10 @@ This repository includes work by others. Each keeps its own license, shipped nex
 Services used at runtime, not bundled: lyrics from [LRCLIB](https://lrclib.net) and other
 providers (Live Lyrics), and the my-internet catalog downloaded every two hours (Immersive Web).
 YouTube Music is used through its own web page, signed in with your own account.
+
+## Translucent Windows (Windhawk mod) — not included
+
+The Windows acrylic that Acrylic Glass shows comes from the
+[Translucent Windows](https://windhawk.net/mods/translucent-windows) mod by Undisputed00x,
+installed separately through [Windhawk](https://windhawk.net). No code from it is copied
+into this repository; it is credited here because the effect depends on it.

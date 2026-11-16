@@ -33,12 +33,12 @@ Prefer to do it by hand? **[Manual install guide → INSTALL.md](INSTALL.md)**
 
 | Mod | What it does |
 | --- | --- |
-| **[Acrylic Glass](mods/appearance/acrylic-glass/)** | Real Windows 11 acrylic (DWM) or macOS vibrancy behind Zen, without Mica For Everyone or any injected DLL. Websites become transparent so the glass shows through, with hand-made fixes for dozens of sites. Intensity and tint in *Settings → Zen Mods*. |
-| **[Glass Toggle](mods/appearance/glass-toggle/)** | Right-click any page → *Zen Cristal* → see that site without glass. Remembered per site. |
+| **[Acrylic Glass](mods/appearance/acrylic-glass/)** | Windows 11 acrylic or macOS vibrancy behind Zen. On Windows the acrylic itself comes from the [Translucent Windows](https://windhawk.net/mods/translucent-windows) Windhawk mod by Undisputed00x ([see below](#windows-the-acrylic-comes-from-windhawk)); this mod makes Zen let it through. Websites become transparent so the glass shows through, with hand-made fixes for dozens of sites. Intensity and tint in *Settings → Zen Mods*. |
+| **[Glass Toggle](mods/appearance/glass-toggle/)** | Right-click any page → *Glass Toggle* → see that site without glass. Remembered per site. |
 | **[Motion](mods/appearance/motion/)** | Animated search bar with cascading results, tab and menu micro-interactions, Montserrat as the UI font (install [Montserrat](https://fonts.google.com/specimen/Montserrat) for the full look). |
 | **[Traffic Lights](mods/appearance/traffic-lights/)** | macOS-style minimize, maximize and close buttons. Size, colors and order are configurable. |
 | **[Dark Mode](mods/appearance/dark-mode/)** | A real dark mode for any page from the right-click menu, powered by Dark Reader. It recolors instead of inverting, and leaves the glass alone. |
-| **[Immersive Web](mods/appearance/immersive-web/)** | Transparent, clean websites with effects: hidden clutter, hover reveals, YouTube's immersive search, the YouTube Music side panel that slides in on hover… 667 sites from the [my-internet](https://github.com/sameerasw/my-internet) catalog. A native replacement for the Zen Internet extension, byte-for-byte identical output. Right-click → *Zen Inmersivo* to toggle each feature per site. |
+| **[Immersive Web](mods/appearance/immersive-web/)** | Transparent, clean websites with effects: hidden clutter, hover reveals, YouTube's immersive search, the YouTube Music side panel that slides in on hover… 667 sites from the [my-internet](https://github.com/sameerasw/my-internet) catalog. A native replacement for the Zen Internet extension, byte-for-byte identical output. Right-click → *Immersive Web* to toggle each feature per site. |
 
 ### YouTube Music
 
@@ -56,6 +56,36 @@ Prefer to do it by hand? **[Manual install guide → INSTALL.md](INSTALL.md)**
 | **[Web Apps](mods/utilities/web-apps/)** | Hides Zen's sidebar in web app windows, where it is always empty. |
 | **[Agent Indicator](mods/utilities/agent-indicator/)** | A floating pill that shows when an AI agent is connected to the browser session. |
 | **[Privacy Hardening](mods/utilities/privacy-hardening/)** | Prefs that shrink the attack surface (balanced or strict level). |
+
+### Windows: the acrylic comes from Windhawk
+
+On Windows, the glass you see behind Zen is drawn by the
+[**Translucent Windows**](https://windhawk.net/mods/translucent-windows) mod by
+**Undisputed00x**, running in [Windhawk](https://windhawk.net). All the credit for the
+effect itself goes to that mod: Acrylic Glass only removes the opaque layers Zen paints on
+top so the effect shows through. Without it, Zen's window stays solid.
+
+1. Install [Windhawk](https://windhawk.net).
+2. In Windhawk, search for **Translucent Windows** and install it.
+3. In its settings, these are the values used here:
+
+   | Setting | Value |
+   | --- | --- |
+   | Effect type (`type`) | **Acrylic blur** |
+   | Blur tint (`AccentBlurBehind`) | `8C000000` |
+   | Extend frame into the client area (`ExtendFrame`) | on |
+   | Immersive dark title bar (`ImmersiveDarkTitle`) | on |
+   | Background effects (`BackgroundEffects`) | Acrylic blur, `3A232323` |
+   | Menu/flyout effects (`FlyoutsEffects`) | on |
+
+macOS doesn't need anything extra: Zen's own vibrancy does the job.
+
+### Languages
+
+Every mod speaks English and Spanish. The YouTube Music mods follow the language of your
+YouTube Music account, the right-click menus follow Zen's language, the phone app follows the
+phone, and the installer asks. To force one everywhere, set `zen.mods.idioma` to `en` or `es`
+in `about:config` (`auto` by default).
 
 ---
 
@@ -123,6 +153,7 @@ node dev/tools/probar-lrc.mjs        # Live Lyrics parser
 
 ## Credits
 
+- [Translucent Windows](https://windhawk.net/mods/translucent-windows) by Undisputed00x, on [Windhawk](https://windhawk.net): the Windows acrylic behind Acrylic Glass. None of its code is included here.
 - [Dark Reader](https://github.com/darkreader/darkreader) (MIT), the engine of Dark Mode.
 - [my-internet](https://github.com/sameerasw/my-internet) and [Zen Internet](https://github.com/sameerasw/zeninternet) by sameerasw (MIT), the style catalog and the reference behind Immersive Web.
 - [Geist](https://github.com/vercel/geist-font) (SIL OFL 1.1) and [Phosphor Icons](https://phosphoricons.com) (MIT), in the Phone Remote web app.

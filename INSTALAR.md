@@ -34,6 +34,36 @@ node installer/menu.mjs --es --mods acrylic-glass,immersive-web,phone-remote
 la carpeta de instalación de Zen y se lleva el cargador con ella. Vuelve a abrir el instalador y
 elige cualquier mod nativo.
 
+## Windows: el acrílico sale de Windhawk
+
+En Windows, el cristal que se ve detrás de Zen lo dibuja el mod
+[**Translucent Windows**](https://windhawk.net/mods/translucent-windows) de
+**Undisputed00x**, que funciona dentro de [Windhawk](https://windhawk.net). Todo el mérito del
+efecto es de ese mod: Acrylic Glass solo quita las capas opacas que Zen pinta encima para que
+se vea. Sin él, la ventana de Zen se queda sólida.
+
+1. Instala [Windhawk](https://windhawk.net).
+2. En Windhawk, busca **Translucent Windows** e instálalo.
+3. En sus ajustes, estos son los valores que se usan aquí:
+
+   | Ajuste | Valor |
+   | --- | --- |
+   | Tipo de efecto (`type`) | **Acrylic blur** |
+   | Tinte del desenfoque (`AccentBlurBehind`) | `8C000000` |
+   | Extender el marco al contenido (`ExtendFrame`) | activado |
+   | Barra de título oscura (`ImmersiveDarkTitle`) | activado |
+   | Efectos de fondo (`BackgroundEffects`) | Acrylic blur, `3A232323` |
+   | Efectos en menús (`FlyoutsEffects`) | activado |
+
+En macOS no hace falta nada más: basta con la vibrancy del propio Zen.
+
+## Idiomas
+
+Todos los mods hablan inglés y español. Los de YouTube Music siguen el idioma de tu cuenta de
+YouTube Music, los menús del clic derecho el de Zen, la app del móvil el del móvil, y el
+instalador pregunta. Para forzar uno en todo, pon `zen.mods.idioma` en `es` o `en` en
+`about:config` (`auto` por defecto).
+
 ## Los mods
 
 | # | Mod | Qué hace | Tipo |

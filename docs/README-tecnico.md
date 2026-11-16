@@ -3,15 +3,17 @@
 Cristal **real** del sistema en Zen Browser, sin herramientas externas y sin
 tocar ninguna otra aplicacion.
 
-En **Windows 11** es el acrilico de DWM, sin Mica For Everyone. Mica For
-Everyone inyecta un DLL en procesos ajenos para forzar el backdrop de DWM desde
-fuera. Aqui no hace falta: Gecko ya sabe pedirle a DWM el backdrop de su propia
-ventana, solo hay que decirle cual.
+En **Windows 11** es el acrilico de DWM que pone el mod
+[Translucent Windows](https://windhawk.net/mods/translucent-windows) de
+Undisputed00x, dentro de [Windhawk](https://windhawk.net) (ajustes en INSTALAR.md).
+Medido el 16-11-2026 con `dev/tools/cristal.mjs`: el backdrop que Gecko pide por su
+cuenta se queda en AUTO, asi que el acrilico que se ve es el de ese mod, y este
+repo solo quita las capas opacas de Zen para que se vea.
 
 En **macOS** es la vibrancy de Cocoa: una `NSVisualEffectView` que Gecko monta
-solo, dentro del propio proceso. Tampoco hay nada que inyectar.
+solo, dentro del propio proceso. No hay nada que inyectar.
 
-En los dos casos: cero procesos residentes, cero inyeccion, y un efecto que solo
+En macOS: cero procesos residentes, cero inyeccion, y un efecto que solo
 afecta a Zen.
 
 ## Como funciona

@@ -1,9 +1,14 @@
 # Acrylic Zen
 
-Cristal nativo del sistema dentro de Zen Browser: acrilico de Windows 11 **sin
-Mica For Everyone**, y vibrancy de macOS sin tocar nada del sistema.
+Cristal del sistema detrás de Zen Browser: acrílico en Windows 11 y vibrancy en macOS.
 
-El efecto no lo dibuja este CSS. Lo dibuja el compositor —DWM en Windows, una
+**En Windows, el acrílico lo pone el mod
+[Translucent Windows](https://windhawk.net/mods/translucent-windows) de Undisputed00x, en
+[Windhawk](https://windhawk.net).** Es gracias a ese mod que el efecto funciona: sin él la
+ventana de Zen se queda sólida. Sus ajustes, más abajo en *Requisitos*.
+
+El efecto no lo dibuja este CSS. Lo dibuja el compositor —DWM en Windows, a través de
+Translucent Windows; una
 `NSVisualEffectView` en macOS— y este mod solo se encarga de retirar las capas
 opacas que Zen pinta encima, para que ese cristal se vea. Como son las mismas
 capas en los dos sistemas, el CSS es casi todo compartido.
@@ -16,6 +21,10 @@ Comunes:
   visible: el `background-color` translucido que aplica se veria sobre el fondo
   opaco de siempre.
 - Transparencias activadas en el sistema.
+- En Windows, [Windhawk](https://windhawk.net) con el mod **Translucent Windows**
+  (Undisputed00x): tipo *Acrylic blur*, `AccentBlurBehind` `8C000000`, `ExtendFrame` y
+  `ImmersiveDarkTitle` activados, `BackgroundEffects` en *Acrylic blur* `3A232323` y
+  `FlyoutsEffects` activado.
 
 | | Windows | macOS |
 | --- | --- | --- |
