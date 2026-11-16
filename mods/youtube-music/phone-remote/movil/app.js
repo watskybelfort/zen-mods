@@ -11,6 +11,139 @@
 (() => {
   'use strict';
 
+  /* EL IDIOMA: el del movil. En espanol si el movil esta en espanol; si no, en
+     ingles. El HTML viene escrito en espanol y se traduce al cargar con el mismo
+     diccionario que los textos de aqui. */
+  const ES = /^es\b/i.test(navigator.language || '');
+  const EN = {
+    "Remoto": "Remote",
+    "Conectando con el PC…": "Connecting to the PC…",
+    "Si no avanza, comprueba que el móvil está en la misma wifi y que Zen está abierto.": "If it doesn't move on, check that the phone is on the same Wi-Fi and that Zen is open.",
+    "Reintentar": "Try again",
+    "Controla la música del PC": "Control your PC's music",
+    "En el PC, en YouTube Music, pulsa el botón del móvil de la barra del reproductor y escanea el código. O escribe aquí el número que sale debajo.": "On the PC, in YouTube Music, tap the phone button in the player bar and scan the code. Or type the number shown under it here.",
+    "Código del PC": "PC code",
+    "Emparejar": "Pair",
+    "Atrás": "Back",
+    "Inicio": "Home",
+    "YouTube Music no está abierto en el PC": "YouTube Music isn't open on the PC",
+    "Ábrelo en Zen y aparecerá aquí.": "Open it in Zen and it'll show up here.",
+    "Abrir en el PC": "Open on the PC",
+    "Sonando": "Now playing",
+    "Bajar": "Close",
+    "Ver la letra": "Show lyrics",
+    "No me gusta": "Dislike",
+    "Me gusta": "Like",
+    "Anuncio en el PC": "Ad playing on the PC",
+    "Posición": "Position",
+    "Aleatorio": "Shuffle",
+    "Anterior": "Previous",
+    "Reproducir": "Play",
+    "Siguiente": "Next",
+    "Repetir": "Repeat",
+    "Silenciar": "Mute",
+    "Volumen del PC": "PC volume",
+    "Buscar": "Search",
+    "Canciones, artistas, álbumes": "Songs, artists, albums",
+    "Buscar en YouTube Music": "Search YouTube Music",
+    "Borrar": "Clear",
+    "Biblioteca": "Library",
+    "Cola": "Queue",
+    "Letra": "Lyrics",
+    "Detalle": "Details",
+    "Ver lo que suena": "Show what is playing",
+    "Secciones": "Sections",
+    "Sin conexión con el PC. Reintentando…": "No connection to the PC. Retrying…",
+    "Canción": "Song",
+    "Vídeo": "Video",
+    "Álbum": "Album",
+    "Artista": "Artist",
+    "Playlist": "Playlist",
+    "Episodio": "Episode",
+    "Podcast": "Podcast",
+    "El PC no contestó a tiempo": "The PC didn't answer in time",
+    "Demasiado rápido, espera un momento": "Too fast, wait a moment",
+    "Esa lista ya no está. Vuelve a abrirla.": "That list isn't there anymore. Open it again.",
+    "No se pudo: ": "Couldn't do it: ",
+    "Ese código no es. Mira el que sale ahora en el PC.": "That's not the code. Check the one showing on the PC now.",
+    "Abre primero el panel del móvil en YouTube Music, en el PC.": "First open the phone panel in YouTube Music, on the PC.",
+    "Demasiados intentos. Espera unos minutos.": "Too many attempts. Wait a few minutes.",
+    "No se pudo emparejar. ¿Estás en la misma wifi que el PC?": "Couldn't pair. Are you on the same Wi-Fi as the PC?",
+    "Son seis cifras.": "It's six digits.",
+    "Sin título": "Untitled",
+    "Portada de ": "Cover of ",
+    "Pausar": "Pause",
+    "Repetir una": "Repeat one",
+    "Repetir todo": "Repeat all",
+    "Quitar silencio": "Unmute",
+    "Abriendo YouTube Music en el PC": "Opening YouTube Music on the PC",
+    "No se pudo abrir": "Couldn't open it",
+    "A continuación": "Up next",
+    "Sonando en el PC": "Playing on the PC",
+    "Explícito": "Explicit",
+    "Más opciones de ": "More options for ",
+    "Cargar más": "Load more",
+    "Cargando…": "Loading…",
+    "Reproducir en aleatorio": "Shuffle play",
+    "Sonando en aleatorio": "Shuffling",
+    "Reproducir a continuación": "Play next",
+    "Sonará a continuación": "Plays next",
+    "Añadir a la cola": "Add to queue",
+    "Añadido a la cola": "Added to queue",
+    "Iniciar radio": "Start radio",
+    "Radio en el PC": "Radio on the PC",
+    "Abrir": "Open",
+    "Radio": "Radio",
+    "Aquí no hay nada": "Nothing here",
+    "Esta página no tiene canciones que mostrar.": "This page has no songs to show.",
+    "Vuelve atrás e inténtalo otra vez.": "Go back and try again.",
+    "Sin resultados": "No results",
+    "Prueba con otras palabras.": "Try other words.",
+    "No se pudo buscar": "Couldn't search",
+    "Comprueba que YouTube Music sigue abierto en el PC.": "Check that YouTube Music is still open on the PC.",
+    "Todo": "All",
+    "Nada que sugerir todavía": "Nothing to suggest yet",
+    "Pon algo de música y YouTube Music empezará a recomendarte.": "Play some music and YouTube Music will start recommending.",
+    "No se pudo cargar el inicio": "Couldn't load Home",
+    "Playlists": "Playlists",
+    "Álbumes": "Albums",
+    "Artistas": "Artists",
+    "Canciones": "Songs",
+    "Historial": "History",
+    "Para ti": "For you",
+    "Inicia sesión en YouTube Music en el PC para ver tu biblioteca.": "Sign in to YouTube Music on the PC to see your library.",
+    "Esta sección está vacía.": "This section is empty.",
+    "No se pudo cargar": "Couldn't load it",
+    "La cola está vacía": "The queue is empty",
+    "Busca algo y pulsa «Añadir a la cola».": "Search for something and tap “Add to queue”.",
+    "No se pudo cargar la cola": "Couldn't load the queue",
+    "No se pudo traer la letra": "Couldn't get the lyrics",
+    "Letra Viva no está en el PC": "Live Lyrics isn't on the PC",
+    "La letra sale del mod Zen Letra Viva. Instálalo en Zen y aparecerá aquí.": "Lyrics come from the Live Lyrics mod. Install it in Zen and they'll show up here.",
+    "Buscando la letra…": "Looking for the lyrics…",
+    "Instrumental": "Instrumental",
+    "Sin letra": "No lyrics",
+    "Nadie tiene la letra de esta canción.": "Nobody has the lyrics for this song.",
+    "Esta letra no tiene tiempos: no se puede seguir.": "These lyrics have no timing, so they can't follow along.",
+    "Letra: ": "Lyrics: "
+  };
+  const T = (es) => (ES ? es : (EN[es] ?? es));
+  document.documentElement.lang = ES ? 'es' : 'en';
+  if (!ES) {
+    for (const n of document.querySelectorAll('[aria-label], [placeholder], [title], [alt]')) {
+      for (const a of ['aria-label', 'placeholder', 'title', 'alt']) {
+        const v = n.getAttribute(a);
+        if (v && EN[v]) n.setAttribute(a, EN[v]);
+      }
+    }
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let t = w.nextNode(); t; t = w.nextNode()) {
+      const k = t.nodeValue.replace(/\s+/g, ' ').trim();
+      if (k && EN[k]) t.nodeValue = t.nodeValue.replace(t.nodeValue.trim(), EN[k]);
+    }
+    document.title = EN[document.title] || document.title;
+  }
+
   const $ = (id) => document.getElementById(id);
   const crear = (tag, clase, texto) => {
     const n = document.createElement(tag);
@@ -40,7 +173,7 @@
     const ss = String(s % 60).padStart(2, '0');
     return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
   };
-  const TIPOS = { cancion: 'Canción', video: 'Vídeo', album: 'Álbum', artista: 'Artista', playlist: 'Playlist', episodio: 'Episodio', podcast: 'Podcast' };
+  const TIPOS = { cancion: T('Canción'), video: T('Vídeo'), album: T('Álbum'), artista: T('Artista'), playlist: T('Playlist'), episodio: T('Episodio'), podcast: T('Podcast') };
 
   // --- Red --------------------------------------------------------------------
   class ErrorApi extends Error {
@@ -75,17 +208,17 @@
   };
 
   const MENSAJES = {
-    'sin-pestana': 'YouTube Music no está abierto en el PC',
-    'la pestana no contesto': 'El PC no contestó a tiempo',
-    'despacio': 'Demasiado rápido, espera un momento',
-    'esa lista ya no esta; vuelve a abrirla': 'Esa lista ya no está. Vuelve a abrirla.',
+    'sin-pestana': T('YouTube Music no está abierto en el PC'),
+    'la pestana no contesto': T('El PC no contestó a tiempo'),
+    'despacio': T('Demasiado rápido, espera un momento'),
+    'esa lista ya no esta; vuelve a abrirla': T('Esa lista ya no está. Vuelve a abrirla.'),
   };
   const orden = async (nombre, args) => {
     try {
       const r = await api('/api/orden', { orden: nombre, args });
       return r.datos || {};
     } catch (e) {
-      if (e.estado !== 401) aviso(MENSAJES[e.message] || 'No se pudo: ' + e.message);
+      if (e.estado !== 401) aviso(MENSAJES[e.message] || T('No se pudo: ') + e.message);
       throw e;
     }
   };
@@ -116,17 +249,17 @@
       arrancar();
     } catch (e) {
       const m = e.cuerpo && e.cuerpo.error;
-      err.textContent = m === 'codigo-malo' ? 'Ese código no es. Mira el que sale ahora en el PC.'
-        : m === 'abre-el-panel' ? 'Abre primero el panel del móvil en YouTube Music, en el PC.'
-        : m === 'demasiados-intentos' ? 'Demasiados intentos. Espera unos minutos.'
-        : 'No se pudo emparejar. ¿Estás en la misma wifi que el PC?';
+      err.textContent = m === 'codigo-malo' ? T('Ese código no es. Mira el que sale ahora en el PC.')
+        : m === 'abre-el-panel' ? T('Abre primero el panel del móvil en YouTube Music, en el PC.')
+        : m === 'demasiados-intentos' ? T('Demasiados intentos. Espera unos minutos.')
+        : T('No se pudo emparejar. ¿Estás en la misma wifi que el PC?');
       mostrarEmparejar();
     }
   };
   $('form-codigo').addEventListener('submit', (e) => {
     e.preventDefault();
     const c = $('codigo').value.replace(/\D/g, '');
-    if (c.length !== 6) { $('codigo-error').textContent = 'Son seis cifras.'; return; }
+    if (c.length !== 6) { $('codigo-error').textContent = T('Son seis cifras.'); return; }
     emparejar(c);
   });
   $('codigo').addEventListener('input', () => {
@@ -204,11 +337,11 @@
       $('fondo').classList.remove('con-imagen');
       return;
     }
-    $('ahora-titulo').textContent = E.titulo || 'Sin título';
+    $('ahora-titulo').textContent = E.titulo || T('Sin título');
     $('ahora-titulo').classList.remove('cargando-texto');
     $('ahora-artista').textContent = [E.artista, E.album].filter(Boolean).join(' · ');
     ponerImg($('ahora-img'), E.img);
-    $('ahora-img').alt = E.titulo ? 'Portada de ' + E.titulo : '';
+    $('ahora-img').alt = E.titulo ? T('Portada de ') + E.titulo : '';
     const img = imgSegura(E.img);
     const fondo = $('fondo');
     if (img) {
@@ -222,12 +355,12 @@
     const tocar = E.sonando ? 'pausa' : 'play';
     $('i-tocar').setAttribute('href', '/iconos.svg#' + tocar);
     $('i-mini').setAttribute('href', '/iconos.svg#' + tocar);
-    $('b-tocar').setAttribute('aria-label', E.sonando ? 'Pausar' : 'Reproducir');
-    $('mini-tocar').setAttribute('aria-label', E.sonando ? 'Pausar' : 'Reproducir');
+    $('b-tocar').setAttribute('aria-label', E.sonando ? T('Pausar') : T('Reproducir'));
+    $('mini-tocar').setAttribute('aria-label', E.sonando ? T('Pausar') : T('Reproducir'));
     $('b-aleatorio').setAttribute('aria-pressed', String(!!E.aleatorio));
     $('b-repetir').setAttribute('aria-pressed', String(E.repetir !== 'NONE'));
     $('i-repetir').setAttribute('href', '/iconos.svg#' + (E.repetir === 'ONE' ? 'repetiruna' : 'repetir'));
-    $('b-repetir').setAttribute('aria-label', E.repetir === 'ONE' ? 'Repetir una' : E.repetir === 'ALL' ? 'Repetir todo' : 'Repetir');
+    $('b-repetir').setAttribute('aria-label', E.repetir === 'ONE' ? T('Repetir una') : E.repetir === 'ALL' ? T('Repetir todo') : T('Repetir'));
     $('b-megusta').setAttribute('aria-pressed', String(E.megusta === 'LIKE'));
     $('b-nomegusta').setAttribute('aria-pressed', String(E.megusta === 'DISLIKE'));
     $('b-megusta').disabled = $('b-nomegusta').disabled = !E.sesion;
@@ -239,7 +372,7 @@
     }
     $('b-silencio').setAttribute('aria-pressed', String(!!E.silencio));
     $('i-volumen').setAttribute('href', '/iconos.svg#' + (E.silencio || E.vol === 0 ? 'silencio' : E.vol < 40 ? 'volbajo' : 'volumen'));
-    $('b-silencio').setAttribute('aria-label', E.silencio ? 'Quitar silencio' : 'Silenciar');
+    $('b-silencio').setAttribute('aria-label', E.silencio ? T('Quitar silencio') : T('Silenciar'));
 
     $('mini-titulo').textContent = E.titulo || '';
     $('mini-artista').textContent = E.artista || '';
@@ -292,7 +425,7 @@
   pulsar('b-silencio', () => orden('silencio', { on: !(E && E.silencio) }).catch(() => {}));
   pulsar('mini-abrir', () => abrirSonando());
   pulsar('abrir-ytm', async () => {
-    try { await api('/api/orden', { orden: 'abrirYTM' }); aviso('Abriendo YouTube Music en el PC'); } catch (e) { aviso('No se pudo abrir'); }
+    try { await api('/api/orden', { orden: 'abrirYTM' }); aviso(T('Abriendo YouTube Music en el PC')); } catch (e) { aviso(T('No se pudo abrir')); }
   });
 
   const prog = $('progreso');
@@ -333,7 +466,7 @@
   let ultimaPestana = 'inicio';
   const PESTANAS = ['inicio', 'buscar', 'biblioteca', 'cola'];
   const pila = [];   // paginas de detalle abiertas, para "Atras"
-  const TITULOS = { inicio: 'Inicio', buscar: 'Buscar', biblioteca: 'Biblioteca', cola: 'A continuación', pagina: '', letra: 'Letra' };
+  const TITULOS = { inicio: T('Inicio'), buscar: T('Buscar'), biblioteca: T('Biblioteca'), cola: T('A continuación'), pagina: '', letra: T('Letra') };
 
   // --- Sonando: la hoja -------------------------------------------------------
   // Sube desde la mini barra y tapa la pestana en la que estabas, como en la app
@@ -460,7 +593,7 @@
   // lo demas suena.
   const usar = async (it) => {
     if (it.abre) { abrirDetalle(it); return; }
-    try { await orden('tocar', { ref: it.ref }); aviso('Sonando en el PC'); } catch (e) { /* ya avisado */ }
+    try { await orden('tocar', { ref: it.ref }); aviso(T('Sonando en el PC')); } catch (e) { /* ya avisado */ }
   };
 
   const filaDe = (it, opciones = {}) => {
@@ -480,7 +613,7 @@
     const t = crear('div', 'fila-texto');
     t.appendChild(crear('strong', null, it.titulo));
     const sub = crear('span');
-    if (it.explicito) { const e = crear('span', 'explicito', 'E'); e.setAttribute('aria-label', 'Explícito'); sub.appendChild(e); }
+    if (it.explicito) { const e = crear('span', 'explicito', 'E'); e.setAttribute('aria-label', T('Explícito')); sub.appendChild(e); }
     sub.appendChild(document.createTextNode(subtitulo(it, opciones.conTipo) + (it.dur ? (it.sub ? ' · ' : '') + it.dur : '')));
     t.appendChild(sub);
     cuerpo.appendChild(t);
@@ -489,7 +622,7 @@
     if (it.encola || it.toca || it.radio) {
       const m = crear('button', 'icono-boton');
       m.type = 'button';
-      m.setAttribute('aria-label', 'Más opciones de ' + it.titulo);
+      m.setAttribute('aria-label', T('Más opciones de ') + it.titulo);
       m.appendChild(icono('mas'));
       m.addEventListener('click', () => abrirHoja(it));
       fila.appendChild(m);
@@ -540,11 +673,11 @@
   const botonMas = (cont, ref, opciones) => {
     if (!ref) return;
     const caja = crear('div', 'mas');
-    const b = crear('button', 'boton', 'Cargar más');
+    const b = crear('button', 'boton', T('Cargar más'));
     b.type = 'button';
     b.addEventListener('click', async () => {
       b.disabled = true;
-      b.textContent = 'Cargando…';
+      b.textContent = T('Cargando…');
       try {
         const d = await orden('mas', { ref });
         caja.remove();
@@ -553,7 +686,7 @@
         botonMas(cont, m.mas, opciones);
       } catch (e) {
         b.disabled = false;
-        b.textContent = 'Cargar más';
+        b.textContent = T('Cargar más');
       }
     });
     caja.appendChild(b);
@@ -577,14 +710,14 @@
       b.addEventListener('click', async () => { cerrarHoja(); try { await fn(); } catch (e) { /* ya avisado */ } });
       acc.appendChild(b);
     };
-    if (it.toca) accion('play', 'Reproducir', async () => { await orden('tocar', { ref: it.ref }); aviso('Sonando en el PC'); });
-    if (it.abre && it.toca) accion('aleatorio', 'Reproducir en aleatorio', async () => { await orden('tocar', { ref: it.ref, modo: 'aleatorio' }); aviso('Sonando en aleatorio'); });
+    if (it.toca) accion('play', T('Reproducir'), async () => { await orden('tocar', { ref: it.ref }); aviso(T('Sonando en el PC')); });
+    if (it.abre && it.toca) accion('aleatorio', T('Reproducir en aleatorio'), async () => { await orden('tocar', { ref: it.ref, modo: 'aleatorio' }); aviso(T('Sonando en aleatorio')); });
     if (it.encola) {
-      accion('siguientecola', 'Reproducir a continuación', async () => { await orden('encolar', { ref: it.ref, donde: 'siguiente' }); aviso('Sonará a continuación'); });
-      accion('anadir', 'Añadir a la cola', async () => { await orden('encolar', { ref: it.ref, donde: 'final' }); aviso('Añadido a la cola'); });
+      accion('siguientecola', T('Reproducir a continuación'), async () => { await orden('encolar', { ref: it.ref, donde: 'siguiente' }); aviso(T('Sonará a continuación')); });
+      accion('anadir', T('Añadir a la cola'), async () => { await orden('encolar', { ref: it.ref, donde: 'final' }); aviso(T('Añadido a la cola')); });
     }
-    if (it.radio) accion('radio', 'Iniciar radio', async () => { await orden('tocar', { ref: it.ref, modo: 'radio' }); aviso('Radio en el PC'); });
-    if (it.abre) accion('lista', 'Abrir', async () => abrirDetalle(it));
+    if (it.radio) accion('radio', T('Iniciar radio'), async () => { await orden('tocar', { ref: it.ref, modo: 'radio' }); aviso(T('Radio en el PC')); });
+    if (it.abre) accion('lista', T('Abrir'), async () => abrirDetalle(it));
     $('hoja-fondo').hidden = false;
     $('hoja').hidden = false;
   };
@@ -606,14 +739,14 @@
       b.addEventListener('click', async () => { try { await orden('tocar', { ref }); aviso(avisoTxt); } catch (e) { /* ya avisado */ } });
       acc.appendChild(b);
     };
-    boton('play', 'Reproducir', p.reproducir, true, 'Sonando en el PC');
-    boton('aleatorio', 'Aleatorio', p.aleatorio, false, 'Sonando en aleatorio');
-    boton('radio', 'Radio', p.radio, false, 'Radio en el PC');
+    boton('play', T('Reproducir'), p.reproducir, true, T('Sonando en el PC'));
+    boton('aleatorio', T('Aleatorio'), p.aleatorio, false, T('Sonando en aleatorio'));
+    boton('radio', T('Radio'), p.radio, false, T('Radio en el PC'));
     if (acc.children.length) cab.appendChild(acc);
     cont.appendChild(cab);
     const op = { numerar: true };
     pintarSecciones(cont, p.secciones || [], op);
-    if (!(p.secciones || []).length) cont.appendChild(vacio('Aquí no hay nada', 'Esta página no tiene canciones que mostrar.'));
+    if (!(p.secciones || []).length) cont.appendChild(vacio(T('Aquí no hay nada'), T('Esta página no tiene canciones que mostrar.')));
     botonMas(cont, p.mas, op);
   };
   const abrirDetalle = async (it) => {
@@ -631,7 +764,7 @@
       entrada.datos = d.pagina;
       if (pila[pila.length - 1] === entrada) pintarPagina(d.pagina, it.titulo);
     } catch (e) {
-      if (pila[pila.length - 1] === entrada) cont.replaceChildren(vacio('No se pudo abrir', 'Vuelve atrás e inténtalo otra vez.'));
+      if (pila[pila.length - 1] === entrada) cont.replaceChildren(vacio(T('No se pudo abrir'), T('Vuelve atrás e inténtalo otra vez.')));
     }
   };
 
@@ -659,11 +792,11 @@
       const b = d.busqueda || {};
       pintarFiltros(b.filtros || [], texto);
       res.replaceChildren();
-      if (!(b.secciones || []).length) { res.appendChild(vacio('Sin resultados', 'Prueba con otras palabras.')); return; }
+      if (!(b.secciones || []).length) { res.appendChild(vacio(T('Sin resultados'), T('Prueba con otras palabras.'))); return; }
       pintarSecciones(res, b.secciones, { conTipo: !filtro, siempreFilas: true });
       botonMas(res, b.mas, { conTipo: !filtro });
     } catch (e) {
-      res.replaceChildren(vacio('No se pudo buscar', 'Comprueba que YouTube Music sigue abierto en el PC.'));
+      res.replaceChildren(vacio(T('No se pudo buscar'), T('Comprueba que YouTube Music sigue abierto en el PC.')));
     }
   };
 
@@ -678,7 +811,7 @@
       b.addEventListener('click', () => buscar(texto, ref));
       c.appendChild(b);
     };
-    chip('Todo', null, !filtros.some((f) => f.puesto));
+    chip(T('Todo'), null, !filtros.some((f) => f.puesto));
     for (const f of filtros) chip(f.nombre, f.puesto ? null : f.ref, f.puesto);
     c.hidden = false;
   };
@@ -738,24 +871,24 @@
       const d = await orden('pagina', { id: 'inicio' });
       const p = d.pagina || {};
       cont.replaceChildren();
-      if (!(p.secciones || []).length) { cont.appendChild(vacio('Nada que sugerir todavía', 'Pon algo de música y YouTube Music empezará a recomendarte.')); return; }
+      if (!(p.secciones || []).length) { cont.appendChild(vacio(T('Nada que sugerir todavía'), T('Pon algo de música y YouTube Music empezará a recomendarte.'))); return; }
       pintarSecciones(cont, p.secciones, {});
       botonMas(cont, p.mas, {});
     } catch (e) {
       inicioPedido = 0;
-      if (e.estado !== 401) cont.replaceChildren(vacio('No se pudo cargar el inicio', 'Comprueba que YouTube Music sigue abierto en el PC.'));
+      if (e.estado !== 401) cont.replaceChildren(vacio(T('No se pudo cargar el inicio'), T('Comprueba que YouTube Music sigue abierto en el PC.')));
     }
   };
 
   // --- Biblioteca ---------------------------------------------------------------
   const BIBLIOTECA = [
-    ['biblioteca', 'Playlists'],
-    ['megusta', 'Me gusta'],
-    ['albumes', 'Álbumes'],
-    ['artistas', 'Artistas'],
-    ['canciones', 'Canciones'],
-    ['historial', 'Historial'],
-    ['inicio', 'Para ti'],
+    ['biblioteca', T('Playlists')],
+    ['megusta', T('Me gusta')],
+    ['albumes', T('Álbumes')],
+    ['artistas', T('Artistas')],
+    ['canciones', T('Canciones')],
+    ['historial', T('Historial')],
+    ['inicio', T('Para ti')],
   ];
   let bibliotecaCargada = false;
   let paginaBiblio = 'biblioteca';
@@ -785,24 +918,24 @@
         const acc = crear('div', 'pagina-acciones');
         acc.style.justifyContent = 'flex-start';
         acc.style.paddingTop = '12px';
-        for (const [ic, txt, ref, prim] of [['play', 'Reproducir', p.reproducir, true], ['aleatorio', 'Aleatorio', p.aleatorio, false]]) {
+        for (const [ic, txt, ref, prim] of [['play', T('Reproducir'), p.reproducir, true], ['aleatorio', T('Aleatorio'), p.aleatorio, false]]) {
           if (!ref) continue;
           const b = crear('button', 'boton' + (prim ? ' primario' : ''));
           b.type = 'button';
           b.append(icono(ic), document.createTextNode(txt));
-          b.addEventListener('click', () => orden('tocar', { ref }).then(() => aviso('Sonando en el PC'), () => {}));
+          b.addEventListener('click', () => orden('tocar', { ref }).then(() => aviso(T('Sonando en el PC')), () => {}));
           acc.appendChild(b);
         }
         cont.appendChild(acc);
       }
       if (!(p.secciones || []).length) {
-        cont.appendChild(vacio('Aquí no hay nada', E && E.listo && !E.sesion ? 'Inicia sesión en YouTube Music en el PC para ver tu biblioteca.' : 'Esta sección está vacía.'));
+        cont.appendChild(vacio(T('Aquí no hay nada'), E && E.listo && !E.sesion ? T('Inicia sesión en YouTube Music en el PC para ver tu biblioteca.') : T('Esta sección está vacía.')));
         return;
       }
       pintarSecciones(cont, p.secciones, { siempreFilas: id !== 'inicio' });
       botonMas(cont, p.mas, { siempreFilas: true });
     } catch (e) {
-      cont.replaceChildren(vacio('No se pudo cargar', 'Comprueba que YouTube Music sigue abierto en el PC.'));
+      cont.replaceChildren(vacio(T('No se pudo cargar'), T('Comprueba que YouTube Music sigue abierto en el PC.')));
     }
   };
 
@@ -817,7 +950,7 @@
       const d = await orden('cola');
       const c = d.cola || { items: [] };
       cont.replaceChildren();
-      if (!c.items.length) { cont.appendChild(vacio('La cola está vacía', 'Busca algo y pulsa «Añadir a la cola».')); return; }
+      if (!c.items.length) { cont.appendChild(vacio(T('La cola está vacía'), T('Busca algo y pulsa «Añadir a la cola».'))); return; }
       const f = crear('div', 'filas');
       let actual = null;
       for (const it of c.items) {
@@ -840,10 +973,10 @@
         if (it.actual) actual = fila;
       }
       cont.appendChild(f);
-      if (c.total > c.desde + c.items.length) cont.appendChild(crear('p', 'suave mas', `Y ${c.total - c.desde - c.items.length} más`));
+      if (c.total > c.desde + c.items.length) cont.appendChild(crear('p', 'suave mas', (ES ? `Y ${c.total - c.desde - c.items.length} más` : `And ${c.total - c.desde - c.items.length} more`)));
       if (actual && vistaActual === 'cola') actual.scrollIntoView({ block: 'center' });
     } catch (e) {
-      cont.replaceChildren(vacio('No se pudo cargar la cola', 'Comprueba que YouTube Music sigue abierto en el PC.'));
+      cont.replaceChildren(vacio(T('No se pudo cargar la cola'), T('Comprueba que YouTube Music sigue abierto en el PC.')));
     } finally {
       pidiendoCola = false;
     }
@@ -869,7 +1002,7 @@
       L = d.letra || { disponible: false };
       pintarLetra();
     } catch (e) {
-      if (n === pidiendoLetra) contLetra.replaceChildren(vacio('No se pudo traer la letra', 'Comprueba que YouTube Music sigue abierto en el PC.'));
+      if (n === pidiendoLetra) contLetra.replaceChildren(vacio(T('No se pudo traer la letra'), T('Comprueba que YouTube Music sigue abierto en el PC.')));
     }
   };
 
@@ -877,21 +1010,21 @@
     letraIndice = -1;
     contLetra.classList.remove('plana');
     if (!L.disponible) {
-      contLetra.replaceChildren(vacio('Letra Viva no está en el PC', 'La letra sale del mod Zen Letra Viva. Instálalo en Zen y aparecerá aquí.'));
+      contLetra.replaceChildren(vacio(T('Letra Viva no está en el PC'), T('La letra sale del mod Zen Letra Viva. Instálalo en Zen y aparecerá aquí.')));
       return;
     }
     if (L.clave === 'buscando' || L.clave === 'vacio') {
-      contLetra.replaceChildren(vacio('Buscando la letra…'));
+      contLetra.replaceChildren(vacio(T('Buscando la letra…')));
       return;
     }
     if (!L.lineas.length) {
-      contLetra.replaceChildren(vacio(L.clave === 'instrumental' ? 'Instrumental' : 'Sin letra', L.clave === 'instrumental' ? '' : (L.mensaje || 'Nadie tiene la letra de esta canción.')));
+      contLetra.replaceChildren(vacio(L.clave === 'instrumental' ? T('Instrumental') : T('Sin letra'), L.clave === 'instrumental' ? '' : (L.mensaje || T('Nadie tiene la letra de esta canción.'))));
       return;
     }
     const frag = document.createDocumentFragment();
     if (!L.sincronizada) {
       contLetra.classList.add('plana');
-      frag.appendChild(crear('p', 'letra-nota', 'Esta letra no tiene tiempos: no se puede seguir.'));
+      frag.appendChild(crear('p', 'letra-nota', T('Esta letra no tiene tiempos: no se puede seguir.')));
     }
     L.lineas.forEach((l, i) => {
       const b = crear(L.sincronizada ? 'button' : 'p', 'letra-linea' + (l.p ? ' pausa' : ''), l.p ? '•••' : (l.t || ' '));
@@ -907,7 +1040,7 @@
       }
       frag.appendChild(b);
     });
-    if (L.fuente) frag.appendChild(crear('p', 'letra-nota', 'Letra: ' + L.fuente));
+    if (L.fuente) frag.appendChild(crear('p', 'letra-nota', T('Letra: ') + L.fuente));
     contLetra.replaceChildren(frag);
     seguirLetra(true);
   };

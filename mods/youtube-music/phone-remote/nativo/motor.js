@@ -31,6 +31,24 @@
 
   if (window.__zenRemoto) return;
   const P = ZenRemotoPuro;
+
+  // El idioma: el de la pagina de YouTube Music (el de la cuenta) o el forzado
+  // por la pref compartida zen.mods.idioma (llega del cargador como __zenIdioma).
+  const idioma = () => {
+    const f = typeof __zenIdioma === 'string' ? __zenIdioma : '';
+    if (f === 'es' || f === 'en') return f;
+    const l = (document.documentElement && document.documentElement.lang) || navigator.language || '';
+    return /^es\b/i.test(l) ? 'es' : 'en';
+  };
+  const tr = (en, es) => (idioma() === 'es' ? es : en);
+  // Los errores del servidor llegan como codigos y se cuentan aqui.
+  const textoError = (e) => {
+    if (!e) return '';
+    if (e === 'sin-ip') return tr("Can't find this computer's IP on your home network.", 'No encuentro la IP del equipo en la red de casa.');
+    const m = /^puerto:(\d+)$/.exec(e);
+    if (m) return tr(`Couldn't open port ${m[1]}: is another app using it?`, `No pude abrir el puerto ${m[1]}: ¿lo usa otra aplicación?`);
+    return e;
+  };
   const Q = ZenRemotoQR;
   const puente = __zenRemotoPuente;
 
@@ -450,31 +468,33 @@
   // La letra es la de la pagina (Roboto), la misma que usa Zen Mezcla en su panel:
   // lo que se pone en YouTube Music tiene que leerse como YouTube Music.
   const svgNs = 'http://www.w3.org/2000/svg';
+  // ESTILO DE LOS MODS (16-11-2026): el de la app del movil, con aire de iOS.
   const CSS = `
 .zr-boton { width: 40px; height: 40px; margin: 0 2px; padding: 8px; border: 0; border-radius: 50%; background: none;
   color: rgb(255 255 255 / 0.7); cursor: pointer; flex: none; position: relative; }
 .zr-boton:hover { color: #fff; background: rgb(255 255 255 / 0.1); }
 .zr-boton[data-conectado="true"] { color: #fff; }
 .zr-boton[data-conectado="true"]::after { content: ""; position: absolute; right: 8px; bottom: 8px; width: 7px; height: 7px;
-  border-radius: 50%; background: #3ddc84; box-shadow: 0 0 0 2px #212121; }
+  border-radius: 50%; background: #34c759; box-shadow: 0 0 0 2px #212121; }
 .zr-boton svg { display: block; width: 24px; height: 24px; }
-.zr-panel { position: fixed; z-index: 2147483000; width: 300px; padding: 16px; border-radius: 16px; box-sizing: border-box;
-  background: rgb(28 28 30 / 0.96); backdrop-filter: blur(24px) saturate(1.4);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5), inset 0 0 0 1px rgb(255 255 255 / 0.08);
-  color: #fff; font: 400 14px/1.4 Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
+.zr-panel { position: fixed; z-index: 2147483000; width: 320px; padding: 16px 12px 12px; border-radius: 18px; box-sizing: border-box;
+  background: rgb(30 30 32 / 0.92); backdrop-filter: blur(30px) saturate(1.8);
+  border: 1px solid rgb(255 255 255 / 0.1); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+  color: rgb(255 255 255 / 0.92); font: 400 14px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
 .zr-panel[hidden] { display: none; }
-.zr-titulo { font-weight: 500; font-size: 15px; margin-bottom: 4px; }
-.zr-suave { color: rgb(255 255 255 / 0.62); font-size: 13px; }
-.zr-qr { display: block; width: 188px; height: 188px; margin: 12px auto; border-radius: 12px; overflow: hidden; background: #fff; }
+.zr-titulo { padding: 0 6px 4px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: #fff; }
+.zr-suave { padding: 0 6px; color: rgb(235 235 245 / 0.6); font-size: 13px; }
+.zr-qr { display: block; width: 188px; height: 188px; margin: 14px auto 12px; padding: 10px; box-sizing: border-box; border-radius: 16px; overflow: hidden; background: #fff; }
 .zr-qr svg { display: block; width: 100%; height: 100%; }
-.zr-codigo { text-align: center; font-size: 28px; font-weight: 500; letter-spacing: 0.18em; font-variant-numeric: tabular-nums; }
-.zr-url { text-align: center; margin-top: 4px; user-select: all; }
-.zr-panel hr { height: 1px; margin: 12px 0; border: 0; background: rgb(255 255 255 / 0.1); }
-.zr-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
-.zr-panel button.zr-accion { border: 0; border-radius: 16px; padding: 6px 12px; background: rgb(255 255 255 / 0.1); color: #fff;
-  font: inherit; font-size: 13px; cursor: pointer; }
-.zr-panel button.zr-accion:hover { background: rgb(255 255 255 / 0.18); }
-.zr-error { margin-top: 8px; color: #ffc46b; font-size: 13px; }
+.zr-codigo { text-align: center; font-size: 30px; font-weight: 600; letter-spacing: 0.16em; font-variant-numeric: tabular-nums; color: #fff; }
+.zr-url { text-align: center; margin-top: 2px; user-select: all; }
+.zr-grupo { margin-top: 14px; border-radius: 12px; background: rgb(255 255 255 / 0.06); overflow: hidden; }
+.zr-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 6px 12px; box-sizing: border-box; }
+.zr-fila .zr-suave { padding: 0; }
+.zr-panel button.zr-accion { border: 0; border-radius: 999px; padding: 6px 12px; background: rgb(255 92 122 / 0.16); color: #ff7a93;
+  font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.zr-panel button.zr-accion:hover { background: rgb(255 92 122 / 0.26); }
+.zr-error { margin: 10px 6px 0; color: #ffc46b; font-size: 13px; }
 `;
 
   const Panel = {
@@ -507,8 +527,8 @@
     montarPanel() {
       const n = this.crear('div', 'zr-panel');
       n.hidden = true;
-      n.appendChild(this.crear('div', 'zr-titulo', 'Controlar desde el móvil'));
-      n.appendChild(this.crear('div', 'zr-suave', 'Con el móvil en la misma wifi, escanea el código o abre la dirección y escribe el número.'));
+      n.appendChild(this.crear('div', 'zr-titulo', tr('Control from your phone', 'Controlar desde el móvil')));
+      n.appendChild(this.crear('div', 'zr-suave', tr('On the same Wi-Fi, scan the code with your phone, or open the address and type the number.', 'Con el móvil en la misma wifi, escanea el código o abre la dirección y escribe el número.')));
       this.partes.qr = this.crear('div', 'zr-qr');
       n.appendChild(this.partes.qr);
       this.partes.codigo = this.crear('div', 'zr-codigo');
@@ -517,19 +537,20 @@
       n.appendChild(this.partes.url);
       this.partes.error = this.crear('div', 'zr-error');
       n.appendChild(this.partes.error);
-      n.appendChild(this.crear('hr'));
       const fila = this.crear('div', 'zr-fila');
+      const grupo = this.crear('div', 'zr-grupo');
       this.partes.dispositivos = this.crear('span', 'zr-suave');
       fila.appendChild(this.partes.dispositivos);
-      const olvidar = this.crear('button', 'zr-accion', 'Olvidar móviles');
+      const olvidar = this.crear('button', 'zr-accion', tr('Forget phones', 'Olvidar móviles'));
       olvidar.type = 'button';
-      olvidar.title = 'Los móviles emparejados tendrán que volver a escanear el código';
+      olvidar.title = tr('Paired phones will have to scan the code again', 'Los móviles emparejados tendrán que volver a escanear el código');
       olvidar.addEventListener('click', () => {
         try { puente.enviar(JSON.stringify({ tipo: 'olvidar' })); } catch (e) { /* nada */ }
       });
       this.partes.olvidar = olvidar;
       fila.appendChild(olvidar);
-      n.appendChild(fila);
+      grupo.appendChild(fila);
+      n.appendChild(grupo);
       document.body.appendChild(n);
       this.nodo = n;
       document.addEventListener('pointerdown', (e) => {
@@ -554,7 +575,7 @@
       if (this.boton) this.boton.dataset.conectado = String(!!(i && i.conectados > 0));
       if (!this.nodo || this.nodo.hidden) return;
       if (!i) { this.partes.codigo.textContent = '…'; return; }
-      this.partes.error.textContent = i.error || '';
+      this.partes.error.textContent = textoError(i.error);
       this.partes.error.hidden = !i.error;
       if (i.url && i.codigo) {
         const enlace = `${i.url}/#c=${i.codigo}`;
@@ -572,7 +593,7 @@
             s.setAttribute('viewBox', `0 0 ${t} ${t}`);
             s.setAttribute('shape-rendering', 'crispEdges');
             s.setAttribute('role', 'img');
-            s.setAttribute('aria-label', 'Código QR para emparejar el móvil');
+            s.setAttribute('aria-label', tr('QR code to pair your phone', 'Código QR para emparejar el móvil'));
             const p = document.createElementNS(svgNs, 'path');
             p.setAttribute('d', d);
             p.setAttribute('fill', '#000');
@@ -588,11 +609,11 @@
         this.partes.url.textContent = i.url.replace(/^http:\/\//, '');
       } else {
         this.partes.qr.hidden = true;
-        this.partes.codigo.textContent = i.bloqueado ? 'En pausa' : '…';
+        this.partes.codigo.textContent = i.bloqueado ? tr('Paused', 'En pausa') : '…';
         this.partes.url.textContent = i.url ? i.url.replace(/^http:\/\//, '') : '';
       }
       const n = i.dispositivos || 0;
-      this.partes.dispositivos.textContent = n === 0 ? 'Ningún móvil emparejado' : n === 1 ? '1 móvil emparejado' : `${n} móviles emparejados`;
+      this.partes.dispositivos.textContent = n === 0 ? tr('No phones paired', 'Ningún móvil emparejado') : n === 1 ? tr('1 phone paired', '1 móvil emparejado') : tr(`${n} phones paired`, `${n} móviles emparejados`);
       this.partes.olvidar.hidden = n === 0;
     },
 
@@ -614,8 +635,8 @@
       const b = this.boton || this.crear('button', 'zr-boton');
       if (!this.boton) {
         b.type = 'button';
-        b.title = 'Controlar desde el móvil';
-        b.setAttribute('aria-label', 'Controlar desde el móvil');
+        b.title = tr('Control from your phone', 'Controlar desde el móvil');
+        b.setAttribute('aria-label', tr('Control from your phone', 'Controlar desde el móvil'));
         b.appendChild(this.icono());
         b.addEventListener('click', (e) => {
           // ytmusic-player-bar abre y cierra el reproductor grande con cualquier clic

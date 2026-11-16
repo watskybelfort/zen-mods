@@ -565,7 +565,8 @@
       dispositivos: Dispositivos.lista.length,
       conectados: Dispositivos.lista.filter((d) => ahora - (d.vivo || 0) < 30000).length,
       otras: Red.ips.filter((x) => x !== ip).map((x) => `http://${x}:${puerto}`),
-      error: Servidor.error || (!ip ? 'No encuentro la IP del equipo en la red de casa.' : null),
+      // Codigos: el panel los cuenta en el idioma de la pagina.
+      error: Servidor.error || (!ip ? 'sin-ip' : null),
       elegida: Pestanas.elegida === id,
     };
   };
@@ -736,7 +737,7 @@
         this.error = null;
         registrar(`servidor en pie en el puerto ${this.puerto}`);
       } catch (e) {
-        this.error = `No pude abrir el puerto ${this.puerto}: ¿lo usa otra aplicación?`;
+        this.error = `puerto:${this.puerto}`;
         registrar('no pude abrir el puerto ' + this.puerto + ': ' + e);
       }
       Red.buscar();
