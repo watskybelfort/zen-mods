@@ -31,6 +31,16 @@
     ? Services
     : ChromeUtils.importESModule('resource://gre/modules/Services.sys.mjs').Services;
 
+  // EL IDIOMA de los menus: el de la interfaz de Zen, o el que fuerce la pref
+  // compartida zen.mods.idioma ('auto' | 'es' | 'en'). Se mira al abrir el menu.
+  const idioma = () => {
+    let f = 'auto';
+    try { f = SV.prefs.getStringPref('zen.mods.idioma', 'auto'); } catch (e) { /* auto */ }
+    if (f === 'es' || f === 'en') return f;
+    try { return /^es\b/i.test(SV.locale.appLocaleAsBCP47) ? 'es' : 'en'; } catch (e) { return 'en'; }
+  };
+  const tr = (en, es) => (idioma() === 'es' ? es : en);
+
   const PREF_SITIOS = 'zen.modooscuro.sitios';
   const PREF_ENCENDIDO = 'zen.modooscuro.encendido';
   const PREF_TODO = 'zen.modooscuro.todo';
@@ -97,7 +107,7 @@
   // --- La entrada ------------------------------------------------------------
   const item = document.createXULElement('menuitem');
   item.id = ID_ITEM;
-  item.setAttribute('label', 'Activar modo oscuro');
+  item.setAttribute('label', tr('Turn on dark mode', 'Activar modo oscuro'));
 
   const vecino = document.getElementById(ID_CRISTAL)
     || VECINOS.map((id) => document.getElementById(id)).find((n) => n && n.parentNode === menu);
@@ -130,11 +140,11 @@
     if (leerBool(PREF_TODO, false)) {
       // Con "oscurecer todas las paginas" puesto, la lista no pinta nada: la
       // entrada se queda a la vista, apagada y diciendo por que.
-      item.setAttribute('label', 'Modo oscuro en todas las paginas (Ajustes > Zen Mods)');
+      item.setAttribute('label', tr('Dark mode on all pages (Settings > Zen Mods)', 'Modo oscuro en todas las páginas (Ajustes > Zen Mods)'));
       item.setAttribute('disabled', 'true');
     } else {
       item.removeAttribute('disabled');
-      item.setAttribute('label', (leer().includes(sitio) ? 'Desactivar modo oscuro (' : 'Activar modo oscuro (') + sitio + ')');
+      item.setAttribute('label', leer().includes(sitio) ? tr(`Turn off dark mode (${sitio})`, `Desactivar modo oscuro (${sitio})`) : tr(`Turn on dark mode (${sitio})`, `Activar modo oscuro (${sitio})`));
     }
 
     // nsContextMenu ya ordeno los separadores con los `hidden` del clic anterior;

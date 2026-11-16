@@ -21,6 +21,16 @@
     ? Services
     : ChromeUtils.importESModule('resource://gre/modules/Services.sys.mjs').Services;
 
+  // EL IDIOMA de los menus: el de la interfaz de Zen, o el que fuerce la pref
+  // compartida zen.mods.idioma ('auto' | 'es' | 'en'). Se mira al abrir el menu.
+  const idioma = () => {
+    let f = 'auto';
+    try { f = SV.prefs.getStringPref('zen.mods.idioma', 'auto'); } catch (e) { /* auto */ }
+    if (f === 'es' || f === 'en') return f;
+    try { return /^es\b/i.test(SV.locale.appLocaleAsBCP47) ? 'es' : 'en'; } catch (e) { return 'en'; }
+  };
+  const tr = (en, es) => (idioma() === 'es' ? es : en);
+
   const PREF_AJUSTES = 'zen.inmersivo.ajustes';
   const PREF_FECHA = 'zen.inmersivo.catalogo.fecha';
   const ID_MENU = 'contentAreaContextMenu';
@@ -86,19 +96,19 @@
       alternarEnLista(a.sinTema, h);
       guardar(a);
       const en = a.sinTema.includes(h);
-      avisar('Estilos de la web', a.global.whitelistStyleMode ? en : !en);
+      avisar(tr('Site styles', 'Estilos de la web'), a.global.whitelistStyleMode ? en : !en);
     },
     global() {
       const a = ajustes();
       a.global.enableStyling = !a.global.enableStyling;
       guardar(a);
-      avisar('Estilos en todas las webs', a.global.enableStyling);
+      avisar(tr('Styles on all sites', 'Estilos en todas las webs'), a.global.enableStyling);
     },
     transparencia() {
       const a = ajustes();
       a.global.disableTransparency = !a.global.disableTransparency;
       guardar(a);
-      avisar('Transparencia', !a.global.disableTransparency);
+      avisar(tr('Transparency', 'Transparencia'), !a.global.disableTransparency);
     },
     fondo() {
       const h = hostActual();
@@ -106,7 +116,7 @@
       const a = ajustes();
       alternarEnLista(a.fondo, h);
       guardar(a);
-      avisar('Fondo de respaldo', a.fondo.includes(h));
+      avisar(tr('Fallback background', 'Fondo de respaldo'), a.fondo.includes(h));
     },
   };
 
@@ -136,19 +146,19 @@
     return n;
   };
 
-  const raiz = crear('menu', { id: ID_RAIZ, label: 'Zen Inmersivo' });
+  const raiz = crear('menu', { id: ID_RAIZ, label: tr('Immersive Web', 'Zen Inmersivo') });
   const popup = crear('menupopup', { id: 'zen-inmersivo-popup' });
   raiz.appendChild(popup);
   const vecino = VECINOS.map((id) => document.getElementById(id)).find((n) => n && n.parentNode === menu);
   if (vecino) menu.insertBefore(raiz, vecino); else menu.appendChild(raiz);
 
   const hace = (t) => {
-    if (!t) return 'nunca';
+    if (!t) return tr('never', 'nunca');
     const m = Math.round((Date.now() - t) / 60000);
-    if (m < 1) return 'hace un momento';
-    if (m < 60) return `hace ${m} min`;
+    if (m < 1) return tr('just now', 'hace un momento');
+    if (m < 60) return tr(`${m} min ago`, `hace ${m} min`);
     const h = Math.round(m / 60);
-    return h < 48 ? `hace ${h} h` : `hace ${Math.round(h / 24)} días`;
+    return h < 48 ? tr(`${h} h ago`, `hace ${h} h`) : tr(`${Math.round(h / 24)} days ago`, `hace ${Math.round(h / 24)} días`);
   };
 
   const llenar = () => {
@@ -158,11 +168,11 @@
     const cat = elCatalogo();
 
     if (sd().get('zen-inmersivo:extension') === true) {
-      popup.appendChild(crear('menuitem', { label: 'Zen Internet sigue activa: desactívala para usar este mod', disabled: 'true' }));
+      popup.appendChild(crear('menuitem', { label: tr('Zen Internet is still on: turn it off to use this mod', 'Zen Internet sigue activa: desactívala para usar este mod'), disabled: 'true' }));
       return;
     }
     if (!cat) {
-      popup.appendChild(crear('menuitem', { label: 'Sin catálogo: reinstala el mod', disabled: 'true' }));
+      popup.appendChild(crear('menuitem', { label: tr('No catalog: reinstall the mod', 'Sin catálogo: reinstala el mod'), disabled: 'true' }));
       return;
     }
 
@@ -170,13 +180,13 @@
       const info = P.funcionesDe(h, cat, a);
       const blanca = a.global.whitelistStyleMode;
       const enLista = a.sinTema.includes(h);
-      popup.appendChild(casilla(`Estilos en ${h}`, blanca ? enLista : !enLista, () => ACCIONES.sitio(), { acceltext: 'Alt+Mayús+U' }));
-      const tema = info.clave ? (info.generico ? 'Tema genérico (forzado)' : 'Tema: ' + info.clave.replace(/\.css$/, '').replace(/^[+-]/, '')) : 'Esta web no tiene tema';
+      popup.appendChild(casilla(tr(`Styles on ${h}`, `Estilos en ${h}`), blanca ? enLista : !enLista, () => ACCIONES.sitio(), { acceltext: tr('Alt+Shift+U', 'Alt+Mayús+U') }));
+      const tema = info.clave ? (info.generico ? tr('Generic theme (forced)', 'Tema genérico (forzado)') : tr('Theme: ', 'Tema: ') + info.clave.replace(/\.css$/, '').replace(/^[+-]/, '')) : tr('This site has no theme', 'Esta web no tiene tema');
       popup.appendChild(crear('menuitem', { label: tema, disabled: 'true' }));
       if (info.funciones.length) {
         popup.appendChild(crear('menuseparator'));
         for (const f of info.funciones) {
-          const item = casilla(f.nombre + (f.anulada ? ' (anulada)' : ''), f.puesta, () => {
+          const item = casilla(f.nombre + (f.anulada ? tr(' (overridden)', ' (anulada)') : ''), f.puesta, () => {
             const b = ajustes();
             const propios = Object.assign({}, b.sitios[h] || {});
             if (f.puesta) propios[f.id] = false; else delete propios[f.id];
@@ -189,12 +199,12 @@
         }
       }
       popup.appendChild(crear('menuseparator'));
-      popup.appendChild(casilla(`Fondo de respaldo en ${h}`, a.fondo.includes(h), () => ACCIONES.fondo(), {
-        acceltext: 'Alt+Mayús+B', tooltiptext: 'Fondo sólido en vez de transparente, para webs que se leen mal sobre el cristal',
+      popup.appendChild(casilla(tr(`Fallback background on ${h}`, `Fondo de respaldo en ${h}`), a.fondo.includes(h), () => ACCIONES.fondo(), {
+        acceltext: tr('Alt+Shift+B', 'Alt+Mayús+B'), tooltiptext: tr('Solid background instead of transparent, for sites that are hard to read over the glass', 'Fondo sólido en vez de transparente, para webs que se leen mal sobre el cristal'),
       }));
     }
 
-    const generales = crear('menu', { label: 'Ajustes generales' });
+    const generales = crear('menu', { label: tr('General settings', 'Ajustes generales') });
     const pg = crear('menupopup');
     const g = a.global;
     const interruptor = (label, valor, clave, invertido, extra) => pg.appendChild(casilla(label, valor, () => {
@@ -202,19 +212,19 @@
       b.global[clave] = !b.global[clave];
       guardar(b);
     }, extra));
-    pg.appendChild(casilla('Estilos en todas las webs', g.enableStyling, () => ACCIONES.global(), { acceltext: 'Alt+Mayús+G' }));
-    pg.appendChild(casilla('Transparencia', !g.disableTransparency, () => ACCIONES.transparencia(), { acceltext: 'Alt+Mayús+O' }));
-    interruptor('Efectos al pasar el ratón', !g.disableHover, 'disableHover');
-    interruptor('Pies de página', !g.disableFooter, 'disableFooter');
-    interruptor('Ajustes para Dark Reader', !g.disableDarkReader, 'disableDarkReader');
+    pg.appendChild(casilla(tr('Styles on all sites', 'Estilos en todas las webs'), g.enableStyling, () => ACCIONES.global(), { acceltext: tr('Alt+Shift+G', 'Alt+Mayús+G') }));
+    pg.appendChild(casilla(tr('Transparency', 'Transparencia'), !g.disableTransparency, () => ACCIONES.transparencia(), { acceltext: tr('Alt+Shift+O', 'Alt+Mayús+O') }));
+    interruptor(tr('Hover effects', 'Efectos al pasar el ratón'), !g.disableHover, 'disableHover');
+    interruptor(tr('Footers', 'Pies de página'), !g.disableFooter, 'disableFooter');
+    interruptor(tr('Dark Reader tweaks', 'Ajustes para Dark Reader'), !g.disableDarkReader, 'disableDarkReader');
     pg.appendChild(crear('menuseparator'));
-    interruptor('Forzar un tema en webs sin tema', g.forceStyling, 'forceStyling', false, { tooltiptext: 'Aplica el tema genérico a las webs que no tienen uno propio' });
-    interruptor('Lista de webs: solo las elegidas', g.whitelistStyleMode, 'whitelistStyleMode', false, { tooltiptext: 'Con esto, "Estilos en <web>" pasa a ser una lista blanca' });
-    if (g.forceStyling) interruptor('Forzar: solo en las elegidas', g.whitelistMode, 'whitelistMode');
+    interruptor(tr('Force a theme on sites without one', 'Forzar un tema en webs sin tema'), g.forceStyling, 'forceStyling', false, { tooltiptext: tr("Applies the generic theme to sites that don't have their own", 'Aplica el tema genérico a las webs que no tienen uno propio') });
+    interruptor(tr('Site list: only the chosen ones', 'Lista de webs: solo las elegidas'), g.whitelistStyleMode, 'whitelistStyleMode', false, { tooltiptext: tr('With this on, "Styles on <site>" becomes an allow list', 'Con esto, "Estilos en <web>" pasa a ser una lista blanca') });
+    if (g.forceStyling) interruptor(tr('Force: only on the chosen ones', 'Forzar: solo en las elegidas'), g.whitelistMode, 'whitelistMode');
     pg.appendChild(crear('menuseparator'));
-    interruptor('Actualizar el catálogo solo', g.autoUpdate, 'autoUpdate', false, { tooltiptext: 'Cada 2 horas, como la extensión' });
+    interruptor(tr('Update the catalog automatically', 'Actualizar el catálogo solo'), g.autoUpdate, 'autoUpdate', false, { tooltiptext: tr('Every 2 hours, like the extension', 'Cada 2 horas, como la extensión') });
     const ultima = Number(SV.prefs.getStringPref(PREF_FECHA, '0')) || 0;
-    const actualizar = crear('menuitem', { label: `Buscar temas nuevos ahora (último: ${hace(ultima)})` });
+    const actualizar = crear('menuitem', { label: tr(`Check for new themes now (last: ${hace(ultima)})`, `Buscar temas nuevos ahora (último: ${hace(ultima)})`) });
     actualizar.addEventListener('command', () => SV.obs.notifyObservers(null, 'zen-inmersivo:bajar'));
     pg.appendChild(actualizar);
     generales.appendChild(pg);
@@ -227,6 +237,7 @@
     let encendido = true;
     try { encendido = SV.prefs.getBoolPref('zen.inmersivo.encendido', true); } catch (e) { /* si */ }
     raiz.hidden = !encendido;
+    raiz.setAttribute('label', tr('Immersive Web', 'Zen Inmersivo'));
     if (encendido) { try { llenar(); } catch (e) { registrar('no pude llenar el menu: ' + e); } }
   });
 })();

@@ -54,6 +54,16 @@
     ? Services
     : ChromeUtils.importESModule('resource://gre/modules/Services.sys.mjs').Services;
 
+  // EL IDIOMA de los menus: el de la interfaz de Zen, o el que fuerce la pref
+  // compartida zen.mods.idioma ('auto' | 'es' | 'en'). Se mira al abrir el menu.
+  const idioma = () => {
+    let f = 'auto';
+    try { f = SV.prefs.getStringPref('zen.mods.idioma', 'auto'); } catch (e) { /* auto */ }
+    if (f === 'es' || f === 'en') return f;
+    try { return /^es\b/i.test(SV.locale.appLocaleAsBCP47) ? 'es' : 'en'; } catch (e) { return 'en'; }
+  };
+  const tr = (en, es) => (idioma() === 'es' ? es : en);
+
   const PREF_SITIOS = 'zen.sincristal.sitios';
   const PREF_ENCENDIDO = 'zen.sincristal.encendido';
 
@@ -322,14 +332,14 @@
     return n;
   };
 
-  const raiz = crear('menu', ID_RAIZ, { label: 'Zen Cristal' });
+  const raiz = crear('menu', ID_RAIZ, { label: tr('Glass Toggle', 'Zen Cristal') });
   const popup = crear('menupopup', ID_POPUP);
-  const itemApagar = crear('menuitem', ID_APAGAR, { type: 'checkbox', label: 'Ver este sitio sin cristal' });
+  const itemApagar = crear('menuitem', ID_APAGAR, { type: 'checkbox', label: tr('See this site without glass', 'Ver este sitio sin cristal') });
 
   const sep = crear('menuseparator', ID_SEP);
-  const itemGuardar = crear('menuitem', ID_GUARDAR, { type: 'checkbox', label: 'Guardar esta pagina para revisar' });
-  const itemExportar = crear('menuitem', ID_EXPORTAR, { label: 'Exportar la lista...' });
-  const itemImportar = crear('menuitem', ID_IMPORTAR, { label: 'Importar una lista...' });
+  const itemGuardar = crear('menuitem', ID_GUARDAR, { type: 'checkbox', label: tr('Save this page for review', 'Guardar esta página para revisar') });
+  const itemExportar = crear('menuitem', ID_EXPORTAR, { label: tr('Export the list…', 'Exportar la lista…') });
+  const itemImportar = crear('menuitem', ID_IMPORTAR, { label: tr('Import a list…', 'Importar una lista…') });
 
   popup.append(itemApagar, sep, itemGuardar, itemExportar, itemImportar);
   raiz.appendChild(popup);
@@ -366,7 +376,7 @@
     try {
       fp = Cc['@mozilla.org/filepicker;1'].createInstance(Ci.nsIFilePicker);
       fp.init(window.browsingContext, titulo, modo);
-      fp.appendFilter('Listas de Zen Cristal', '*.json');
+      fp.appendFilter(tr('Glass Toggle lists', 'Listas de Zen Cristal'), '*.json');
       fp.appendFilters(Ci.nsIFilePicker.filterAll);
       if (preparar) preparar(fp);
     } catch (e) {
@@ -385,7 +395,7 @@
 
   const exportar = () => {
     abrirSelector(
-      'Exportar la lista de Zen Cristal',
+      tr('Export the Glass Toggle list', 'Exportar la lista de Zen Cristal'),
       Ci.nsIFilePicker.modeSave,
       (fp) => {
         fp.defaultString = ARCHIVO;
@@ -405,7 +415,7 @@
 
   const importar = () => {
     abrirSelector(
-      'Importar una lista en Zen Cristal',
+      tr('Import a list into Glass Toggle', 'Importar una lista en Zen Cristal'),
       Ci.nsIFilePicker.modeOpen,
       null,
       async (ruta) => {
@@ -413,7 +423,7 @@
         try {
           entrantes = sanear(await IOUtils.readJSON(ruta));
         } catch (e) {
-          SV.prompt.alert(window, 'Zen Cristal', 'Ese archivo no se pudo leer como una lista de Zen Cristal.');
+          SV.prompt.alert(window, tr('Glass Toggle', 'Zen Cristal'), tr("That file couldn't be read as a Glass Toggle list.", 'Ese archivo no se pudo leer como una lista de Zen Cristal.'));
           registrar('no pude leer la lista importada: ' + e);
           return;
         }
@@ -438,10 +448,10 @@
         // ya estaban" son dos resultados buenos que se ven igual.
         SV.prompt.alert(
           window,
-          'Zen Cristal',
+          tr('Glass Toggle', 'Zen Cristal'),
           nuevas
-            ? nuevas + ' pagina(s) anadidas de las ' + entrantes.length + ' del archivo.'
-            : 'No habia ninguna pagina nueva: las ' + entrantes.length + ' del archivo ya estaban en la lista.'
+            ? tr(`${nuevas} page(s) added out of the ${entrantes.length} in the file.`, `${nuevas} página(s) añadidas de las ${entrantes.length} del archivo.`)
+            : tr(`No new pages: all ${entrantes.length} in the file were already on the list.`, `No había ninguna página nueva: las ${entrantes.length} del archivo ya estaban en la lista.`)
         );
       }
     );
@@ -491,7 +501,10 @@
 
     itemApagar.hidden = !sitio;
     if (sitio) {
-      itemApagar.setAttribute('label', 'Ver ' + sitio + ' sin cristal');
+      itemApagar.setAttribute('label', tr(`See ${sitio} without glass`, `Ver ${sitio} sin cristal`));
+      raiz.setAttribute('label', tr('Glass Toggle', 'Zen Cristal'));
+      itemGuardar.setAttribute('label', tr('Save this page for review', 'Guardar esta página para revisar'));
+      itemImportar.setAttribute('label', tr('Import a list…', 'Importar una lista…'));
       if (leer().includes(sitio)) itemApagar.setAttribute('checked', 'true');
       else itemApagar.removeAttribute('checked');
     }
@@ -513,7 +526,7 @@
     // linea menos, y es la unica a la que el numero le cambia el sentido
     // --exportar cero paginas no lo quiere nadie--.
     const n = pendientes.length;
-    itemExportar.setAttribute('label', n ? 'Exportar la lista (' + n + ')...' : 'Exportar la lista...');
+    itemExportar.setAttribute('label', n ? tr(`Export the list (${n})…`, `Exportar la lista (${n})…`) : tr('Export the list…', 'Exportar la lista…'));
     itemExportar.setAttribute('disabled', n ? 'false' : 'true');
 
     // Y ahora que los `hidden` son los de este clic, se le pide a Firefox que
