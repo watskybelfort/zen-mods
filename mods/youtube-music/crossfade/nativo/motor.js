@@ -17,6 +17,16 @@
   'use strict';
 
   if (window.__zenMezcla) return;
+
+  // El idioma: el de la pagina de YouTube Music (el de la cuenta) o el forzado
+  // por la pref compartida zen.mods.idioma (llega del cargador como __zenIdioma).
+  const idioma = () => {
+    const f = typeof __zenIdioma === 'string' ? __zenIdioma : '';
+    if (f === 'es' || f === 'en') return f;
+    const l = (document.documentElement && document.documentElement.lang) || navigator.language || '';
+    return /^es\b/i.test(l) ? 'es' : 'en';
+  };
+  const tr = (en, es) => (idioma() === 'es' ? es : en);
   const P = ZenMezclaPuro;
   const L = P.LIMITES;
 
@@ -659,6 +669,9 @@
 
   // --- Panel -----------------------------------------------------------------
   const svgNs = 'http://www.w3.org/2000/svg';
+  // ESTILO DE LOS MODS (16-11-2026): el de la app del movil de Zen Remoto, con aire
+  // de iOS. Lamina esmerilada de 18px, grupos redondeados con separadores finos,
+  // interruptores de iOS con el acento rosa y la letra del sistema.
   const CSS = `
 .zm-boton { width: 40px; height: 40px; margin: 0 2px; padding: 8px; border: 0; border-radius: 50%; background: none;
   color: rgb(255 255 255 / 0.7); cursor: pointer; flex: none; }
@@ -666,30 +679,41 @@
 .zm-boton[data-activa="true"] { color: #fff; }
 .zm-boton[data-fase="activa"] { color: #ff5c7a; }
 .zm-boton svg { display: block; width: 24px; height: 24px; }
-.zm-panel { position: fixed; z-index: 2147483000; width: 300px; padding: 16px; border-radius: 16px; box-sizing: border-box;
-  background: rgb(28 28 30 / 0.96); backdrop-filter: blur(24px) saturate(1.4);
-  box-shadow: 0 12px 40px rgb(0 0 0 / 0.5), inset 0 0 0 1px rgb(255 255 255 / 0.08);
-  color: #fff; font: 400 14px/1.4 Roboto, "Noto Naskh Arabic UI", Arial, sans-serif; }
+.zm-panel { position: fixed; z-index: 2147483000; width: 320px; padding: 14px 12px 12px; border-radius: 18px; box-sizing: border-box;
+  background: rgb(30 30 32 / 0.92); backdrop-filter: blur(30px) saturate(1.8);
+  border: 1px solid rgb(255 255 255 / 0.1); box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
+  color: rgb(255 255 255 / 0.92); font: 400 14px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
 .zm-panel[hidden] { display: none; }
-.zm-fila { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
-.zm-titulo { font-weight: 500; font-size: 15px; }
-.zm-suave { color: rgb(255 255 255 / 0.62); font-size: 13px; }
-.zm-panel hr { height: 1px; margin: 12px 0; border: 0; background: rgb(255 255 255 / 0.1); }
-.zm-panel input[type=range] { width: 100%; margin: 6px 0 2px; accent-color: #ff5c7a; }
-.zm-panel input[type=checkbox] { width: 16px; height: 16px; margin: 0; accent-color: #ff5c7a; }
-.zm-nota { margin-top: 8px; color: #ffc46b; font-size: 13px; }
-.zm-estado { margin-top: 8px; color: rgb(255 255 255 / 0.62); font-size: 13px; }
+.zm-cabeza { padding: 2px 6px 12px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; color: #fff; }
+.zm-seccion { margin: 16px 6px 6px; font-size: 12px; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; color: rgb(235 235 245 / 0.55); }
+.zm-grupo { border-radius: 12px; background: rgb(255 255 255 / 0.06); overflow: hidden; }
+.zm-fila { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 6px 12px; box-sizing: border-box; }
+.zm-fila + .zm-fila::before, .zm-fila + .zm-deslizador::before, .zm-deslizador + .zm-fila::before {
+  content: ''; position: absolute; top: 0; left: 12px; right: 0; height: 1px; background: rgb(255 255 255 / 0.08); }
+.zm-deslizador { position: relative; padding: 2px 12px 12px; }
+.zm-suave { color: rgb(235 235 245 / 0.6); font-variant-numeric: tabular-nums; }
+.zm-panel input[type=range] { width: 100%; margin: 0; accent-color: #ff5c7a; }
+.zm-panel input[type=checkbox] { -webkit-appearance: none; appearance: none; flex: none; position: relative; width: 42px; height: 26px; margin: 0;
+  border-radius: 13px; background: rgb(120 120 128 / 0.36); cursor: pointer; transition: background-color 0.2s ease; }
+.zm-panel input[type=checkbox]::after { content: ''; position: absolute; top: 2px; left: 2px; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; box-shadow: 0 2px 4px rgb(0 0 0 / 0.3); transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.4, 1); }
+.zm-panel input[type=checkbox]:checked { background: #ff5c7a; }
+.zm-panel input[type=checkbox]:checked::after { transform: translateX(16px); }
+.zm-panel input:focus-visible { outline: 2px solid #ff5c7a; outline-offset: 2px; }
+.zm-nota { margin: 10px 6px 0; color: #ffc46b; font-size: 13px; }
+.zm-estado { margin: 10px 6px 0; color: rgb(235 235 245 / 0.6); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .zm-panel input[type=checkbox], .zm-panel input[type=checkbox]::after { transition: none; } }
 `;
 
-  const MOTIVOS = {
-    apagada: 'Mezcla apagada',
-    anuncio: 'En pausa durante el anuncio',
-    corta: 'Esta canción es corta o en directo: no se mezcla',
-    'repetir una': 'Repetir una: no se mezcla',
-    velocidad: 'Con otra velocidad no se mezcla',
-    disco: 'Disco completo: se respetan sus pausas',
-    'cola corta': 'Esta canción termina sin mezcla: no se bajó a tiempo',
-  };
+  const MOTIVOS = () => ({
+    apagada: tr('Crossfade off', 'Mezcla apagada'),
+    anuncio: tr('Paused during the ad', 'En pausa durante el anuncio'),
+    corta: tr('This song is short or live: no crossfade', 'Esta canción es corta o en directo: no se mezcla'),
+    'repetir una': tr('Repeat one: no crossfade', 'Repetir una: no se mezcla'),
+    velocidad: tr('No crossfade at another playback speed', 'Con otra velocidad no se mezcla'),
+    disco: tr('Full album: its gaps are kept', 'Disco completo: se respetan sus pausas'),
+    'cola corta': tr("This song ends without crossfade: its ending didn't download in time", 'Esta canción termina sin mezcla: no se bajó a tiempo'),
+  });
 
   const Panel = {
     boton: null, nodo: null, partes: {},
@@ -734,31 +758,37 @@
     montarPanel() {
       const n = this.crear('div', 'zm-panel');
       n.hidden = true;
-      n.appendChild(this.fila(this.crear('span', 'zm-titulo', 'Mezcla entre canciones'), this.casilla(Ajustes.v.activa, (x) => {
+      n.appendChild(this.crear('div', 'zm-cabeza', tr('Crossfade', 'Mezcla entre canciones')));
+      const g1 = this.crear('div', 'zm-grupo');
+      n.appendChild(g1);
+      g1.appendChild(this.fila(this.crear('span', null, tr('Blend songs', 'Mezclar canciones')), this.casilla(Ajustes.v.activa, (x) => {
         Ajustes.v.activa = x; Ajustes.guardar(); this.pintar();
       })));
 
       const dura = this.crear('span', 'zm-suave');
       this.partes.dura = dura;
-      n.appendChild(this.fila(this.crear('span', null, 'Fundido'), dura));
+      g1.appendChild(this.fila(this.crear('span', null, tr('Fade length', 'Duración del fundido')), dura));
       const r = this.crear('input');
       r.type = 'range';
       r.min = L.fundidoMin; r.max = L.fundidoMax; r.step = 1;
       r.value = Ajustes.v.fundido;
-      r.setAttribute('aria-label', 'Duración del fundido en segundos');
+      r.setAttribute('aria-label', tr('Fade length in seconds', 'Duración del fundido en segundos'));
       r.addEventListener('input', () => { Ajustes.v.fundido = Number(r.value); Ajustes.guardar(); this.pintar(); });
-      n.appendChild(r);
+      const caja = this.crear('div', 'zm-deslizador');
+      caja.appendChild(r);
+      g1.appendChild(caja);
 
-      n.appendChild(this.fila(this.crear('span', null, 'Mezclar también en discos'), this.casilla(Ajustes.v.discos, (x) => {
+      g1.appendChild(this.fila(this.crear('span', null, tr('Also on full albums', 'Mezclar también en discos')), this.casilla(Ajustes.v.discos, (x) => {
         Ajustes.v.discos = x; Ajustes.guardar(); this.pintar();
       })));
 
-      n.appendChild(this.crear('hr'));
-      n.appendChild(this.crear('div', 'zm-titulo', 'Lo que suena'));
-      for (const [clave, etiqueta] of [['calidad', 'Calidad'], ['version', 'Versión'], ['volumen', 'Volumen']]) {
+      n.appendChild(this.crear('div', 'zm-seccion', tr('Now playing', 'Lo que suena')));
+      const g2 = this.crear('div', 'zm-grupo');
+      n.appendChild(g2);
+      for (const [clave, etiqueta] of [['calidad', tr('Quality', 'Calidad')], ['version', tr('Version', 'Versión')], ['volumen', tr('Loudness', 'Volumen')]]) {
         const v = this.crear('span', 'zm-suave');
         this.partes[clave] = v;
-        n.appendChild(this.fila(this.crear('span', null, etiqueta), v));
+        g2.appendChild(this.fila(this.crear('span', null, etiqueta), v));
       }
       this.partes.nota = this.crear('div', 'zm-nota');
       n.appendChild(this.partes.nota);
@@ -773,10 +803,10 @@
     },
 
     textoEstado() {
-      if (!Grafo.fuente) return 'Se conecta al sonar la primera canción';
-      if (['alineando', 'alineada', 'cola', 'entrada', 'fundiendo'].includes(D.fase)) return 'Mezclando';
-      if (D.motivo) return MOTIVOS[D.motivo] || 'Esta canción termina sin mezcla';
-      return Ajustes.v.activa ? 'Lista para mezclar' : MOTIVOS.apagada;
+      if (!Grafo.fuente) return tr('Connects when the first song plays', 'Se conecta al sonar la primera canción');
+      if (['alineando', 'alineada', 'cola', 'entrada', 'fundiendo'].includes(D.fase)) return tr('Blending', 'Mezclando');
+      if (D.motivo) return MOTIVOS()[D.motivo] || tr('This song ends without crossfade', 'Esta canción termina sin mezcla');
+      return Ajustes.v.activa ? tr('Ready to blend', 'Lista para mezclar') : MOTIVOS().apagada;
     },
 
     pintar() {
@@ -790,11 +820,11 @@
       const ver = Rep.version();
       this.partes.dura.textContent = Ajustes.v.fundido + ' s';
       this.partes.calidad.textContent = f.itag ? `${f.nombre}, ${f.kbps ? '~' + f.kbps + ' kbps' : 'itag ' + f.itag}` : '—';
-      this.partes.version.textContent = ver === 'estudio' ? 'Pista de estudio' : ver === 'video' ? 'Video' : '—';
-      this.partes.volumen.textContent = Number.isFinite(l) ? l.toFixed(1).replace('.', ',') + ' LKFS' : '—';
+      this.partes.version.textContent = ver === 'estudio' ? tr('Studio track', 'Pista de estudio') : ver === 'video' ? tr('Music video', 'Vídeo') : '—';
+      this.partes.volumen.textContent = Number.isFinite(l) ? tr(l.toFixed(1), l.toFixed(1).replace('.', ',')) + ' LKFS' : '—';
       let aviso = '';
-      if (f.itag && !f.alMaximo) aviso = 'Por debajo del máximo. Mira la calidad de audio en los ajustes de YouTube Music.';
-      else if (ver === 'video') aviso = 'Es el audio del video: la pista de estudio puede sonar mejor.';
+      if (f.itag && !f.alMaximo) aviso = tr('Below the best quality. Check the audio quality in YouTube Music settings.', 'Por debajo del máximo. Mira la calidad de audio en los ajustes de YouTube Music.');
+      else if (ver === 'video') aviso = tr("This is the video's audio: the studio track may sound better.", 'Es el audio del vídeo: la pista de estudio puede sonar mejor.');
       this.partes.nota.textContent = aviso;
       this.partes.nota.hidden = !aviso;
       this.partes.estado.textContent = this.textoEstado();
@@ -818,8 +848,8 @@
       const b = this.boton || this.crear('button', 'zm-boton');
       if (!this.boton) {
         b.type = 'button';
-        b.title = 'Mezcla entre canciones';
-        b.setAttribute('aria-label', 'Mezcla entre canciones');
+        b.title = tr('Crossfade', 'Mezcla entre canciones');
+        b.setAttribute('aria-label', tr('Crossfade', 'Mezcla entre canciones'));
         b.appendChild(this.icono());
         b.addEventListener('click', (e) => {
           // ytmusic-player-bar abre y cierra el reproductor grande con cualquier clic
