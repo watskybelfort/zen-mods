@@ -35,7 +35,7 @@ import * as z from './zen.mjs'
  * Asi cada instalador reconoce como propio el que dejo el otro y lo puede
  * actualizar al compartido sin quejarse.
  */
-export const MARCA_NUESTRA = /Zen Letra Viva|Zen Sintonia|Zen Sin Cristal|Zen Web Apps|Zen Modo Oscuro|Zen Mezcla|Zen Remoto|Zen Inmersivo/
+export const MARCA_NUESTRA = /Zen Letra Viva|Zen Sintonia|Zen Sin Cristal|Zen Web Apps|Zen Modo Oscuro|Zen Mezcla|Zen Remoto|Zen Inmersivo|Zen Descargas/
 
 /**
  * Los mods nativos que carga el config.js compartido, por su carpeta del perfil.
@@ -60,6 +60,7 @@ export const MODS_NATIVOS = [
   { dir: 'zen-mezcla', nombre: 'Zen Mezcla', pieza: 'proceso.js' },
   { dir: 'zen-remoto', nombre: 'Zen Remoto', pieza: 'proceso.js' },
   { dir: 'zen-inmersivo', nombre: 'Zen Inmersivo', pieza: 'proceso.js' },
+  { dir: 'zen-descargas', nombre: 'Zen Descargas', pieza: 'proceso.js' },
 ]
 
 /**

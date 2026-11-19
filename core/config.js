@@ -1,4 +1,4 @@
-// Cargador nativo del repo (autoconfig) — Zen Letra Viva y Zen Sintonia
+// Cargador nativo del repo (autoconfig) — Zen Letra Viva, Zen Sintonia, Zen Descargas y los demas
 //
 // Este archivo va en el DIRECTORIO DE INSTALACION de Zen y lo ejecuta el
 // navegador al arrancar con privilegios de sistema. Es el mecanismo legado de
@@ -170,6 +170,19 @@ try {
       ],
       ventana: 'ventana.js',
       padre: ['puro.js', 'servicio.js'],
+    },
+    // Descargar canciones y videos de YouTube y YouTube Music: boton en la pagina y
+    // yt-dlp en el padre (lanzar procesos solo se puede desde ahi).
+    {
+      nombre: 'Zen Descargas',
+      dir: 'zen-descargas',
+      inyector: 'proceso.js',
+      publicar: [
+        { clave: 'zen-descargas:puro', archivo: 'puro.js' },
+        { clave: 'zen-descargas:motor', archivo: 'motor.js' },
+      ],
+      ventana: null,
+      padre: ['puro.js', 'descargador.js'],
     },
   ];
 

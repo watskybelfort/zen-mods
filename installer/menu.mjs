@@ -67,6 +67,10 @@ const MODS = [
     en: 'Control YouTube Music on your PC from your phone: scan a QR and go.',
     es: 'Controla el YouTube Music del PC desde el móvil: escaneas un QR y listo.',
     native: 'instalar-remoto.mjs' },
+  { id: 'downloader', cat: 'youtube-music', name: 'Downloader',
+    en: 'A Download button on YouTube and YouTube Music: the song (MP3) or the video (MP4) in one click.',
+    es: 'Un botón Descargar en YouTube y YouTube Music: la canción (MP3) o el vídeo (MP4) en un clic.',
+    native: 'instalar-descargas.mjs' },
   { id: 'obs-now-playing', cat: 'youtube-music', name: 'OBS Now Playing',
     en: 'Feeds the current song to an OBS music widget.',
     es: 'Le pasa la canción que suena a un widget de música de OBS.',
@@ -87,7 +91,7 @@ const MODS = [
 
 const CATEGORIAS = () => ({
   appearance: t('Appearance', 'Apariencia'),
-  'youtube-music': 'YouTube Music',
+  'youtube-music': t('YouTube & YouTube Music', 'YouTube y YouTube Music'),
   utilities: t('Utilities', 'Utilidades'),
 })
 
