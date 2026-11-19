@@ -106,6 +106,7 @@ Web Apps.
 | Live Lyrics | `zen-letra.js` | `zen-letra` | `nativo/proceso.js`, `dist/zen-letra-viva.user.js` |
 | Crossfade | `zen-mezcla.js` | `zen-mezcla` | `nativo/proceso.js`, `nativo/puro.js`, `nativo/motor.js` |
 | Phone Remote | `zen-remoto.js` | `zen-remoto` | `nativo/proceso.js`, `nativo/puro.js`, `nativo/qr.js`, `nativo/motor.js`, `nativo/servidor.js`, and the whole `movil` folder |
+| Downloader | `zen-descargas.js` | `zen-descargas` | `nativo/proceso.js`, `nativo/puro.js`, `nativo/motor.js`, `nativo/descargador.js`, and yt-dlp in `bin/` (better with the installer: it downloads and verifies it) |
 | OBS Now Playing | `zen-sintonia.js` | `zen-sintonia` | `nativo/proceso.js` |
 | Web Apps | `zen-web-apps.js` | `zen-web-apps` | `nativo/ventana.js` |
 

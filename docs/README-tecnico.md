@@ -766,6 +766,7 @@ nativo/
 mods/youtube-music/live-lyrics/                     Zen Letra Viva; su propio readme
 mods/youtube-music/crossfade/                    Zen Mezcla: fundido entre canciones de YouTube Music; su propio readme
 mods/youtube-music/phone-remote/                    Zen Remoto: controlar YouTube Music del PC desde el movil; su propio readme
+mods/youtube-music/downloader/                      Zen Descargas: boton Descargar en YouTube y YouTube Music (yt-dlp); su propio readme
 mods/appearance/immersive-web/                 Zen Inmersivo: sustituto nativo de la extension Zen Internet; su propio readme
 mods/youtube-music/obs-now-playing/                  Zen Sintonia: la cancion de YouTube Music para el widget de OBS
   nativo/proceso.js        inyector + recolector + el puente hacia el widget

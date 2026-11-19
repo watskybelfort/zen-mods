@@ -77,10 +77,11 @@ instalador pregunta. Para forzar uno en todo, pon `zen.mods.idioma` en `es` o `e
 | 7 | **Live Lyrics** | Letra sincronizada palabra a palabra en YouTube Music. | Nativo |
 | 8 | **Crossfade** | Funde el final de cada canción con la siguiente. | Nativo |
 | 9 | **Phone Remote** | Controla el YouTube Music del PC desde el móvil: escaneas un QR y listo. | Nativo |
-| 10 | **OBS Now Playing** | Le pasa la canción que suena a un widget de OBS. | Nativo |
-| 11 | **Web Apps** | Quita la barra lateral vacía de las ventanas de aplicación web. | CSS + nativo |
-| 12 | **Agent Indicator** | Una pastilla que avisa cuando un agente de IA maneja el navegador. | CSS |
-| 13 | **Privacy Hardening** | Prefs que reducen la superficie de ataque. | Prefs |
+| 10 | **Downloader** | Un botón Descargar en YouTube y YouTube Music: la canción en MP3 con portada o el vídeo en MP4, en un clic. | Nativo |
+| 11 | **OBS Now Playing** | Le pasa la canción que suena a un widget de OBS. | Nativo |
+| 12 | **Web Apps** | Quita la barra lateral vacía de las ventanas de aplicación web. | CSS + nativo |
+| 13 | **Agent Indicator** | Una pastilla que avisa cuando un agente de IA maneja el navegador. | CSS |
+| 14 | **Privacy Hardening** | Prefs que reducen la superficie de ataque. | Prefs |
 
 ## Manual
 
@@ -131,6 +132,7 @@ Acrylic Glass, Motion, Traffic Lights, Agent Indicator y la parte visual de Dark
 | Live Lyrics | `zen-letra.js` | `zen-letra` | `nativo/proceso.js`, `dist/zen-letra-viva.user.js` |
 | Crossfade | `zen-mezcla.js` | `zen-mezcla` | `nativo/proceso.js`, `nativo/puro.js`, `nativo/motor.js` |
 | Phone Remote | `zen-remoto.js` | `zen-remoto` | `nativo/proceso.js`, `nativo/puro.js`, `nativo/qr.js`, `nativo/motor.js`, `nativo/servidor.js`, y la carpeta `movil` entera |
+| Downloader | `zen-descargas.js` | `zen-descargas` | `nativo/proceso.js`, `nativo/puro.js`, `nativo/motor.js`, `nativo/descargador.js`, y yt-dlp en `bin/` (mejor con el instalador: lo baja y lo comprueba) |
 | OBS Now Playing | `zen-sintonia.js` | `zen-sintonia` | `nativo/proceso.js` |
 | Web Apps | `zen-web-apps.js` | `zen-web-apps` | `nativo/ventana.js` |
 

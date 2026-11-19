@@ -10,6 +10,11 @@ This repository includes work by others. Each keeps its own license, shipped nex
 | [Geist](https://github.com/vercel/geist-font) font | `mods/youtube-music/phone-remote/movil/geist.woff2` | SIL Open Font License 1.1 | `movil/LICENCIA-GEIST.txt` |
 | [Phosphor Icons](https://phosphoricons.com) | `mods/youtube-music/phone-remote/movil/iconos.svg` | MIT | `movil/LICENCIA-PHOSPHOR.txt` |
 
+Tools downloaded by an installer, not bundled: [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+(Unlicense) and, only if it is missing, [FFmpeg](https://ffmpeg.org) from
+[yt-dlp/FFmpeg-Builds](https://github.com/yt-dlp/FFmpeg-Builds) (GPL), both for Downloader and both
+verified against their published SHA-256 sums.
+
 Services used at runtime, not bundled: lyrics from [LRCLIB](https://lrclib.net) and other
 providers (Live Lyrics), and the my-internet catalog downloaded every two hours (Immersive Web).
 YouTube Music is used through its own web page, signed in with your own account.

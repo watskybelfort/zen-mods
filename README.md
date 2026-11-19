@@ -1,8 +1,8 @@
 # Zen Mods
 
-Thirteen mods for [Zen Browser](https://zen-browser.app): real system glass behind the
+Fourteen mods for [Zen Browser](https://zen-browser.app): real system glass behind the
 browser, an immersive web, a proper dark mode, and a set of YouTube Music upgrades
-(synced lyrics, crossfade, and a phone remote).
+(synced lyrics, crossfade, a phone remote, and a one-click downloader for YouTube).
 
 Windows 11 and macOS. Pick only the ones you want; the rest of your browser is untouched.
 
@@ -40,13 +40,14 @@ Prefer to do it by hand? **[Manual install guide → INSTALL.md](INSTALL.md)**
 | **[Dark Mode](mods/appearance/dark-mode/)** | A real dark mode for any page from the right-click menu, powered by Dark Reader. It recolors instead of inverting, and leaves the glass alone. |
 | **[Immersive Web](mods/appearance/immersive-web/)** | Transparent, clean websites with effects: hidden clutter, hover reveals, YouTube's immersive search, the YouTube Music side panel that slides in on hover… 667 sites from the [my-internet](https://github.com/sameerasw/my-internet) catalog. A native replacement for the Zen Internet extension, byte-for-byte identical output. Right-click → *Immersive Web* to toggle each feature per site. |
 
-### YouTube Music
+### YouTube and YouTube Music
 
 | Mod | What it does |
 | --- | --- |
 | **[Live Lyrics](mods/youtube-music/live-lyrics/)** | Synced lyrics, word by word: a karaoke stage instead of the video, full screen, or a mini strip above the player bar. |
 | **[Crossfade](mods/youtube-music/crossfade/)** | Blends the end of each song into the next one, like AutoMix. Fade length 3–12 s. |
 | **[Phone Remote](mods/youtube-music/phone-remote/)** | Control YouTube Music on your PC from your phone. Click the phone button in the player bar, scan the QR code, done. Now playing, search, your library, the queue, volume and live lyrics. No app to install; works great as a home-screen web app on iOS. |
+| **[Downloader](mods/youtube-music/downloader/)** | A **Download** button on YouTube (next to Share, and on Shorts) and in the YouTube Music player bar. One click: the song as MP3 with cover art, or the video as MP4 up to the quality you pick. Progress, cancel and "show in folder" in the same panel. Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp), which the installer downloads and checks by SHA-256 and the mod keeps updated. |
 | **[OBS Now Playing](mods/youtube-music/obs-now-playing/)** | Feeds the current song to an OBS music widget, and nothing else from your browser. |
 
 ### Utilities
@@ -124,6 +125,9 @@ puts the latest one back.
   private IP addresses, pairs with a one-time 6-digit code that exists only while its panel is
   open, uses an HttpOnly cookie, blocks brute force, and rejects DNS rebinding and cross-site
   requests. It is plain HTTP inside your Wi-Fi. Details in its [readme](mods/youtube-music/phone-remote/readme.md).
+- **Downloader** only sends the 11-character video id from the page; the browser builds the URL and
+  runs yt-dlp without a shell and with `--ignore-config`. Using your YouTube session (cookies) is off
+  until you turn it on in its panel. Download only what you have the right to keep.
 - Nothing phones home. The only outgoing requests are the ones each feature needs
   (lyrics providers for Live Lyrics, the style catalog for Immersive Web every two hours).
 
@@ -147,6 +151,7 @@ what was measured and why, which is what you need when Zen changes something.
 node dev/tools/doctor.mjs            # is everything installed and working?
 node dev/tools/probar-inmersivo.mjs  # Immersive Web vs. the original extension engine
 node dev/tools/probar-remoto.mjs     # Phone Remote: parser, validation, QR
+node dev/tools/probar-descargas.mjs  # Downloader: validation, yt-dlp arguments (--vivo downloads a 19 s clip)
 node dev/tools/probar-mezcla.mjs     # Crossfade
 node dev/tools/probar-lrc.mjs        # Live Lyrics parser
 ```
