@@ -104,6 +104,9 @@ There are two kinds of mods:
   native mod from your profile. Every native mod has an emergency off switch
   (a pref, listed in its readme) and stops quietly instead of breaking the browser.
 
+**Privacy Hardening** is neither: it is a set of prefs, applied and reverted by
+`installer/blindar.mjs`, with no CSS and no loader involved.
+
 When Zen updates, its install folder is replaced and the loader goes with it. Run the
 installer again and pick any native mod: it puts the loader back.
 
@@ -142,8 +145,9 @@ dev/                            tests, compatibility contracts, maintenance note
 docs/README-tecnico.md          the long technical write-up (Spanish)
 ```
 
-The mods' own menus are in Spanish, and so are most of the inline documentation and the per-mod readmes: they record
-what was measured and why, which is what you need when Zen changes something.
+The mods' own menus speak English and Spanish (they follow Zen's language, or `zen.mods.idioma`), and most of the
+inline documentation and the per-mod readmes are in Spanish: they record what was measured and why, which is what you
+need when Zen changes something.
 
 ## Development
 
@@ -154,6 +158,8 @@ node dev/tools/probar-remoto.mjs     # Phone Remote: parser, validation, QR
 node dev/tools/probar-descargas.mjs  # Downloader: validation, yt-dlp arguments (--vivo downloads a 19 s clip)
 node dev/tools/probar-mezcla.mjs     # Crossfade
 node dev/tools/probar-lrc.mjs        # Live Lyrics parser
+node dev/tools/probar-contrato.mjs --ruta-zen "<new Zen>"  # what a Zen update would break, before installing it
+node dev/tools/probar-css.mjs        # broken comments, unbalanced braces, missing Zen Sin Cristal guards
 ```
 
 ## Credits
