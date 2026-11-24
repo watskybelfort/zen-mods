@@ -136,26 +136,6 @@ const puntos = (nombre) => {
   return [];
 };
 
-/* Las pestanas se piden aparte porque no son un punto unico sino una lista, y
-   porque lo que nos interesa de ellas es la de letra: la usamos solo para
-   saber si YTM tiene letra propia, nunca como contenedor.
-
-   La expresion se construye desde una cadena ASCII con los escapes dentro en
-   lugar de escribirse como literal con caracteres japoneses. El parcial pasa por
-   concatenacion y por conversion de fin de linea antes de llegar al navegador, y
-   un caracter fuera del ASCII en la fuente es una oportunidad de que la
-   expresion llegue mal formada al otro lado sin que nadie lo note. */
-const RE_PESTANA_LETRA = new RegExp('letra|lyric|liedtext|parole|testo|\\u6b4c\\u8a5e', 'i');
-const pestanaLetra = () => {
-  const tabs = document.querySelectorAll('#tabsContainer tp-yt-paper-tab.tab-header');
-  /* Por texto no vale: la interfaz esta traducida. Medido que la de letra es
-     la segunda de cuatro, pero fiarse del indice es fragil, asi que se cruzan
-     las dos cosas: el indice 1 como pista y el texto en varios idiomas como
-     confirmacion, y con que una de las dos acierte, sirve. */
-  const porTexto = [...tabs].find((t) => RE_PESTANA_LETRA.test(t.textContent || ''));
-  return porTexto || tabs[1] || null;
-};
-
 /* --- El informe ----------------------------------------------------------
    Esto es lo que hace que el mod no se quede obsoleto en silencio. Sale por
    window.__zenLetra.doctor() y dice, punto por punto, si sigue existiendo.

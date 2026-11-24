@@ -119,12 +119,6 @@
   const leerAjustes = () => {
     try { return P.ajustesCompletos(JSON.parse(SV.prefs.getStringPref(PREF_AJUSTES, '{}'))); } catch (e) { return P.ajustesCompletos({}); }
   };
-  const guardarAjustes = (a) => {
-    const limpio = P.ajustesCompletos(a);
-    // El chat movible guarda posicion y opacidad aparte, como la extension.
-    if (a && a.chat && typeof a.chat === 'object') limpio.chat = a.chat;
-    SV.prefs.setStringPref(PREF_AJUSTES, JSON.stringify(limpio));
-  };
 
   // --- La extension ---------------------------------------------------------------
   // Mientras Zen Internet este activa, el mod no pinta nada.
