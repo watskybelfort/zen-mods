@@ -71,6 +71,38 @@ prueba('validar: lo demas se descarta', () => {
   cierto(P.validar({ tipo: 'descargar', id: 'jNQXAC9IVRw', modo: 'video', titulo: 'x'.repeat(5000) }).titulo.length === 200, 'titulo recortado');
 });
 
+prueba('validar: los mensajes sin datos que llevan trabajo', () => {
+  igual(P.validar({ tipo: 'adios' }), { tipo: 'adios' });
+  igual(P.validar({ tipo: 'carpeta' }), { tipo: 'carpeta' });
+  igual(P.validar({ tipo: 'quitar', trabajo: '1abc' }), { tipo: 'quitar', trabajo: '1abc' });
+  igual(P.validar({ tipo: 'quitar' }), null);
+});
+
+// --- Iconos ------------------------------------------------------------------
+prueba('iconos: la forma sale de la primera letra y los numeros no pierden digitos', () => {
+  // Los dos puntos de la nota y el marco del video: ahi se comia el primer digito
+  // de la primera coordenada.
+  igual(P.formaIcono('C6 18 3'), { forma: 'circle', atributos: { cx: '6', cy: '18', r: '3' } });
+  igual(P.formaIcono('C17 16 3'), { forma: 'circle', atributos: { cx: '17', cy: '16', r: '3' } });
+  igual(P.formaIcono('R3 5 18 14 3'), { forma: 'rect', atributos: { x: '3', y: '5', width: '18', height: '14', rx: '3' } });
+});
+prueba('iconos: trazados normales y rellenos', () => {
+  igual(P.formaIcono('M12 4v11'), { forma: 'path', atributos: { d: 'M12 4v11' } });
+  igual(P.formaIcono('FM10 9.2v5.6l4.8-2.8z'), { forma: 'path', atributos: { d: 'M10 9.2v5.6l4.8-2.8z' }, relleno: true });
+});
+prueba('iconos: los del panel dan formas y numeros completos', () => {
+  const motor = fs.readFileSync(path.join(raiz, 'mods/youtube-music/downloader/nativo/motor.js'), 'utf8');
+  const desde = motor.indexOf('const ICONOS = {');
+  const bloque = desde > -1 ? motor.slice(desde, motor.indexOf('};', desde)) : '';
+  const piezas = (bloque.match(/'[^']+'/g) || []).map((p) => p.slice(1, -1));
+  cierto(piezas.length >= 14, 'no encontre los iconos de motor.js');
+  for (const d of piezas) {
+    const f = P.formaIcono(d);
+    if (f.forma === 'path') continue;
+    for (const v of Object.values(f.atributos)) cierto(/^\d+(\.\d+)?$/.test(v), `${d}: ${v} no es un numero`);
+  }
+});
+
 // --- Argumentos --------------------------------------------------------------
 const base = { carpeta: 'C:\\Users\\x\\Downloads', temporal: 'C:\\t', ffmpeg: 'C:\\ff', js: { nombre: 'deno', ruta: 'C:\\deno.exe' }, calidad: '1080', audio: 'mp3', cookies: null };
 prueba('argumentos: la URL la pone el mod y va despues de --', () => {
@@ -134,6 +166,11 @@ prueba('progreso: video en dos partes no retrocede', () => {
   cierto(vistos.every((v, i) => i === 0 || v >= vistos[i - 1]), 'retrocedio: ' + vistos);
   igual(vistos[2], 90);
   cierto(vistos[4] >= 98, 'casi al final: ' + vistos[4]);
+});
+
+prueba('progreso: el audio avanza sobre 99 y sin total no inventa', () => {
+  igual(P.progreso(null, { bajado: 50, total: 100 }, 'audio', false).pct, 49.5);
+  igual(P.progreso(null, { bajado: 50, total: 0 }, 'audio', false).pct, 0);
 });
 
 // --- En vivo ----------------------------------------------------------------------

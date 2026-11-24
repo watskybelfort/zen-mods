@@ -98,24 +98,10 @@
     s.setAttribute('stroke-linejoin', 'round');
     s.setAttribute('aria-hidden', 'true');
     for (const d of ICONOS[nombre]) {
-      let n;
-      if (d[0] === 'C') {
-        const [x, y, r] = d.slice(1).split(' ');
-        n = document.createElementNS(svgNs, 'circle');
-        n.setAttribute('cx', x); n.setAttribute('cy', y); n.setAttribute('r', r);
-      } else if (d[0] === 'R') {
-        const [x, y, w, h, r] = d.slice(1).split(' ');
-        n = document.createElementNS(svgNs, 'rect');
-        n.setAttribute('x', x); n.setAttribute('y', y); n.setAttribute('width', w); n.setAttribute('height', h); n.setAttribute('rx', r);
-      } else if (d[0] === 'F') {
-        n = document.createElementNS(svgNs, 'path');
-        n.setAttribute('d', d.slice(1));
-        n.setAttribute('fill', 'currentColor');
-        n.setAttribute('stroke', 'none');
-      } else {
-        n = document.createElementNS(svgNs, 'path');
-        n.setAttribute('d', d);
-      }
+      const f = P.formaIcono(d);
+      const n = document.createElementNS(svgNs, f.forma);
+      for (const k of Object.keys(f.atributos)) n.setAttribute(k, f.atributos[k]);
+      if (f.relleno) { n.setAttribute('fill', 'currentColor'); n.setAttribute('stroke', 'none'); }
       s.appendChild(n);
     }
     return s;

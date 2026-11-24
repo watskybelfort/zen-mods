@@ -86,6 +86,28 @@
     }
   };
 
+  // --- Iconos -----------------------------------------------------------------
+  // Cada pieza de los iconos del panel (motor.js) empieza por una letra que dice
+  // la forma; detras van sus numeros separados por espacios:
+  //   C cx cy r            circulo
+  //   R x y ancho alto r   rectangulo
+  //   F ...                trazado relleno
+  //   ...                  trazado normal
+  // Se quita UNA letra, no dos: con dos, la primera coordenada perdia su primer
+  // digito y 'C6 18 3' salia con cx vacio (el circulo se iba al borde).
+  const formaIcono = (d) => {
+    if (d[0] === 'C') {
+      const [cx, cy, r] = d.slice(1).split(' ');
+      return { forma: 'circle', atributos: { cx, cy, r } };
+    }
+    if (d[0] === 'R') {
+      const [x, y, ancho, alto, r] = d.slice(1).split(' ');
+      return { forma: 'rect', atributos: { x, y, width: ancho, height: alto, rx: r } };
+    }
+    if (d[0] === 'F') return { forma: 'path', atributos: { d: d.slice(1) }, relleno: true };
+    return { forma: 'path', atributos: { d } };
+  };
+
   // --- yt-dlp ---------------------------------------------------------------
   // Marcas al principio de cada linea que nos interesa: el resto de la salida de
   // yt-dlp (avisos, [youtube] ...) se ignora salvo los ERROR:.
@@ -234,6 +256,6 @@
 
   return {
     LIMITES, MODOS, CALIDADES, FORMATOS_AUDIO, AJUSTES, MARCA,
-    esId, esIdTrabajo, idDeUrl, validar, argumentos, leerLinea, explicarError, progreso,
+    esId, esIdTrabajo, idDeUrl, validar, formaIcono, argumentos, leerLinea, explicarError, progreso,
   };
 });
