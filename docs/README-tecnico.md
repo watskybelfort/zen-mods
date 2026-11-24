@@ -185,12 +185,17 @@ ejecutar el instalador:
 }
 ```
 
-## Mods incluidos
+## Los mods de este documento
 
-El instalador copia todas las subcarpetas de `mod/` que tengan `theme.json` **y
-que apliquen a tu sistema**, y cada una aparece por separado en *Ajustes > Zen
-Mods*, con su propio interruptor y sus opciones. Se activan y desactivan una a
-una sin desinstalar nada, y se anaden mods nuevos sin tocar el instalador.
+Este documento nace con el cristal y detalla sobre todo los mods de apariencia.
+La lista completa, con los cinco de YouTube Music, esta en
+[`README.md`](../README.md).
+
+El instalador copia todas las subcarpetas de `mods/<categoria>/` que tengan
+`theme.json` **y que apliquen a tu sistema**, y cada una aparece por separado en
+*Ajustes > Zen Mods*, con su propio interruptor y sus opciones. Se activan y
+desactivan una a una sin desinstalar nada, y se anaden mods nuevos sin tocar el
+instalador.
 
 | Mod | Que hace | Donde |
 | --- | --- | --- |
@@ -285,7 +290,7 @@ que no pasa por CORS ni por la CSP de la pagina.
 
 ```bash
 node installer/instalar-sintonia.mjs        # una vez; necesita escribir en la instalacion
-node dev/tools/probar-sintonia.mjs            # 36 pruebas, sin navegador
+node dev/tools/probar-sintonia.mjs            # 40 pruebas, sin navegador
 ```
 
 **En macOS se instala y funciona, pero el motivo de arriba no existe.** El
@@ -594,6 +599,9 @@ aplique, y esa se mide desde dentro con `node dev/tools/probar-vivo.mjs`.
 | Flag | Efecto |
 | --- | --- |
 | `--perfil <ruta>` | Instalar en un perfil concreto en vez del de por defecto. |
+| `--mods <lista>` | Instalar solo esos mods, por el nombre de su carpeta (`acrylic-glass,motion,…`). Los demas no se tocan. |
+| `--idioma <es o en>` | Idioma de las opciones en *Ajustes > Zen Mods*; por defecto, el del sistema. |
+| `--forzar` | Instalar tambien los mods que no aplican a esta plataforma. Para preparar un perfil desde otro sistema, no para uso normal. |
 | `--bloquear` | Escribir las prefs en `user.js` en lugar de `prefs.js`. Se reaplican en cada arranque y about:config deja de poder cambiarlas de forma permanente. Por defecto se escriben en `prefs.js` para que sigan siendo editables a mano. |
 | `--nivel-web <nivel>` | Cuanto se insiste en vaciar el fondo de las paginas. |
 
@@ -740,65 +748,75 @@ lo baje como que lo suba.
 ## Estructura
 
 ```
-mod/                       los mods; cada subcarpeta con theme.json se instala sola
-  acrylic-zen/             el cristal de la ventana
-    theme.json             manifiesto que se registra en zen-themes.json.
+mods/                      los mods, por categoria; cada carpeta con theme.json
+                           se instala sola
+  appearance/
+    acrylic-glass/         el cristal de la ventana
+      theme.json           manifiesto que se registra en zen-themes.json.
                            `plataformas` dice donde aplica; sin esa clave, en todas
-    chrome.css             el CSS
-    preferences.json       las opciones que salen en Ajustes > Zen Mods
-    readme.md
-  zen-motion/              movimiento y tipografia
-  zen-claude-link/         el indicador de agente conectado
-  zen-traffic-lights/      botones de ventana estilo macOS        (solo Windows)
-  zen-web-apps/            las ventanas de app web, sin barra lateral  (solo Windows)
-    nativo/ventana.js      la unica mitad no-CSS que tiene un mod de mod/: le dice
-                           a Zen que esa ventana no usa barra unica
-    nativo/config-prefs.js las prefs del autoconfig, y su interruptor
-  zen-modo-oscuro/         el modo oscuro del clic derecho, con Dark Reader de motor
-    nativo/proceso.js      inyector: arranca el motor, el puente de red, los arreglos
-    nativo/ventana.js      la entrada "Activar modo oscuro" del clic derecho
-    nativo/config-prefs.js las prefs, y la lista de sitios
-    motor/                 Dark Reader 4.9.133 sin tocar, su licencia y su base de
+      chrome.css           el CSS
+      preferences.json     las opciones que salen en Ajustes > Zen Mods
+      readme.md
+      prefs/
+        acrylic-zen.user.js  las prefs comunes a los dos sistemas
+        windows.user.js      el backdrop de DWM: mica y acrilico
+        macos.user.js        la vibrancy de Cocoa: material y modo de muestreo
+      web/                 la capa de contenido, se concatena en userContent.css
+        00-base.css        html/body + esquema oscuro forzado   (siempre)
+        10-wrappers.css    contenedores raiz de frameworks      (nivel full)
+        20-aggressive.css  descendientes del body               (nivel aggressive)
+        45-emergentes.css  velo para los emergentes de cualquier sitio (siempre)
+        50-sites.css       ajustes por sitio (@-moz-document)
+        90-exclusions.css  lista de rescate y exclusiones       (siempre, la ultima)
+        readme.md          el catalogo de los 38 sitios y como se anade uno;
+                           las cinco primeras llevan la guarda de Zen Sin
+                           Cristal, 90-exclusions no, y su cabecera dice por que
+    motion/                movimiento y tipografia
+    traffic-lights/        botones de ventana estilo macOS        (solo Windows)
+    dark-mode/             el modo oscuro del clic derecho, con Dark Reader de motor
+      nativo/proceso.js    inyector: arranca el motor, el puente de red, los arreglos
+      nativo/ventana.js    la entrada "Activar modo oscuro" del clic derecho
+      nativo/config-prefs.js  las prefs, y la lista de sitios
+      motor/               Dark Reader 4.9.133 sin tocar, su licencia y su base de
                            arreglos por sitio (dynamic-theme-fixes.config)
-nativo/
+    glass-toggle/          Zen Sin Cristal: apagar el acrilico en un sitio suelto
+      nativo/proceso.js    marca los documentos del dominio apagado
+      nativo/ventana.js    la entrada del clic derecho, una por ventana
+      nativo/config-prefs.js  las prefs, y la lista de sitios
+      readme.md
+    immersive-web/         Zen Inmersivo: sustituto nativo de la extension Zen Internet
+      nativo/              inyector, parte pura, servicio y ventanas
+      catalogo/styles.json el catalogo de estilos de my-internet (667 webs)
+      readme.md
+  utilities/
+    web-apps/              las ventanas de app web, sin barra lateral  (solo Windows)
+      nativo/ventana.js    la unica mitad no-CSS: le dice a Zen que esa ventana
+                           no usa barra unica
+      nativo/config-prefs.js  las prefs del autoconfig, y su interruptor
+    agent-indicator/       el indicador de agente conectado (Zen Claude Link)
+    privacy-hardening/     blindaje, se acumulan por nivel; lo aplica blindar.mjs
+      00-balanced.user.js  red, PDF y rastreo          (siempre)
+      10-strict.user.js    JIT y wasm fuera del contenido web
+      20-paranoid.user.js  WebGL, service workers, resto del JIT
+  youtube-music/
+    live-lyrics/           Zen Letra Viva (src/, dist/); su propio readme
+    crossfade/             Zen Mezcla: fundido entre canciones; su propio readme
+    phone-remote/          Zen Remoto: YouTube Music del PC desde el movil; movil/ y nativo/
+    downloader/            Zen Descargas: boton Descargar en YouTube y YouTube Music
+                           (el instalador deja yt-dlp en el bin/ del perfil); su readme
+    obs-now-playing/       Zen Sintonia: la cancion de YouTube Music para el widget de OBS
+      nativo/proceso.js    inyector + recolector + el puente hacia el widget
+      nativo/config-prefs.js  las prefs que lo encienden, y el puerto
+      readme.md
+core/
   config.js                el cargador de autoconfig, COMPARTIDO por los mods nativos
                            (general.config.filename admite un archivo, no una lista)
-mods/youtube-music/live-lyrics/                     Zen Letra Viva; su propio readme
-mods/youtube-music/crossfade/                    Zen Mezcla: fundido entre canciones de YouTube Music; su propio readme
-mods/youtube-music/phone-remote/                    Zen Remoto: controlar YouTube Music del PC desde el movil; su propio readme
-mods/youtube-music/downloader/                      Zen Descargas: boton Descargar en YouTube y YouTube Music (yt-dlp); su propio readme
-mods/appearance/immersive-web/                 Zen Inmersivo: sustituto nativo de la extension Zen Internet; su propio readme
-mods/youtube-music/obs-now-playing/                  Zen Sintonia: la cancion de YouTube Music para el widget de OBS
-  nativo/proceso.js        inyector + recolector + el puente hacia el widget
-  nativo/config-prefs.js   las prefs que lo encienden, y el puerto
-  readme.md
-mods/appearance/glass-toggle/               Zen Sin Cristal: apagar el acrilico en un sitio suelto
-  nativo/proceso.js        marca los documentos del dominio apagado
-  nativo/ventana.js        la entrada del clic derecho, una por ventana
-  nativo/config-prefs.js   las prefs, y la lista de sitios
-  readme.md
-web/                       la capa de contenido, se concatena en userContent.css
-  00-base.css              html/body + esquema oscuro forzado   (siempre)
-  10-wrappers.css          contenedores raiz de frameworks      (nivel full)
-  20-aggressive.css        descendientes del body               (nivel aggressive)
-  45-emergentes.css        velo para los emergentes de cualquier sitio (siempre)
-  50-sites.css             ajustes por sitio (@-moz-document)
-  90-exclusions.css        lista de rescate y exclusiones       (siempre, la ultima)
-  readme.md                el catalogo de los 38 sitios y como se anade uno
-                           las cinco primeras llevan la guarda de Zen Sin
-                           Cristal; 90-exclusions no, y su cabecera dice por que
-mods/appearance/acrylic-glass/prefs/
-  acrylic-zen.user.js      las prefs comunes a los dos sistemas
-  windows.user.js          el backdrop de DWM: mica y acrilico
-  macos.user.js            la vibrancy de Cocoa: material y modo de muestreo
-  harden/                  blindaje, se acumulan por nivel
-    00-balanced.user.js    red, PDF y rastreo          (siempre)
-    10-strict.user.js      JIT y wasm fuera del contenido web
-    20-paranoid.user.js    WebGL, service workers, resto del JIT
 installer/                   todo Node, el mismo comando en los dos sistemas
+  menu.mjs                 el menu de Install.cmd / Install.command
   lib/zen.mjs              perfil, plataforma, prefs, recompilado de la hoja
   lib/nativo.mjs           donde van config.js y defaults/pref en cada sistema
   lib/zip.mjs              lector de zip para los omni.ja, sin dependencias
+  lib/arreglos-oscuro.mjs  los arreglos propios de Dark Mode, con su medida
   instalar.mjs
   desinstalar.mjs
   restaurar.mjs            volver a un backup del instalador, por fecha
@@ -813,10 +831,11 @@ installer/                   todo Node, el mismo comando en los dos sistemas
   instalar-mezcla.mjs      Zen Mezcla (cargador nativo, mismo config.js)
   instalar-remoto.mjs      Zen Remoto (cargador nativo, mismo config.js, con pieza en el padre)
   instalar-inmersivo.mjs   Zen Inmersivo (cargador nativo: paginas, padre y ventanas)
+  instalar-descargas.mjs   Zen Descargas (cargador nativo; descarga yt-dlp y lo
+                           verifica por SHA-256 antes de dejarlo en el perfil)
   instalar-web-apps.mjs    la pieza nativa de Zen Web Apps (mismo config.js; el
                            unico mod nativo sin inyector: no toca ninguna pagina)
-  *.ps1                    los originales de Windows; ya no son el camino documentado
-dev/contract/                  de que depende cada mod, en formato legible por maquina
+dev/contract/              de que depende cada mod, en formato legible por maquina
   <mod>.json               un archivo por mod, mas instalador.json. Los enganches
                            llevan `plataformas` cuando solo existen en un motor
   baseline.json            estado validado en Windows
@@ -834,18 +853,23 @@ dev/tools/
                            vibrancy en macOS, que es todo lo que se puede saber alli
   auditar-opacos.js        capas opacas que tapan el cristal
   senalar.js               senalar algo en una pagina y sacar el parche hecho
+  zen-agente.mjs           manejar Zen desde fuera por el canal BiDi del RemoteAgent
+  poner-guarda.mjs         la pasada unica que puso las guardas de Zen Sin Cristal
   probar-mezcla.mjs        contenedores, tiempos, reglas y curvas de Zen Mezcla, sin navegador
   probar-remoto.mjs        extractor, validacion, redes y QR de Zen Remoto, sin navegador
   probar-inmersivo.mjs     paridad de Zen Inmersivo con el motor de Zen Internet, en 1351 webs
   probar-sintonia.mjs      los dos lados del puente de Sintonia, sin navegador
+  probar-descargas.mjs     validacion, ids, linea de yt-dlp y progreso de Zen Descargas
   probar-lrc.mjs           el conversor de LRC de Letra Viva
   probar-reloj.mjs         el reloj de Letra Viva
+dev/powershell/
   Get-ZenBackdrop.ps1      SOLO WINDOWS: le pregunta a DWM por el backdrop de la
                            ventana. Necesita P/Invoke; cristal.mjs lo llama por ti
   Sondear-Media.ps1        SOLO WINDOWS: que publica como "media que suena", y cual
                            cogeria el widget. La sonda que ensena por que hace falta
                            Sintonia. No hay equivalente en macOS: alli no hay SMTC
-dev/MAINTENANCE.md           de que depende cada mod y que hacer cuando Zen se actualice
+  resto de .ps1            los originales de Windows; ya no son el camino documentado
+dev/MAINTENANCE.md         de que depende cada mod y que hacer cuando Zen se actualice
 ```
 
 ## Cuando Zen saque una version nueva
@@ -862,7 +886,7 @@ node dev/tools/doctor.mjs                                                   # de
 El primero abre los `omni.ja` de una build que todavia no has instalado y dice si
 te va a romper algo. El segundo lo revisa todo de una vez: perfil, mods
 registrados, que el CSS instalado sea el del repo, que este dentro de la hoja
-compilada, que las opciones esten sembradas, los 133 enganches del contrato y los
+compilada, que las opciones esten sembradas, los enganches del contrato y los
 CVE pendientes. `dev/MAINTENANCE.md` explica de que depende cada mod y que hacer
 con cada resultado.
 

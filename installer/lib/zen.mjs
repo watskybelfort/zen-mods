@@ -288,7 +288,14 @@ export function leerJson(ruta, siFalta = null) {
   if (!fs.existsSync(ruta)) return siFalta
   const bruto = fs.readFileSync(ruta, 'utf8').replace(/^\uFEFF/, '').trim()
   if (!bruto) return siFalta
-  return JSON.parse(bruto)
+  try {
+    return JSON.parse(bruto)
+  } catch (e) {
+    // JSON.parse sin contexto dice «Unexpected token } in JSON at position 42»
+    // y nada mas: ni el archivo ni que hacer. Con decenas de JSON en el perfil,
+    // eso obliga a buscar a mano cual de todos esta roto.
+    throw new Error(`${ruta}: el JSON no es valido (${e.message}). Revisa el archivo: una coma o una comilla de mas lo rompen entero.`)
+  }
 }
 
 export function escribirJson(ruta, valor) {
@@ -331,7 +338,18 @@ export function mods(raizMods = path.join(RAIZ_REPO, 'mods'), plat = plataforma(
     .map((d) => {
       const dir = d.dir
       const manifiesto = leerJson(path.join(dir, 'theme.json'))
-      const plataformas = manifiesto.plataformas || null
+      // Un theme.json vacio devuelve null y el acceso a .plataformas reventaba
+      // con «Cannot read properties of null», que no dice ni que mod es.
+      if (!manifiesto || typeof manifiesto !== 'object' || Array.isArray(manifiesto)) {
+        throw new Error(`El ${path.join(dir, 'theme.json')} esta vacio o no contiene un objeto JSON. Cada mod necesita al menos {}.`)
+      }
+      const plataformas = manifiesto.plataformas ?? null
+      // `plataformas` se compara con Array.includes; si alguien la escribe como
+      // texto suelto, includes haria una busqueda de subcadena y el mod se
+      // instalaria (o no) por casualidad. Mejor decirlo.
+      if (plataformas !== null && !Array.isArray(plataformas)) {
+        throw new Error(`El ${path.join(dir, 'theme.json')} tiene "plataformas" como ${typeof plataformas}; debe ser una lista, por ejemplo ["windows", "macos"].`)
+      }
       return {
         dir,
         carpeta: d.name,
@@ -719,6 +737,12 @@ export function aviso(texto) {
  * Acepta `--clave valor`, `--clave=valor` y `--interruptor`. Los nombres se
  * declaran para poder distinguir un interruptor de una clave con valor sin
  * adivinar por la forma del siguiente argumento.
+ *
+ * UNA CLAVE SIN VALOR ES UN ERROR, NO UN `undefined`. Antes `--perfil` al final
+ * de la linea dejaba `args.perfil` en undefined y cada script caia en
+ * `args.perfil || resolverPerfil()`: se instalaba en el perfil por defecto en
+ * vez de en el que se queria tocar, sin decir nada. Y `--perfil --forzar`
+ * tomaba `--forzar` como ruta del perfil. Las dos cosas se avisan ahora.
  */
 export function parsearArgs(argv, { interruptores = [], claves = [] } = {}) {
   const salida = { _: [] }
@@ -732,9 +756,21 @@ export function parsearArgs(argv, { interruptores = [], claves = [] } = {}) {
     if (interruptores.includes(nombre)) {
       salida[nombre] = incrustado === undefined ? true : incrustado !== 'false'
     } else if (claves.includes(nombre)) {
-      salida[nombre] = incrustado !== undefined ? incrustado : argv[++i]
+      if (incrustado !== undefined) {
+        if (!incrustado.trim()) throw new Error(`Falta el valor de --${nombre}. Uso: --${nombre} <valor>`)
+        salida[nombre] = incrustado
+        continue
+      }
+      const siguiente = argv[i + 1]
+      if (siguiente === undefined || !siguiente.trim() || siguiente.startsWith('--')) {
+        throw new Error(`Falta el valor de --${nombre}. Uso: --${nombre} <valor>`)
+      }
+      salida[nombre] = argv[++i]
     } else {
-      throw new Error(`Opcion desconocida: --${nombre}`)
+      const validas = [...interruptores, ...claves].map((n) => `--${n}`)
+      throw new Error(
+        `Opcion desconocida: --${nombre}.` + (validas.length ? ` Opciones validas: ${validas.join(', ')}.` : '')
+      )
     }
   }
   return salida

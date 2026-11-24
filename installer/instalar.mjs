@@ -68,6 +68,10 @@ z.principal(() => {
   let elegidos = todos
   if (args.mods) {
     const pedidos = String(args.mods).split(',').map((x) => x.trim()).filter(Boolean)
+    // «--mods ,» dejaba la lista vacia y el error que salia era «Ninguno de los
+    // mods elegidos aplica a linux», que habla de plataforma cuando el problema
+    // es que no se pidio ningun mod.
+    if (!pedidos.length) throw new Error('--mods esta vacio: indica al menos un mod, por ejemplo --mods acrylic-glass')
     const desconocidos = pedidos.filter((n) => !todos.some((m) => m.carpeta === n))
     if (desconocidos.length) throw new Error(`No conozco estos mods: ${desconocidos.join(', ')}. Hay: ${todos.map((m) => m.carpeta).join(', ')}`)
     elegidos = todos.filter((m) => pedidos.includes(m.carpeta))

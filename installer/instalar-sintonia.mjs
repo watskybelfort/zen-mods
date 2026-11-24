@@ -49,7 +49,9 @@ z.principal(() => {
 
   const puerto = Number(args.puerto ?? 9463)
   if (!Number.isInteger(puerto) || puerto < 1024 || puerto > 65535) {
-    throw new Error(`Puerto fuera de rango: ${args.puerto}`)
+    // «Puerto fuera de rango: abc» describia mal el fallo cuando lo que llego
+    // no era un numero. Se dice el rango y lo que se recibio.
+    throw new Error(`--puerto debe ser un entero entre 1024 y 65535 (llego: ${JSON.stringify(args.puerto)}).`)
   }
 
   const dirNativo = path.join(z.RAIZ_REPO, 'mods', 'youtube-music', 'obs-now-playing', 'nativo')
