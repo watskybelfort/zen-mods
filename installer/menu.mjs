@@ -145,7 +145,13 @@ z.principal(async () => {
 
   let elegidos
   if (args.mods) {
-    const pedidos = String(args.mods).split(',').map((x) => x.trim())
+    const pedidos = String(args.mods).split(',').map((x) => x.trim()).filter(Boolean)
+    // Sin el filtro, «--mods ,» generaba dos nombres vacios y el aviso decia
+    // «No conozco estos mods: ,», que no nombra ningun mod.
+    if (!pedidos.length) {
+      throw new Error(t('--mods is empty: name at least one mod, e.g. --mods acrylic-glass',
+        '--mods está vacío: indica al menos un mod, p. ej. --mods acrylic-glass'))
+    }
     elegidos = MODS.filter((m) => pedidos.includes(m.id))
     const malos = pedidos.filter((p) => !MODS.some((m) => m.id === p))
     if (malos.length) throw new Error(t('Unknown mods: ', 'No conozco estos mods: ') + malos.join(', '))
