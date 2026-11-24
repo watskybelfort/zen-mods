@@ -73,8 +73,12 @@
       case 'quitar':
         return esIdTrabajo(m.trabajo) ? { tipo: m.tipo, trabajo: m.trabajo } : null;
       case 'ajuste': {
+        // hasOwnProperty y no AJUSTES[m.clave] a secas: una clave como
+        // 'constructor' o '__proto__' trae algo del prototipo, y validar tiene
+        // que descartarla, no reventar al llamarle .includes.
+        if (!Object.prototype.hasOwnProperty.call(AJUSTES, m.clave)) return null;
         const permitidos = AJUSTES[m.clave];
-        if (!permitidos || !permitidos.includes(m.valor)) return null;
+        if (!permitidos.includes(m.valor)) return null;
         return { tipo: 'ajuste', clave: m.clave, valor: m.valor };
       }
       default:

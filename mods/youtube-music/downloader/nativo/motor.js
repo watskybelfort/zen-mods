@@ -100,11 +100,11 @@
     for (const d of ICONOS[nombre]) {
       let n;
       if (d[0] === 'C') {
-        const [x, y, r] = d.slice(2).split(' ');
+        const [x, y, r] = d.slice(1).split(' ');
         n = document.createElementNS(svgNs, 'circle');
         n.setAttribute('cx', x); n.setAttribute('cy', y); n.setAttribute('r', r);
       } else if (d[0] === 'R') {
-        const [x, y, w, h, r] = d.slice(2).split(' ');
+        const [x, y, w, h, r] = d.slice(1).split(' ');
         n = document.createElementNS(svgNs, 'rect');
         n.setAttribute('x', x); n.setAttribute('y', y); n.setAttribute('width', w); n.setAttribute('height', h); n.setAttribute('rx', r);
       } else if (d[0] === 'F') {

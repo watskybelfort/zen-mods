@@ -60,6 +60,8 @@ prueba('validar: lo demas se descarta', () => {
     { tipo: 'descargar', url: 'https://www.youtube.com/watch?v=jNQXAC9IVRw', modo: 'audio' },
     { tipo: 'ajuste', clave: 'calidad', valor: '--exec' },
     { tipo: 'ajuste', clave: 'carpeta', valor: 'C:\\' },
+    { tipo: 'ajuste', clave: 'constructor', valor: 'x' },
+    { tipo: 'ajuste', clave: '__proto__', valor: 'mp3' },
     { tipo: 'ajuste', clave: 'cookies', valor: 'true' },
     { tipo: 'mostrar', trabajo: '../x' },
     { tipo: 'mostrar', trabajo: 'C:\\Windows' },
