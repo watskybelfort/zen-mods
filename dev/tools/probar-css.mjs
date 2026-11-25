@@ -54,6 +54,22 @@ z.principal(() => {
   }
   if (!archivos.length) throw new Error('No hay ningun CSS que revisar.')
 
+  // Las rutas que llegan por la linea de comandos se comprueban antes de leer.
+  // Sin esto, un nombre mal escrito salia como «ENOENT: no such file or
+  // directory, open 'no-existe.css'», que no dice ni que herramienta lo pide ni
+  // que el problema es el argumento. Los archivos del repo (sin argumentos) ya
+  // se filtran con existsSync arriba.
+  if (args._.length) {
+    for (const archivo of archivos) {
+      if (!fs.existsSync(archivo)) {
+        throw new Error(`No existe el archivo: ${archivo}. Pasa una ruta a un CSS o ejecuta sin argumentos para revisar los del repo.`)
+      }
+      if (!fs.statSync(archivo).isFile()) {
+        throw new Error(`No es un archivo: ${archivo}. Se esperaba un .css, no una carpeta.`)
+      }
+    }
+  }
+
   let fallos = 0
   let sinGuarda = 0
   for (const archivo of archivos) {

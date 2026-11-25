@@ -102,6 +102,38 @@ grupo('LRC mejorado: tiempos por palabra reales');
   ok('el texto queda sin marcas dentro', t && !/[<>]/.test(t.lineas[0].texto), t && t.lineas[0].texto);
   const plano = parsearLrc('[00:10.00]uno dos tres');
   ok('sin marcas por dentro, porPalabra es false', plano && plano.porPalabra === false);
+
+  /* Texto antes de la primera marca: la linea empieza con una palabra que no
+     lleva hora propia. Esa palabra existe y hay que verla. */
+  const antes = parsearLrc('[00:10.00]Hola <00:12.00>mundo');
+  ok('el texto anterior a la primera marca no se pierde', antes && antes.lineas[0].texto === 'Hola mundo',
+    antes && JSON.stringify(antes.lineas[0].texto));
+  ok('ese texto entra como palabra al inicio de la linea',
+    antes && antes.lineas[0].palabras.length === 2 && cerca(antes.lineas[0].palabras[0].inicio, 10),
+    antes && JSON.stringify(antes.lineas[0].palabras.map((p) => [+p.inicio.toFixed(2), p.texto])));
+  ok('y la palabra marcada conserva su hora', antes && cerca(antes.lineas[0].palabras[1].inicio, 12));
+
+  const soloEspacios = parsearLrc('[00:10.00] <00:12.00>mundo');
+  ok('un hueco antes de la primera marca no inventa palabra',
+    soloEspacios && soloEspacios.lineas[0].palabras.length === 1, soloEspacios && JSON.stringify(soloEspacios.lineas[0].palabras));
+
+  /* La etiqueta [offset:] ya se aplica al inicio de la linea. El texto de
+     delante toma ese inicio, asi que no puede volver a desplazarse: hacerlo dos
+     veces lo dejaria medio segundo antes de donde le toca, que es medio segundo
+     de letra cantada por delante del audio. */
+  const conOffset = parsearLrc('[offset:+500]\n[00:10.00]Hola <00:12.00>mundo');
+  ok('con offset, el texto de delante entra en el inicio ya desplazado',
+    conOffset && cerca(conOffset.lineas[0].palabras[0].inicio, 9.5),
+    conOffset && JSON.stringify(conOffset.lineas[0].palabras.map((p) => [+p.inicio.toFixed(2), p.texto])));
+  ok('y la palabra marcada se desplaza una sola vez', conOffset && cerca(conOffset.lineas[0].palabras[1].inicio, 11.5),
+    conOffset && String(conOffset.lineas[0].palabras[1].inicio));
+
+  /* Y el motor no reordena ni invierte esa primera palabra al componer. */
+  const compuesta = componerLineaDeTiempo(parsearLrc('[00:10.00]Hola <00:12.00>mundo\n[00:15.00]siguiente'));
+  const la = compuesta.lineas.find((l) => l.texto.startsWith('Hola'));
+  ok('esa palabra sobrevive al motor, en orden y sin invadir la linea siguiente',
+    la && la.palabras.length === 2 && la.palabras[0].inicio <= la.palabras[1].inicio && la.palabras[1].fin <= 15.001,
+    la && JSON.stringify(la.palabras.map((p) => [+p.inicio.toFixed(2), +p.fin.toFixed(2), p.texto])));
 }
 
 grupo('Basura y casos limite');

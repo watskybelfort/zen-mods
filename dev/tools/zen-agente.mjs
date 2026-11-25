@@ -55,11 +55,29 @@
 const args = process.argv.slice(2);
 const orden = args[0];
 
+/* Los errores de los argumentos se imprimen solos, sin traza: son un uso mal
+   escrito de la herramienta, no un fallo del programa. */
+const morir = (mensaje) => {
+  console.error(mensaje);
+  process.exit(2);
+};
+
 const flag = (nombre, pordefecto) => {
   const i = args.indexOf('--' + nombre);
-  return i >= 0 && args[i + 1] ? args[i + 1] : pordefecto;
+  if (i < 0) return pordefecto;
+  const valor = args[i + 1];
+  // Antes, `--port` al final de la linea devolvia el valor por defecto sin
+  // avisar: uno creia estar hablando con otro puerto y el error salia luego como
+  // «No hay nadie escuchando en ws://127.0.0.1:9222».
+  if (valor === undefined || valor.startsWith('--')) {
+    morir(`Falta el valor de --${nombre}. Uso: --${nombre} <valor>`);
+  }
+  return valor;
 };
 const puerto = flag('port', '9222');
+if (!/^\d+$/.test(puerto) || Number(puerto) < 1 || Number(puerto) > 65535) {
+  morir(`--port debe ser un numero entero entre 1 y 65535 (llego: ${JSON.stringify(puerto)}).`);
+}
 const contextoFijo = flag('contexto', null);
 const filtroUrl = flag('url', null); // elegir pestana por un trozo de su url
 
@@ -71,6 +89,12 @@ for (let i = 1; i < args.length; i++) {
     continue;
   }
   sueltos.push(args[i]);
+}
+
+// Sin esto, `guion` sin ruta llegaba al readFileSync de dentro de main y moria
+// con «The "path" argument must be of type string», despues de conectarse.
+if (orden === 'guion' && !sueltos[0]) {
+  morir('Falta el archivo del guion. Uso: node dev/tools/zen-agente.mjs guion <pasos.json>');
 }
 
 const url = `ws://127.0.0.1:${puerto}/session`;
@@ -291,10 +315,34 @@ const main = async () => {
   };
 
   if (orden === 'guion') {
-    const lista = JSON.parse(readFileSync(sueltos[0], 'utf8'));
-    for (const paso of lista) {
-      const [nombre, valor] = Object.entries(paso)[0];
-      if (!pasos[nombre]) throw new Error('paso desconocido: ' + nombre);
+    const archivoGuion = sueltos[0];
+    let lista;
+    try {
+      lista = JSON.parse(readFileSync(archivoGuion, 'utf8'));
+    } catch (e) {
+      // JSON.parse a secas decia «Unexpected token } in JSON at position 42» sin
+      // decir de que archivo era ni que forma tiene un guion.
+      if (e instanceof SyntaxError) {
+        throw new Error(`El guion ${archivoGuion} no es JSON valido (${e.message}).`);
+      }
+      throw new Error(`No se pudo leer el guion ${archivoGuion}: ${e.message}`);
+    }
+    if (!Array.isArray(lista)) {
+      throw new Error(`El guion ${archivoGuion} debe ser una lista de pasos, por ejemplo [{"ir": "https://..."}].`);
+    }
+    for (const [i, paso] of lista.entries()) {
+      if (!paso || typeof paso !== 'object' || Array.isArray(paso)) {
+        throw new Error(`Paso ${i + 1} del guion: se esperaba un objeto con una sola clave, llego ${JSON.stringify(paso)}.`);
+      }
+      const claves = Object.keys(paso);
+      if (claves.length !== 1) {
+        throw new Error(`Paso ${i + 1} del guion: tiene ${claves.length} claves (${claves.join(', ')}); cada paso lleva exactamente una.`);
+      }
+      const nombre = claves[0];
+      const valor = paso[nombre];
+      if (!pasos[nombre]) {
+        throw new Error(`Paso ${i + 1} del guion: paso desconocido «${nombre}». Los pasos son: ${Object.keys(pasos).join(', ')}.`);
+      }
       const args = Array.isArray(valor) ? valor : [valor];
       console.log(await pasos[nombre](...args));
     }

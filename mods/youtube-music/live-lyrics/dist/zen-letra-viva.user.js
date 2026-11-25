@@ -1065,6 +1065,12 @@ const extraerPalabrasMejoradas = (bruto, inicioLinea, offsetMs) => {
     if (ultimo) {
       ultimo.texto = bruto.slice(cursor, m.index);
       trozos.push(ultimo);
+    } else {
+      /* Texto ANTES de la primera marca: "Hola <00:12.00>mundo". No trae hora
+         propia, asi que empieza cuando empieza la linea. Descartarlo borraba
+         "Hola" del texto y de la vista. */
+      const antes = bruto.slice(0, m.index).trim();
+      if (antes) trozos.push({ inicio: inicioLinea, fin: 0, texto: antes });
     }
     ultimo = { inicio: Math.max(0, aSegundos(m[1], m[2], m[3]) - offsetMs / 1000), fin: 0, texto: '' };
     cursor = m.index + m[0].length;

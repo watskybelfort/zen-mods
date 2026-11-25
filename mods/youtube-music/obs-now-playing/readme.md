@@ -149,7 +149,7 @@ En `about:config`, en caliente (basta recargar la pestana):
 node dev/tools/probar-sintonia.mjs      # los dos lados del puente, sin navegador
 ```
 
-36 pruebas con dobles de `Services`, `Cu`, XHR y un DOM de mentira: donde se
+40 pruebas con dobles de `Services`, `Cu`, XHR y un DOM de mentira: donde se
 inyecta y donde no, que se manda, el respaldo por DOM, los anuncios, el ritmo,
 el cortafuegos, y que el saneador no se fia de la pagina.
 

@@ -175,13 +175,38 @@ prueba('progreso: el audio avanza sobre 99 y sin total no inventa', () => {
 
 // --- En vivo ----------------------------------------------------------------------
 if (process.argv.includes('--vivo')) {
-  const i = process.argv.indexOf('--perfil');
-  let perfil = i > 0 ? process.argv[i + 1] : null;
-  if (!perfil) {
-    const z = await import(pathToFileURL(path.join(raiz, 'installer/lib/zen.mjs')).href);
-    perfil = z.resolverPerfil();
+  const z = await import(pathToFileURL(path.join(raiz, 'installer/lib/zen.mjs')).href);
+
+  /* El parseo se hace con el mismo ayudante que los instaladores, y no a mano.
+     Antes, `--perfil` al final de la linea o escrito con una errata se ignoraba
+     en silencio: la prueba seguia contra el perfil por defecto y el fallo
+     aparecia mas tarde como «no se encontro profiles.ini», que no menciona el
+     argumento. */
+  let opciones;
+  try {
+    opciones = z.parsearArgs(process.argv.slice(2), { interruptores: ['vivo'], claves: ['perfil'] });
+  } catch (e) {
+    console.error(e.message);
+    process.exit(2);
   }
-  const h = JSON.parse(fs.readFileSync(path.join(perfil, 'chrome/zen-descargas/herramientas.json'), 'utf8'));
+
+  let perfil = opciones.perfil;
+  if (perfil) {
+    if (!fs.existsSync(perfil)) {
+      console.error(`El perfil no existe: ${perfil}. Revisa la ruta de --perfil.`);
+      process.exit(2);
+    }
+  } else {
+    try { perfil = z.resolverPerfil(); }
+    catch (e) { console.error(e.message); process.exit(2); }
+  }
+
+  const herramientas = path.join(perfil, 'chrome/zen-descargas/herramientas.json');
+  if (!fs.existsSync(herramientas)) {
+    console.error(`No existe ${herramientas}. Instala Zen Descargas antes de la prueba en vivo: node installer/instalar-descargas.mjs`);
+    process.exit(2);
+  }
+  const h = JSON.parse(fs.readFileSync(herramientas, 'utf8'));
   const carpeta = fs.mkdtempSync(path.join(os.tmpdir(), 'zd-vivo-'));
   const ffDir = h.ffmpeg ? path.dirname(h.ffmpeg) : null;
   const ffprobe = ffDir ? path.join(ffDir, 'ffprobe' + (process.platform === 'win32' ? '.exe' : '')) : null;

@@ -158,6 +158,8 @@ node dev/tools/probar-remoto.mjs     # Phone Remote: parser, validation, QR
 node dev/tools/probar-descargas.mjs  # Downloader: validation, yt-dlp arguments (--vivo downloads a 19 s clip)
 node dev/tools/probar-mezcla.mjs     # Crossfade
 node dev/tools/probar-lrc.mjs        # Live Lyrics parser
+node dev/tools/probar-almacen.mjs    # Live Lyrics: settings, per-song offset, cache
+node dev/tools/probar-reloj.mjs      # Live Lyrics: the player clock (currentTime, ads)
 node dev/tools/probar-contrato.mjs --ruta-zen "<new Zen>"  # what a Zen update would break, before installing it
 node dev/tools/probar-css.mjs        # broken comments, unbalanced braces, missing Zen Sin Cristal guards
 ```

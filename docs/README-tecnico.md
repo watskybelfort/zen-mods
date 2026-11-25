@@ -331,7 +331,7 @@ node installer/instalar-sin-cristal.mjs     # una vez; necesita escribir en la i
 
 La lista vive en `zen.sincristal.sitios` y se puede editar a mano en
 `about:config`. Un dominio cubre sus subdominios y no cruza sufijos, igual que el
-`domain()` del CSS. Lo que se queda fuera —los 38 sitios con bloque propio en
+`domain()` del CSS. Lo que se queda fuera —los 37 bloques por sitio de
 `50-sites.css`, los iframes de terceros, las paginas sin dominio— esta en su
 [readme](mods/appearance/glass-toggle/readme.md).
 
@@ -768,7 +768,7 @@ mods/                      los mods, por categoria; cada carpeta con theme.json
         45-emergentes.css  velo para los emergentes de cualquier sitio (siempre)
         50-sites.css       ajustes por sitio (@-moz-document)
         90-exclusions.css  lista de rescate y exclusiones       (siempre, la ultima)
-        readme.md          el catalogo de los 38 sitios y como se anade uno;
+        readme.md          el catalogo de los 37 sitios y como se anade uno;
                            las cinco primeras llevan la guarda de Zen Sin
                            Cristal, 90-exclusions no, y su cabecera dice por que
     motion/                movimiento y tipografia
@@ -861,6 +861,7 @@ dev/tools/
   probar-sintonia.mjs      los dos lados del puente de Sintonia, sin navegador
   probar-descargas.mjs     validacion, ids, linea de yt-dlp y progreso de Zen Descargas
   probar-lrc.mjs           el conversor de LRC de Letra Viva
+  probar-almacen.mjs       ajustes, desfase por cancion y cache de Letra Viva
   probar-reloj.mjs         el reloj de Letra Viva
 dev/powershell/
   Get-ZenBackdrop.ps1      SOLO WINDOWS: le pregunta a DWM por el backdrop de la
