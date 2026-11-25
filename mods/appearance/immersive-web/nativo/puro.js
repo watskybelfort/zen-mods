@@ -87,7 +87,7 @@
   };
 
   // shouldApplyStyling de background.js.
-  const debeAplicar = (host, catalogo, ajustes, mapeo, cache) => {
+  const debeAplicar = (host, ajustes, mapeo, cache) => {
     const g = ajustes.global;
     if (!g.enableStyling) return { si: false, motivo: 'globally_disabled' };
     const n = normalizar(host);
@@ -206,7 +206,7 @@
     const web = (catalogo && catalogo.website) || {};
     const mapeo = mapeoJunto(catalogo, ajustes);
     const cache = claves(catalogo, mapeo);
-    const estado = debeAplicar(host, catalogo, ajustes, mapeo, cache);
+    const estado = debeAplicar(host, ajustes, mapeo, cache);
     const fondo = ajustes.fondo.includes(host);
 
     if (estado.motivo === 'globally_disabled') return { css: '', motivo: estado.motivo, clave: null };
