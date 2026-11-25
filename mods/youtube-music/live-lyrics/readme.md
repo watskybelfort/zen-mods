@@ -314,4 +314,5 @@ interpolacion, que son funciones puras, se prueban sin navegador:
 
 ```bash
 node dev/tools/probar-lrc.mjs
+node dev/tools/probar-almacen.mjs
 ```

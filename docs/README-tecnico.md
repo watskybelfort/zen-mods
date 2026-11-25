@@ -861,6 +861,7 @@ dev/tools/
   probar-sintonia.mjs      los dos lados del puente de Sintonia, sin navegador
   probar-descargas.mjs     validacion, ids, linea de yt-dlp y progreso de Zen Descargas
   probar-lrc.mjs           el conversor de LRC de Letra Viva
+  probar-almacen.mjs       ajustes, desfase por cancion y cache de Letra Viva
   probar-reloj.mjs         el reloj de Letra Viva
 dev/powershell/
   Get-ZenBackdrop.ps1      SOLO WINDOWS: le pregunta a DWM por el backdrop de la
