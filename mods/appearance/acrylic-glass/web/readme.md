@@ -16,7 +16,7 @@ y se vuelve a ejecutar el instalador.
 | `10-wrappers.css` | nivel `full` (por defecto) | vacia los nodos de montaje de framework (`#root`, `#__next`, `#app`…) |
 | `20-aggressive.css` | nivel `aggressive` | vacia los primeros descendientes del `body`. Es un cheque en blanco |
 | `45-emergentes.css` | siempre | velo para menus, dialogos y tooltips que el sitio dejo transparentes |
-| `50-sites.css` | siempre | los 38 sitios medidos a mano, cada uno con su bloque |
+| `50-sites.css` | siempre | los 37 bloques medidos a mano, uno por sitio |
 | `90-exclusions.css` | siempre, **la ultima** | devuelve el fondo solido donde el cristal no funciona |
 
 El orden es la arquitectura: entre reglas de la misma hoja y la misma

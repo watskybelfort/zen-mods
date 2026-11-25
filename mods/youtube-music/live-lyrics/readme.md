@@ -265,6 +265,25 @@ En cache se guarda el **texto en crudo**, no la linea de tiempo compuesta: ocupa
 fraccion y, sobre todo, el dia que se afine la interpolacion lo ya guardado se
 recompone con las reglas nuevas en lugar de servir para siempre el reparto viejo.
 
+### Cuanto dura lo que se guarda
+
+La cache no es eterna, y a proposito: lo que guarda es la respuesta del proveedor,
+no la verdad. Una letra encontrada caduca a los **30 dias** y se vuelve a pedir; un
+*"no hay letra"* caduca a los **3**, porque las bases de datos crecen y la cancion
+rara de hoy puede tener letra manana. Se guardan como mucho **300** entradas y, al
+pasar de ahi, se tiran las mas antiguas por orden de entrada — no de ultimo uso:
+llevar esa cuenta obligaria a escribir en disco en cada reproduccion.
+
+El desfase por cancion (`Alt+←` / `Alt+→`) se guarda aparte, redondeado al
+milisegundo, y se conservan los **500** ultimos. Es un ajuste tuyo, no una cache:
+antes se pierde el mas viejo que dejar de recordar los nuevos, y `Alt+0` lo borra
+en el acto.
+
+Los ajustes se guardan mezclados con los valores por defecto, asi que una opcion que
+se anada en una version futura arranca con su valor normal en vez de quedarse
+apagada. Y si el navegador se queda sin espacio, se vacia la cache y se reintenta la
+escritura una vez: se pierde la letra recordada antes que tus preferencias.
+
 ## Cuando YouTube Music cambie su DOM
 
 Va a pasar, y el fallo tipico no es una excepcion: es un `querySelector` que
@@ -276,7 +295,7 @@ window.__zenLetra.doctor()
 
 Saca una tabla con cada punto de enganche, si sigue existiendo y para que servia.
 Los criticos salen marcados como `ROTO`. Es la version desde dentro de la pagina de
-lo que `dev/tools/tools/doctor.mjs` hace con el CSS, y existe porque el DOM de una web ajena
+lo que `dev/tools/doctor.mjs` hace con el CSS, y existe porque el DOM de una web ajena
 no se puede comprobar desde fuera. Los mismos puntos estan declarados en
 `dev/contract/letra-viva.json`, marcados como comprobables solo en vivo.
 
